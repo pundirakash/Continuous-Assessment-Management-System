@@ -84,7 +84,7 @@ exports.appointCoordinator = async (req, res) => {
 
 exports.createAssessment = async (req, res) => {
   try {
-    const { courseId, name } = req.body;
+    const { courseId, name, termId,type } = req.body;
     const course = await Course.findById(courseId);
 
     if (!course) {
@@ -100,7 +100,9 @@ exports.createAssessment = async (req, res) => {
 
     const assessment = new Assessment({
       course: courseId,
+      termId,
       name,
+      type,
       facultyQuestions
     });
 

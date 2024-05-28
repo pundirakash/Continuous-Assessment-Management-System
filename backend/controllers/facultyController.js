@@ -3,6 +3,10 @@ const Course = require('../models/Course');
 const Assessment = require('../models/Assessment');
 const Question = require('../models/Question');
 const PDFDocument = require('pdfkit');
+const path = require('path');
+const fs = require('fs');
+const PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
 
 exports.getCourses = async (req, res) => {
   try {
@@ -18,7 +22,7 @@ exports.getCourses = async (req, res) => {
 
 exports.createQuestion = async (req, res) => {
   try {
-    const { assessmentId, text, type, options, bloomLevel, courseOutcome } = req.body;
+    const { assessmentId, text, type, options, bloomLevel, courseOutcome, allotmentDate, submissionDate, maximumMarks,marks } = req.body;
     const assessment = await Assessment.findById(assessmentId);
 
     if (!assessment) {
@@ -31,13 +35,25 @@ exports.createQuestion = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to add questions to this assessment' });
     }
 
+    // Set the subfields if they are not already set
+    if (!facultyQuestions.allotmentDate) {
+      facultyQuestions.allotmentDate = allotmentDate;
+    }
+    if (!facultyQuestions.submissionDate) {
+      facultyQuestions.submissionDate = submissionDate;
+    }
+    if (!facultyQuestions.maximumMarks) {
+      facultyQuestions.maximumMarks = maximumMarks;
+    }
+
     const question = new Question({
       assessment: assessmentId,
       text,
       type,
       options,
       bloomLevel,
-      courseOutcome
+      courseOutcome,
+      marks
     });
 
     await question.save();
@@ -47,9 +63,12 @@ exports.createQuestion = async (req, res) => {
 
     res.status(201).json({ message: 'Question added successfully', question });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+
 
 exports.getQuestions = async (req, res) => {
   try {
@@ -100,10 +119,37 @@ exports.submitAssessment = async (req, res) => {
   }
 };
 
+// Helper function to generate DOCX file
+async function generateDocxFromTemplate(data) {
+  try {
+    const templateFilePath = path.resolve(__dirname, 'template.docx');
+    const outputDocxFilePath = path.resolve(__dirname, 'output.docx');
+
+    const content = fs.readFileSync(templateFilePath, 'binary');
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    doc.setData(data);
+    doc.render();
+
+    const buffer = doc.getZip().generate({ type: 'nodebuffer' });
+    fs.writeFileSync(outputDocxFilePath, buffer);
+
+    return outputDocxFilePath;
+  } catch (error) {
+    throw new Error(`Error generating DOCX file: ${error.message}`);
+  }
+}
+
 exports.downloadAssessment = async (req, res) => {
   try {
     const { assessmentId } = req.params;
-    const assessment = await Assessment.findById(assessmentId).populate('facultyQuestions.questions');
+    const assessment = await Assessment.findById(assessmentId)
+      .populate('facultyQuestions.questions')
+      .populate('course');
 
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
@@ -115,23 +161,31 @@ exports.downloadAssessment = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
     }
 
-    const doc = new PDFDocument();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=assessment_${assessmentId}.pdf`);
+    if (facultyQuestions.status !== 'Approved' && facultyQuestions.status !== 'Approved with Remarks') {
+      return res.status(403).json({ message: 'Assessment not approved by HOD' });
+    }
 
-    doc.pipe(res);
+    // Prepare data for DOCX generation
+    const data = {
+      assessmentName: assessment.name,
+      courseCode: assessment.course.code,
+      allotmentDate: facultyQuestions.allotmentDate,
+      courseName: assessment.course.name,
+      submissionDate: facultyQuestions.submissionDate,
+      maximumMarks: facultyQuestions.maximumMarks,
+      taskType: assessment.type,  // Assuming taskType is a field in the assessment model
+      questions: facultyQuestions.questions.map((question, index) => ({
+        number: index + 1,
+        text: question.text,
+        courseOutcome: question.courseOutcome,
+        bloomLevel: question.bloomLevel,
+        marks: question.marks,
+      })),
+    };
 
-    facultyQuestions.questions.forEach((question, index) => {
-      doc.text(`${index + 1}. ${question.text}`);
-      if (question.type === 'MCQ' && question.options.length) {
-        question.options.forEach((option, optIndex) => {
-          doc.text(`  ${String.fromCharCode(65 + optIndex)}. ${option}`);
-        });
-      }
-      doc.moveDown();
-    });
+    const docxFilePath = await generateDocxFromTemplate(data);
 
-    doc.end();
+    res.download(docxFilePath, `assessment_${assessmentId}.docx`);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }

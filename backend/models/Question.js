@@ -6,7 +6,8 @@ const questionSchema = new mongoose.Schema({
   type: { type: String, enum: ['MCQ', 'Theory'], required: true },
   options: [String], // only for MCQ
   bloomLevel: { type: String, required: true },
-  courseOutcome: { type: String, required: true }
+  courseOutcome: { type: String, required: true },
+  marks:{type:Number,required:true}
 });
 
 module.exports = mongoose.model('Question', questionSchema);
