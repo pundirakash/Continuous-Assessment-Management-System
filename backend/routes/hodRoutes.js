@@ -6,7 +6,8 @@ const {
   assignCourse,
   appointCoordinator,
   createAssessment,
-  reviewAssessment, approveAssessment,
+  reviewAssessment, approveAssessment,downloadAssessmentQuestions,
+  downloadCourseQuestions,
   createCourse // New route for creating courses
 } = require('../controllers/hodController');
 const auth = require('../middleware/auth');
@@ -21,4 +22,7 @@ router.post('/create-assessment', auth(['HOD']), createAssessment);
 router.post('/create-course', auth(['HOD']), createCourse); // New route for creating courses
 router.get('/review-assessment/:assessmentId/:facultyId', auth(['HOD']), reviewAssessment);
 router.post('/approve-assessment/:assessmentId/:facultyId', auth(['HOD']), approveAssessment);
+router.get('/download-assessment-questions/:courseId/:assessmentId', auth(['HOD']), downloadAssessmentQuestions);
+router.get('/download-course-questions/:courseId', auth(['HOD']), downloadCourseQuestions);
+
 module.exports = router;

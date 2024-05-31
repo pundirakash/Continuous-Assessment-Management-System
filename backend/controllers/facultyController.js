@@ -68,8 +68,6 @@ exports.createQuestion = async (req, res) => {
   }
 };
 
-
-
 exports.getQuestions = async (req, res) => {
   try {
     const { assessmentId } = req.query;
@@ -122,7 +120,7 @@ exports.submitAssessment = async (req, res) => {
 // Helper function to generate DOCX file
 async function generateDocxFromTemplate(data) {
   try {
-    const templateFilePath = path.resolve(__dirname, 'template.docx');
+    const templateFilePath = path.resolve(__dirname, '../templates/template.docx');
     const outputDocxFilePath = path.resolve(__dirname, 'output.docx');
 
     const content = fs.readFileSync(templateFilePath, 'binary');
@@ -161,19 +159,23 @@ exports.downloadAssessment = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
     }
 
-    if (facultyQuestions.status !== 'Approved' && facultyQuestions.status !== 'Approved with Remarks') {
-      return res.status(403).json({ message: 'Assessment not approved by HOD' });
+    const hodApproved = facultyQuestions.hodStatus === 'Approved' || facultyQuestions.hodStatus === 'Approved with Remarks';
+    const coordinatorApproved = facultyQuestions.coordinatorStatus === 'Approved' || facultyQuestions.coordinatorStatus === 'Approved with Remarks';
+
+    if (!hodApproved && !coordinatorApproved) {
+      return res.status(403).json({ message: 'Assessment not approved by HOD or CourseCoordinator' });
     }
 
     // Prepare data for DOCX generation
     const data = {
+      termId: assessment.termId,
       assessmentName: assessment.name,
       courseCode: assessment.course.code,
       allotmentDate: facultyQuestions.allotmentDate,
       courseName: assessment.course.name,
       submissionDate: facultyQuestions.submissionDate,
       maximumMarks: facultyQuestions.maximumMarks,
-      taskType: assessment.type,  // Assuming taskType is a field in the assessment model
+      taskType: assessment.type,  
       questions: facultyQuestions.questions.map((question, index) => ({
         number: index + 1,
         text: question.text,
@@ -187,6 +189,8 @@ exports.downloadAssessment = async (req, res) => {
 
     res.download(docxFilePath, `assessment_${assessmentId}.docx`);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
+

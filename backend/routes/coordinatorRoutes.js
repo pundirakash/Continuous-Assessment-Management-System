@@ -6,6 +6,6 @@ const router = express.Router();
 router.get('/faculties', auth(['CourseCoordinator']), getFaculties);
 router.post('/create-assessment', auth(['CourseCoordinator']), createAssessment);
 router.get('/assessments', auth(['CourseCoordinator']), getAssessments);
-router.post('/approve-assessment', auth(['CourseCoordinator']), approveAssessment);
+router.post('/approve-assessment/:assessmentId/:facultyId', auth(['CourseCoordinator']), approveAssessment);
 
 module.exports = router;

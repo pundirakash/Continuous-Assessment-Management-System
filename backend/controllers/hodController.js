@@ -2,6 +2,10 @@ const User = require('../models/User');
 const Course = require('../models/Course');
 const Assessment = require('../models/Assessment');
 const Question = require('../models/Question');
+const fs = require('fs');
+const path = require('path');
+const PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
 
 exports.getFaculties = async (req, res) => {
   try {
@@ -189,12 +193,117 @@ exports.approveAssessment = async (req, res) => {
       return res.status(404).json({ message: 'No questions found for this faculty' });
     }
 
-    facultyQuestions.status = status;
-    facultyQuestions.remarks = remarks;
+    facultyQuestions.hodStatus = status;
+    facultyQuestions.hodRemarks = remarks;
     await assessment.save();
 
-    res.status(200).json({ message: 'Assessment reviewed successfully' });
+    res.status(200).json({ message: 'Assessment reviewed successfully by HOD' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+
+
+// Helper function to generate DOCX file
+async function generateDocxFromTemplate(data) {
+  try {
+    const templateFilePath = path.resolve(__dirname, '../templates/template2.docx');
+    const outputDocxFilePath = path.resolve(__dirname, 'output2.docx');
+
+    const content = fs.readFileSync(templateFilePath, 'binary');
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    doc.setData(data);
+    doc.render();
+
+    const buffer = doc.getZip().generate({ type: 'nodebuffer' });
+    fs.writeFileSync(outputDocxFilePath, buffer);
+
+    return outputDocxFilePath;
+  } catch (error) {
+    throw new Error(`Error generating DOCX file: ${error.message}`);
+  }
+}
+
+exports.downloadAssessmentQuestions = async (req, res) => {
+  try {
+    const { courseId, assessmentId } = req.params;
+    
+    // Ensure the assessment belongs to the specified course
+    const assessment = await Assessment.findOne({ _id: assessmentId, course: courseId }).populate('facultyQuestions.questions').populate('course');;
+    
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found for the specified course' });
+    }
+
+    const allQuestions = assessment.facultyQuestions.flatMap(fq => fq.questions);
+
+    const populatedQuestions = await Question.find({ _id: { $in: allQuestions } });
+
+    // Prepare data for DOCX generation
+    const data = {
+      assessmentName: assessment.name,
+      courseCode: assessment.course.code,
+      courseName: assessment.course.name,
+      questions: populatedQuestions.map((question, index) => ({
+        number: index + 1,
+        text: question.text,
+        courseOutcome: question.courseOutcome,
+        bloomLevel: question.bloomLevel,
+        marks: question.marks,
+      })),
+    };
+
+    const docxFilePath = await generateDocxFromTemplate(data);
+
+    res.download(docxFilePath, `assessment_${assessmentId}_questions.docx`);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.downloadCourseQuestions = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    
+    // Find all assessments for the specified course
+    const assessments = await Assessment.find({ course: courseId }).populate('facultyQuestions.questions');
+
+    if (assessments.length === 0) {
+      return res.status(404).json({ message: 'No assessments found for the specified course' });
+    }
+
+    // Collect all questions from all assessments
+    const allQuestions = assessments.flatMap(assessment => 
+      assessment.facultyQuestions.flatMap(fq => fq.questions)
+    );
+
+    const populatedQuestions = await Question.find({ _id: { $in: allQuestions } });
+
+    // Prepare data for DOCX generation
+    const data = {
+      courseId: courseId,
+      questions: populatedQuestions.map((question, index) => ({
+        number: index + 1,
+        text: question.text,
+        courseOutcome: question.courseOutcome,
+        bloomLevel: question.bloomLevel,
+        marks: question.marks,
+      })),
+    };
+
+    const docxFilePath = await generateDocxFromTemplate(data);
+
+    res.download(docxFilePath, `course_${courseId}_questions.docx`);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+
+
