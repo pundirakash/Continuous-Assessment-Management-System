@@ -5,7 +5,7 @@ const Assessment = require('../models/Assessment');
 exports.getFaculties = async (req, res) => {
   try {
     const courseId = req.query.courseId;
-    const coordinatorId = req.user.id; 
+    const coordinatorId = req.user.id;
 
     // Find the course where the logged-in user is the coordinator
     const course = await Course.findOne({ _id: courseId, coordinator: coordinatorId }).populate('faculties');
@@ -20,11 +20,10 @@ exports.getFaculties = async (req, res) => {
   }
 };
 
-
 exports.createAssessment = async (req, res) => {
   try {
-    const { courseId, name, termId, type } = req.body;
-    const coordinatorId = req.user.id; 
+    const { courseId, name, termId, type, sets } = req.body; // Added 'sets' to the request body
+    const coordinatorId = req.user.id;
 
     // Find the course where the logged-in user is the coordinator
     const course = await Course.findOne({ _id: courseId, coordinator: coordinatorId });
@@ -37,7 +36,7 @@ exports.createAssessment = async (req, res) => {
 
     const facultyQuestions = faculties.map(faculty => ({
       faculty: faculty._id,
-      questions: []
+      sets: Array.from({ length: sets }, () => ({ questions: [] })) // Initialize multiple sets
     }));
 
     const assessment = new Assessment({
@@ -60,11 +59,10 @@ exports.createAssessment = async (req, res) => {
   }
 };
 
-
 exports.getAssessments = async (req, res) => {
   try {
     const { courseId } = req.query;
-    const coordinatorId = req.user.id; 
+    const coordinatorId = req.user.id;
 
     // Find the course where the logged-in user is the coordinator
     const course = await Course.findOne({ _id: courseId, coordinator: coordinatorId });
@@ -80,12 +78,11 @@ exports.getAssessments = async (req, res) => {
   }
 };
 
-
 exports.approveAssessment = async (req, res) => {
   try {
     const { assessmentId, facultyId } = req.params;
-    const { status, remarks } = req.body;
-    const coordinatorId = req.user.id; 
+    const { status, remarks, setIndex } = req.body; // Added 'setIndex' to the request body
+    const coordinatorId = req.user.id;
 
     // Find the assessment and populate the course
     const assessment = await Assessment.findById(assessmentId).populate('course');
@@ -105,8 +102,13 @@ exports.approveAssessment = async (req, res) => {
       return res.status(404).json({ message: 'No questions found for this faculty' });
     }
 
-    facultyQuestions.coordinatorStatus = status;
-    facultyQuestions.coordinatorRemarks = remarks;
+    // Update the specific set's status and remarks
+    if (facultyQuestions.sets[setIndex]) {
+      facultyQuestions.sets[setIndex].coordinatorStatus = status;
+      facultyQuestions.sets[setIndex].coordinatorRemarks = remarks;
+    } else {
+      return res.status(400).json({ message: 'Invalid set index' });
+    }
 
     await assessment.save();
 
@@ -115,4 +117,3 @@ exports.approveAssessment = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
-

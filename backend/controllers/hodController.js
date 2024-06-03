@@ -124,18 +124,31 @@ exports.createAssessment = async (req, res) => {
 
 exports.reviewAssessment = async (req, res) => {
   try {
-    const { id, facultyId } = req.params;
-    const assessment = await Assessment.findOne({ _id: id, 'facultyQuestions.faculty': facultyId }).populate('facultyQuestions.questions');
+    const { assessmentId, facultyId, setName } = req.params;
+    const assessment = await Assessment.findById(assessmentId).populate('facultyQuestions.sets.questions');
 
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
     }
 
-    res.status(200).json(assessment);
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(facultyId));
+
+    if (!facultyQuestions) {
+      return res.status(404).json({ message: 'No questions found for this faculty' });
+    }
+
+    const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
+    }
+
+    res.status(200).json(questionSet);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 exports.createCourse = async (req, res) => {
   try {
@@ -178,7 +191,7 @@ exports.reviewAssessment = async (req, res) => {
 
 exports.approveAssessment = async (req, res) => {
   try {
-    const { assessmentId, facultyId } = req.params;
+    const { assessmentId, facultyId, setName } = req.params;
     const { status, remarks } = req.body;
 
     const assessment = await Assessment.findById(assessmentId);
@@ -193,15 +206,22 @@ exports.approveAssessment = async (req, res) => {
       return res.status(404).json({ message: 'No questions found for this faculty' });
     }
 
-    facultyQuestions.hodStatus = status;
-    facultyQuestions.hodRemarks = remarks;
+    const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
+    }
+
+    questionSet.hodStatus = status;
+    questionSet.hodRemarks = remarks;
     await assessment.save();
 
-    res.status(200).json({ message: 'Assessment reviewed successfully by HOD' });
+    res.status(200).json({ message: 'Assessment set reviewed successfully by HOD' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 
 

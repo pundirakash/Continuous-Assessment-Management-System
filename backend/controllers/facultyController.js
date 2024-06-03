@@ -22,7 +22,7 @@ exports.getCourses = async (req, res) => {
 
 exports.createQuestion = async (req, res) => {
   try {
-    const { assessmentId, text, type, options, bloomLevel, courseOutcome, allotmentDate, submissionDate, maximumMarks,marks } = req.body;
+    const { assessmentId, setName, text, type, options, bloomLevel, courseOutcome, allotmentDate, submissionDate, maximumMarks, marks } = req.body;
     const assessment = await Assessment.findById(assessmentId);
 
     if (!assessment) {
@@ -35,15 +35,17 @@ exports.createQuestion = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to add questions to this assessment' });
     }
 
-    // Set the subfields if they are not already set
-    if (!facultyQuestions.allotmentDate) {
-      facultyQuestions.allotmentDate = allotmentDate;
-    }
-    if (!facultyQuestions.submissionDate) {
-      facultyQuestions.submissionDate = submissionDate;
-    }
-    if (!facultyQuestions.maximumMarks) {
-      facultyQuestions.maximumMarks = maximumMarks;
+    let questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+
+    if (!questionSet) {
+      questionSet = {
+        setName,
+        questions: [],
+        allotmentDate,
+        submissionDate,
+        maximumMarks
+      };
+      facultyQuestions.sets.push(questionSet);
     }
 
     const question = new Question({
@@ -58,7 +60,7 @@ exports.createQuestion = async (req, res) => {
 
     await question.save();
 
-    facultyQuestions.questions.push(question._id);
+    questionSet.questions.push(question._id);
     await assessment.save();
 
     res.status(201).json({ message: 'Question added successfully', question });
@@ -68,10 +70,11 @@ exports.createQuestion = async (req, res) => {
   }
 };
 
+
 exports.getQuestions = async (req, res) => {
   try {
-    const { assessmentId } = req.query;
-    const assessment = await Assessment.findById(assessmentId).populate('facultyQuestions.questions');
+    const { assessmentId, setName } = req.query;
+    const assessment = await Assessment.findById(assessmentId).populate('facultyQuestions.sets.questions');
 
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
@@ -83,7 +86,13 @@ exports.getQuestions = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
     }
 
-    const populatedQuestions = await Question.find({ _id: { $in: facultyQuestions.questions } });
+    const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
+    }
+
+    const populatedQuestions = await Question.find({ _id: { $in: questionSet.questions } });
 
     res.status(200).json(populatedQuestions);
   } catch (error) {
@@ -91,9 +100,10 @@ exports.getQuestions = async (req, res) => {
   }
 };
 
+
 exports.submitAssessment = async (req, res) => {
   try {
-    const { assessmentId } = req.body;
+    const { assessmentId, setName } = req.body;
     const assessment = await Assessment.findById(assessmentId);
 
     if (!assessment) {
@@ -106,21 +116,28 @@ exports.submitAssessment = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to submit questions for this assessment' });
     }
 
-    facultyQuestions.status = 'Pending';
+    const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
+    }
+
+    questionSet.status = 'Pending';
     await assessment.save();
 
     // Logic to notify HOD (e.g., send an email or notification)
 
-    res.status(200).json({ message: 'Assessment submitted successfully for review' });
+    res.status(200).json({ message: 'Assessment set submitted successfully for review' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
 };
 
+
 // Helper function to generate DOCX file
 async function generateDocxFromTemplate(data) {
   try {
-    const templateFilePath = path.resolve(__dirname, '../templates/template.docx');
+    const templateFilePath = path.resolve(__dirname, '../templates/template3.docx');
     const outputDocxFilePath = path.resolve(__dirname, 'output.docx');
 
     const content = fs.readFileSync(templateFilePath, 'binary');
@@ -176,12 +193,16 @@ exports.downloadAssessment = async (req, res) => {
       submissionDate: facultyQuestions.submissionDate,
       maximumMarks: facultyQuestions.maximumMarks,
       taskType: assessment.type,  
-      questions: facultyQuestions.questions.map((question, index) => ({
-        number: index + 1,
-        text: question.text,
-        courseOutcome: question.courseOutcome,
-        bloomLevel: question.bloomLevel,
-        marks: question.marks,
+      questions: await Promise.all(facultyQuestions.questions.map(async (questionId, index) => {
+        const question = await Question.findById(questionId);
+        return {
+          number: index + 1,
+          text: question.text,
+          courseOutcome: question.courseOutcome,
+          bloomLevel: question.bloomLevel,
+          marks: question.marks,
+          options: question.type === 'MCQ' ? question.options.map(option => ({ option })) : []
+        };
       })),
     };
 
@@ -193,4 +214,5 @@ exports.downloadAssessment = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
