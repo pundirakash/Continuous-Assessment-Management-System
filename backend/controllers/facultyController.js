@@ -184,6 +184,9 @@ exports.downloadAssessment = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
+    // Option letters array
+    const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+
     // Prepare data for DOCX generation
     const data = {
       termId: assessment.termId,
@@ -199,7 +202,7 @@ exports.downloadAssessment = async (req, res) => {
           courseOutcome: question.courseOutcome,
           bloomLevel: question.bloomLevel,
           marks: question.marks,
-          options: question.type === 'MCQ' ? question.options.map(option => ({ option })) : []
+          options: question.type === 'MCQ' ? question.options.map((option, i) => ({ option: `${optionLetters[i]}. ${option}` })) : []
         };
       })),
     };
@@ -212,3 +215,4 @@ exports.downloadAssessment = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
