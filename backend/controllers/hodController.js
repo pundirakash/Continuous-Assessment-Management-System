@@ -9,7 +9,8 @@ const Docxtemplater = require('docxtemplater');
 
 exports.getFaculties = async (req, res) => {
   try {
-    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'] });
+    const department = req.user.department; 
+    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'], department });
     res.status(200).json(faculties);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
@@ -19,6 +20,12 @@ exports.getFaculties = async (req, res) => {
 exports.getFacultiesByCourse = async (req, res) => {
   const { courseId } = req.params;
   try {
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(403).json({ message: 'Not authorized to view faculties for this course' });
+    }
+
     const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'], courses: courseId }).populate('courses');
     res.status(200).json(faculties);
   } catch (error) {
@@ -26,15 +33,15 @@ exports.getFacultiesByCourse = async (req, res) => {
   }
 };
 
-exports.getFacultiesByDepartment = async (req, res) => {
-  const { department } = req.params;
-  try {
-    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'], department });
-    res.status(200).json(faculties);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-};
+// exports.getFacultiesByDepartment = async (req, res) => {
+//   const department = req.user.department;
+//   try {
+//     const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'], department });
+//     res.status(200).json(faculties);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error });
+//   }
+// };
 
 exports.assignCourse = async (req, res) => {
   try {
@@ -42,13 +49,15 @@ exports.assignCourse = async (req, res) => {
     const faculty = await User.findById(facultyId);
     const course = await Course.findById(courseId);
 
-    if (!faculty || !course) {
-      return res.status(404).json({ message: 'Faculty or Course not found' });
+    if (!faculty || !course || faculty.department !== req.user.department) {
+      return res.status(403).json({ message: 'Not authorized to assign this course' });
     }
 
+    // Add the course to the faculty's courses
     faculty.courses.push(courseId);
     await faculty.save();
 
+    // Add the faculty to the course's faculties
     course.faculties.push(facultyId);
     await course.save();
 
@@ -62,21 +71,18 @@ exports.appointCoordinator = async (req, res) => {
   try {
     const { facultyId, courseId } = req.body;
     const faculty = await User.findById(facultyId);
+    const course = await Course.findById(courseId);
 
-    if (!faculty) {
-      return res.status(404).json({ message: 'Faculty not found' });
+    if (!faculty || !course || faculty.department !== req.user.department) {
+      return res.status(403).json({ message: 'Not authorized to appoint this coordinator' });
     }
 
     faculty.role = 'CourseCoordinator';
-    faculty.course = courseId;
     await faculty.save();
 
     // Update the course to set the coordinator
-    const course = await Course.findById(courseId);
-    if (course) {
-      course.coordinator = facultyId;
-      await course.save();
-    }
+    course.coordinator = facultyId;
+    await course.save();
 
     res.status(200).json({ message: 'Coordinator appointed successfully' });
   } catch (error) {
@@ -86,11 +92,11 @@ exports.appointCoordinator = async (req, res) => {
 
 exports.createAssessment = async (req, res) => {
   try {
-    const { courseId, name, termId,type } = req.body;
+    const { courseId, name, termId, type } = req.body;
     const course = await Course.findById(courseId);
 
     if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
+      return res.status(403).json({ message: 'Not authorized to create assessments for this course' });
     }
 
     const faculties = await User.find({ courses: courseId });
@@ -122,11 +128,16 @@ exports.createAssessment = async (req, res) => {
 
 exports.reviewAssessment = async (req, res) => {
   try {
-    const { assessmentId, facultyId, setName } = req.params;
+    const { assessmentId, facultyId } = req.params;
     const assessment = await Assessment.findById(assessmentId).populate('facultyQuestions.sets.questions');
 
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    const course = await Course.findById(assessment.course);
+    if (!course || faculty.department !== req.user.department) {
+      return res.status(403).json({ message: 'Not authorized to review this assessment' });
     }
 
     const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(facultyId));
@@ -135,7 +146,7 @@ exports.reviewAssessment = async (req, res) => {
       return res.status(404).json({ message: 'No questions found for this faculty' });
     }
 
-    const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+    const questionSet = facultyQuestions.sets.find(set => set.setName === req.params.setName);
 
     if (!questionSet) {
       return res.status(404).json({ message: 'Question set not found' });
@@ -147,41 +158,19 @@ exports.reviewAssessment = async (req, res) => {
   }
 };
 
-
 exports.createCourse = async (req, res) => {
   try {
     const { name, code } = req.body;
-    const existingCourse = await Course.findOne({ code });
+    const existingCourse = await Course.findOne({ code});
 
     if (existingCourse) {
-      return res.status(400).json({ message: 'Course with this code already exists' });
+      return res.status(400).json({ message: 'Course with this code already exists in your department' });
     }
 
-    const course = new Course({ name, code });
+    const course = new Course({ name, code});
     await course.save();
 
     res.status(201).json({ message: 'Course created successfully', course });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-};
-
-exports.reviewAssessment = async (req, res) => {
-  try {
-    const { assessmentId, facultyId } = req.params;
-    const assessment = await Assessment.findById(assessmentId).populate('facultyQuestions.questions');
-
-    if (!assessment) {
-      return res.status(404).json({ message: 'Assessment not found' });
-    }
-
-    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(facultyId));
-
-    if (!facultyQuestions) {
-      return res.status(404).json({ message: 'No questions found for this faculty' });
-    }
-
-    res.status(200).json(facultyQuestions);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -196,6 +185,11 @@ exports.approveAssessment = async (req, res) => {
 
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    const course = await Course.findById(assessment.course);
+    if (!course) {
+      return res.status(403).json({ message: 'Not authorized to approve this assessment' });
     }
 
     const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(facultyId));
@@ -219,7 +213,6 @@ exports.approveAssessment = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
-
 
 
 async function generateDocxFromTemplate(data) {
@@ -250,14 +243,18 @@ exports.downloadAssessmentQuestions = async (req, res) => {
   try {
     const { courseId, assessmentId } = req.params;
     
-    const assessment = await Assessment.findOne({ _id: assessmentId, course: courseId }).populate('facultyQuestions.questions').populate('course');;
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(403).json({ message: 'Not authorized to download questions for this course' });
+    }
+    
+    const assessment = await Assessment.findOne({ _id: assessmentId, course: courseId }).populate('facultyQuestions.questions').populate('course');
     
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found for the specified course' });
     }
 
     const allQuestions = assessment.facultyQuestions.flatMap(fq => fq.questions);
-
     const populatedQuestions = await Question.find({ _id: { $in: allQuestions } });
 
     const data = {
@@ -285,21 +282,23 @@ exports.downloadCourseQuestions = async (req, res) => {
   try {
     const { courseId } = req.params;
     
-    // Find all assessments for the specified course
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(403).json({ message: 'Not authorized to download questions for this course' });
+    }
+    
     const assessments = await Assessment.find({ course: courseId }).populate('facultyQuestions.questions');
 
     if (assessments.length === 0) {
       return res.status(404).json({ message: 'No assessments found for the specified course' });
     }
 
-    // Collect all questions from all assessments
     const allQuestions = assessments.flatMap(assessment => 
       assessment.facultyQuestions.flatMap(fq => fq.questions)
     );
 
     const populatedQuestions = await Question.find({ _id: { $in: allQuestions } });
 
-    // Prepare data for DOCX generation
     const data = {
       courseId: courseId,
       questions: populatedQuestions.map((question, index) => ({
@@ -318,6 +317,3 @@ exports.downloadCourseQuestions = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
-
-
-

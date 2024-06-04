@@ -58,6 +58,16 @@ exports.createQuestion = async (req, res) => {
     await question.save();
 
     questionSet.questions.push(question._id);
+
+    // Update facultyQuestions.sets directly with modified questionSet
+    facultyQuestions.sets = facultyQuestions.sets.map(set => {
+      if (set.setName === setName) {
+        return questionSet;
+      }
+      return set;
+    });
+
+    // Save the assessment object with updated facultyQuestions
     await assessment.save();
 
     res.status(201).json({ message: 'Question added successfully', question });
@@ -66,6 +76,7 @@ exports.createQuestion = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 exports.getQuestions = async (req, res) => {
   try {
