@@ -46,11 +46,9 @@ exports.assignCourse = async (req, res) => {
       return res.status(404).json({ message: 'Faculty or Course not found' });
     }
 
-    // Add the course to the faculty's courses
     faculty.courses.push(courseId);
     await faculty.save();
 
-    // Add the faculty to the course's faculties
     course.faculties.push(facultyId);
     await course.save();
 
@@ -224,8 +222,6 @@ exports.approveAssessment = async (req, res) => {
 
 
 
-
-// Helper function to generate DOCX file
 async function generateDocxFromTemplate(data) {
   try {
     const templateFilePath = path.resolve(__dirname, '../templates/template2.docx');
@@ -254,7 +250,6 @@ exports.downloadAssessmentQuestions = async (req, res) => {
   try {
     const { courseId, assessmentId } = req.params;
     
-    // Ensure the assessment belongs to the specified course
     const assessment = await Assessment.findOne({ _id: assessmentId, course: courseId }).populate('facultyQuestions.questions').populate('course');;
     
     if (!assessment) {
@@ -265,7 +260,6 @@ exports.downloadAssessmentQuestions = async (req, res) => {
 
     const populatedQuestions = await Question.find({ _id: { $in: allQuestions } });
 
-    // Prepare data for DOCX generation
     const data = {
       assessmentName: assessment.name,
       courseCode: assessment.course.code,

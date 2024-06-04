@@ -6,8 +6,6 @@ exports.getFaculties = async (req, res) => {
   try {
     const courseId = req.query.courseId;
     const coordinatorId = req.user.id;
-
-    // Find the course where the logged-in user is the coordinator
     const course = await Course.findOne({ _id: courseId, coordinator: coordinatorId }).populate('faculties');
 
     if (!course) {

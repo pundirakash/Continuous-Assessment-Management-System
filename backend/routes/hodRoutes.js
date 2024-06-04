@@ -1,30 +1,19 @@
 const express = require('express');
-const {
-  getFaculties,
-  getFacultiesByCourse,
-  getFacultiesByDepartment,
-  assignCourse,
-  appointCoordinator,
-  createAssessment,
-  reviewAssessment, 
-  approveAssessment,
-  downloadAssessmentQuestions,
-  downloadCourseQuestions,
-  createCourse // New route for creating courses
-} = require('../controllers/hodController');
-const auth = require('../middleware/auth');
 const router = express.Router();
+const hodController = require('../controllers/hodController');
+const auth = require('../middleware/auth'); // Assuming this middleware handles authentication
 
-router.get('/faculties', auth(['HOD']), getFaculties);
-router.get('/faculties/course/:courseId', auth(['HOD']), getFacultiesByCourse);
-router.get('/faculties/department/:department', auth(['HOD']), getFacultiesByDepartment);
-router.post('/assign-course', auth(['HOD']), assignCourse);
-router.post('/appoint-coordinator', auth(['HOD']), appointCoordinator);
-router.post('/create-assessment', auth(['HOD']), createAssessment);
-router.post('/create-course', auth(['HOD']), createCourse); // New route for creating courses
-router.get('/review-assessment/:assessmentId/:facultyId', auth(['HOD']), reviewAssessment);
-router.post('/approve-assessment/:assessmentId/:facultyId', auth(['HOD']), approveAssessment);
-router.get('/download-assessment-questions/:courseId/:assessmentId', auth(['HOD']), downloadAssessmentQuestions);
-router.get('/download-course-questions/:courseId', auth(['HOD']), downloadCourseQuestions);
+// Routes for HOD functionalities
+router.get('/faculties', auth, hodController.getFaculties);
+router.get('/faculties/course/:courseId', auth, hodController.getFacultiesByCourse);
+router.get('/faculties/department', auth, hodController.getFacultiesByDepartment);
+router.post('/assign-course', auth, hodController.assignCourse);
+router.post('/appoint-coordinator', auth, hodController.appointCoordinator);
+router.post('/create-assessment', auth, hodController.createAssessment);
+router.get('/review-assessment/:assessmentId/faculty/:facultyId', auth, hodController.reviewAssessment);
+router.post('/create-course', auth, hodController.createCourse);
+router.post('/approve-assessment/:assessmentId/faculty/:facultyId/set/:setName', auth, hodController.approveAssessment);
+router.get('/download-assessment-questions/:courseId/:assessmentId', auth, hodController.downloadAssessmentQuestions);
+router.get('/download-course-questions/:courseId', auth, hodController.downloadCourseQuestions);
 
 module.exports = router;

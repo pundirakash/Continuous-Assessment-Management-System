@@ -22,7 +22,7 @@ exports.getCourses = async (req, res) => {
 
 exports.createQuestion = async (req, res) => {
   try {
-    const { assessmentId, setName, text, type, options, bloomLevel, courseOutcome, allotmentDate, submissionDate, maximumMarks, marks } = req.body;
+    const { assessmentId, setName, text, type, options, bloomLevel, courseOutcome, marks } = req.body;
     const assessment = await Assessment.findById(assessmentId);
 
     if (!assessment) {
@@ -41,9 +41,6 @@ exports.createQuestion = async (req, res) => {
       questionSet = {
         setName,
         questions: [],
-        allotmentDate,
-        submissionDate,
-        maximumMarks
       };
       facultyQuestions.sets.push(questionSet);
     }
@@ -55,7 +52,7 @@ exports.createQuestion = async (req, res) => {
       options,
       bloomLevel,
       courseOutcome,
-      marks
+      marks,
     });
 
     await question.save();
@@ -69,7 +66,6 @@ exports.createQuestion = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
-
 
 exports.getQuestions = async (req, res) => {
   try {
@@ -100,7 +96,6 @@ exports.getQuestions = async (req, res) => {
   }
 };
 
-
 exports.submitAssessment = async (req, res) => {
   try {
     const { assessmentId, setName } = req.body;
@@ -125,16 +120,12 @@ exports.submitAssessment = async (req, res) => {
     questionSet.status = 'Pending';
     await assessment.save();
 
-    // Logic to notify HOD (e.g., send an email or notification)
-
     res.status(200).json({ message: 'Assessment set submitted successfully for review' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
 };
 
-
-// Helper function to generate DOCX file
 async function generateDocxFromTemplate(data) {
   try {
     const templateFilePath = path.resolve(__dirname, '../templates/template3.docx');
@@ -161,9 +152,9 @@ async function generateDocxFromTemplate(data) {
 
 exports.downloadAssessment = async (req, res) => {
   try {
-    const { assessmentId } = req.params;
+    const { assessmentId, setName } = req.params;
     const assessment = await Assessment.findById(assessmentId)
-      .populate('facultyQuestions.questions')
+      .populate('facultyQuestions.sets.questions')
       .populate('course');
 
     if (!assessment) {
@@ -176,11 +167,10 @@ exports.downloadAssessment = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
     }
 
-    const hodApproved = facultyQuestions.hodStatus === 'Approved' || facultyQuestions.hodStatus === 'Approved with Remarks';
-    const coordinatorApproved = facultyQuestions.coordinatorStatus === 'Approved' || facultyQuestions.coordinatorStatus === 'Approved with Remarks';
+    const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
 
-    if (!hodApproved && !coordinatorApproved) {
-      return res.status(403).json({ message: 'Assessment not approved by HOD or CourseCoordinator' });
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
     }
 
     // Prepare data for DOCX generation
@@ -188,12 +178,9 @@ exports.downloadAssessment = async (req, res) => {
       termId: assessment.termId,
       assessmentName: assessment.name,
       courseCode: assessment.course.code,
-      allotmentDate: facultyQuestions.allotmentDate,
       courseName: assessment.course.name,
-      submissionDate: facultyQuestions.submissionDate,
-      maximumMarks: facultyQuestions.maximumMarks,
-      taskType: assessment.type,  
-      questions: await Promise.all(facultyQuestions.questions.map(async (questionId, index) => {
+      setName: questionSet.setName,
+      questions: await Promise.all(questionSet.questions.map(async (questionId, index) => {
         const question = await Question.findById(questionId);
         return {
           number: index + 1,
@@ -208,11 +195,9 @@ exports.downloadAssessment = async (req, res) => {
 
     const docxFilePath = await generateDocxFromTemplate(data);
 
-    res.download(docxFilePath, `assessment_${assessmentId}.docx`);
+    res.download(docxFilePath, `assessment_${assessmentId}_${setName}.docx`);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
-
-
