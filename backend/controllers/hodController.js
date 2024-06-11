@@ -53,11 +53,10 @@ exports.assignCourse = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to assign this course' });
     }
 
-    // Add the course to the faculty's courses
     faculty.courses.push(courseId);
     await faculty.save();
 
-    // Add the faculty to the course's faculties
+
     course.faculties.push(facultyId);
     await course.save();
 
@@ -80,7 +79,6 @@ exports.appointCoordinator = async (req, res) => {
     faculty.role = 'CourseCoordinator';
     await faculty.save();
 
-    // Update the course to set the coordinator
     course.coordinator = facultyId;
     await course.save();
 
@@ -116,7 +114,6 @@ exports.createAssessment = async (req, res) => {
 
     await assessment.save();
 
-    // Add the assessment to the course's assessments
     course.assessments.push(assessment._id);
     await course.save();
 

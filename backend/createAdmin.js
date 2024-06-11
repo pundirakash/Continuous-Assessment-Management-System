@@ -12,7 +12,7 @@ const createAdmin = async () => {
     const hashedPassword = await bcrypt.hash('adminpassword', 10); // Change 'adminpassword' to a strong password
     const admin = new User({
       name: 'Admin',
-      email: 'admin@example.com', // Change email as required
+      email: 'admin@example.com', 
       password: hashedPassword,
       role: 'Admin',
     });
