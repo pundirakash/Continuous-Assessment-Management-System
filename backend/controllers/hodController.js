@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
+const ImageModule = require('docxtemplater-image-module-free');
 
 exports.getFaculties = async (req, res) => {
   try {
@@ -211,17 +212,26 @@ exports.approveAssessment = async (req, res) => {
   }
 };
 
-
-async function generateDocxFromTemplate(data) {
+async function generateDocxFromTemplate(data, templateFileName) {
   try {
-    const templateFilePath = path.resolve(__dirname, '../templates/template2.docx');
-    const outputDocxFilePath = path.resolve(__dirname, 'output2.docx');
+    const templateFilePath = path.resolve(__dirname, `../templates/${templateFileName}`);
+    const outputDocxFilePath = path.resolve(__dirname, 'output.docx');
 
     const content = fs.readFileSync(templateFilePath, 'binary');
     const zip = new PizZip(content);
+
+    const imageOpts = {
+      centered: false,
+      getImage: (tagValue) => fs.readFileSync(tagValue),
+      getSize: (img, tagValue, tagName) => [150, 150], // Adjust size as needed
+    };
+
+    const imageModule = new ImageModule(imageOpts);
+
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
+      modules: [imageModule],
     });
 
     doc.setData(data);
@@ -232,6 +242,7 @@ async function generateDocxFromTemplate(data) {
 
     return outputDocxFilePath;
   } catch (error) {
+    console.error('Error generating DOCX file:', error);
     throw new Error(`Error generating DOCX file: ${error.message}`);
   }
 }
@@ -245,13 +256,18 @@ exports.downloadAssessmentQuestions = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to download questions for this course' });
     }
     
-    const assessment = await Assessment.findOne({ _id: assessmentId, course: courseId }).populate('facultyQuestions.questions').populate('course');
-    
+    const assessment = await Assessment.findOne({ _id: assessmentId, course: courseId })
+      .populate('facultyQuestions.sets.questions')
+      .populate('course');
+
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found for the specified course' });
     }
 
-    const allQuestions = assessment.facultyQuestions.flatMap(fq => fq.questions);
+    const allQuestions = assessment.facultyQuestions.flatMap(fq => 
+      fq.sets.flatMap(set => set.questions)
+    );
+
     const populatedQuestions = await Question.find({ _id: { $in: allQuestions } });
 
     const data = {
@@ -264,13 +280,15 @@ exports.downloadAssessmentQuestions = async (req, res) => {
         courseOutcome: question.courseOutcome,
         bloomLevel: question.bloomLevel,
         marks: question.marks,
+        image: question.image ? path.resolve(__dirname, '../', question.image) : null, // Include image path
       })),
     };
 
-    const docxFilePath = await generateDocxFromTemplate(data);
+    const docxFilePath = await generateDocxFromTemplate(data, 'template3.docx');
 
     res.download(docxFilePath, `assessment_${assessmentId}_questions.docx`);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
@@ -284,33 +302,40 @@ exports.downloadCourseQuestions = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to download questions for this course' });
     }
     
-    const assessments = await Assessment.find({ course: courseId }).populate('facultyQuestions.questions');
+    const assessments = await Assessment.find({ course: courseId })
+      .populate('facultyQuestions.sets.questions')
+      .populate('course');
 
     if (assessments.length === 0) {
       return res.status(404).json({ message: 'No assessments found for the specified course' });
     }
 
     const allQuestions = assessments.flatMap(assessment => 
-      assessment.facultyQuestions.flatMap(fq => fq.questions)
+      assessment.facultyQuestions.flatMap(fq => 
+        fq.sets.flatMap(set => set.questions)
+      )
     );
 
     const populatedQuestions = await Question.find({ _id: { $in: allQuestions } });
 
     const data = {
-      courseId: courseId,
+      courseCode: course.code,
+      courseName: course.name,
       questions: populatedQuestions.map((question, index) => ({
         number: index + 1,
         text: question.text,
         courseOutcome: question.courseOutcome,
         bloomLevel: question.bloomLevel,
         marks: question.marks,
+        image: question.image ? path.resolve(__dirname, '../', question.image) : null, // Include image path
       })),
     };
 
-    const docxFilePath = await generateDocxFromTemplate(data);
+    const docxFilePath = await generateDocxFromTemplate(data, 'template3.docx');
 
     res.download(docxFilePath, `course_${courseId}_questions.docx`);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };

@@ -187,8 +187,6 @@ async function generateDocxFromTemplate(data) {
   }
 }
 
-
-
 exports.downloadAssessment = async (req, res) => {
   try {
     const { assessmentId, setName } = req.params;
@@ -210,6 +208,14 @@ exports.downloadAssessment = async (req, res) => {
 
     if (!questionSet) {
       return res.status(404).json({ message: 'Question set not found' });
+    }
+
+    const allowedStatuses = ['Approved', 'Approved with Remarks'];
+    if (
+      !allowedStatuses.includes(questionSet.hodStatus) &&
+      !allowedStatuses.includes(questionSet.coordinatorStatus)
+    ) {
+      return res.status(403).json({ message: 'Question set is not approved yet' });
     }
 
     const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
@@ -242,6 +248,7 @@ exports.downloadAssessment = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 
 
