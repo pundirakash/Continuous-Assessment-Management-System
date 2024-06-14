@@ -7,6 +7,8 @@ const path = require('path');
 const fs = require('fs');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
+const multer = require('multer');
+const ImageModule = require('docxtemplater-image-module-free');
 
 exports.getCourses = async (req, res) => {
   try {
@@ -20,60 +22,75 @@ exports.getCourses = async (req, res) => {
   }
 };
 
-exports.createQuestion = async (req, res) => {
-  try {
-    const { assessmentId, setName, text, type, options, bloomLevel, courseOutcome, marks } = req.body;
-    const assessment = await Assessment.findById(assessmentId);
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
 
-    if (!assessment) {
-      return res.status(404).json({ message: 'Assessment not found' });
-    }
+const upload = multer({ storage });
 
-    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
+exports.createQuestion = [
+  upload.single('image'), 
+  async (req, res) => {
+    try {
+      const { assessmentId, setName, text, type, options, bloomLevel, courseOutcome, marks } = req.body;
+      const assessment = await Assessment.findById(assessmentId);
 
-    if (!facultyQuestions) {
-      return res.status(403).json({ message: 'Not authorized to add questions to this assessment' });
-    }
-
-    let questionSet = facultyQuestions.sets.find(set => set.setName === setName);
-
-    if (!questionSet) {
-      questionSet = {
-        setName,
-        questions: [],
-      };
-      facultyQuestions.sets.push(questionSet);
-    }
-
-    const question = new Question({
-      assessment: assessmentId,
-      text,
-      type,
-      options,
-      bloomLevel,
-      courseOutcome,
-      marks,
-    });
-
-    await question.save();
-
-    questionSet.questions.push(question._id);
-
-    facultyQuestions.sets = facultyQuestions.sets.map(set => {
-      if (set.setName === setName) {
-        return questionSet;
+      if (!assessment) {
+        return res.status(404).json({ message: 'Assessment not found' });
       }
-      return set;
-    });
-    
-    await assessment.save();
 
-    res.status(201).json({ message: 'Question added successfully', question });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Server error', error });
+      const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
+
+      if (!facultyQuestions) {
+        return res.status(403).json({ message: 'Not authorized to add questions to this assessment' });
+      }
+
+      let questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+
+      if (!questionSet) {
+        questionSet = {
+          setName,
+          questions: [],
+        };
+        facultyQuestions.sets.push(questionSet);
+      }
+
+      const question = new Question({
+        assessment: assessmentId,
+        text,
+        type,
+        options,
+        bloomLevel,
+        courseOutcome,
+        marks,
+        image: req.file ? req.file.path : null
+      });
+
+      await question.save();
+
+      questionSet.questions.push(question._id);
+
+      facultyQuestions.sets = facultyQuestions.sets.map(set => {
+        if (set.setName === setName) {
+          return questionSet;
+        }
+        return set;
+      });
+      
+      await assessment.save();
+
+      res.status(201).json({ message: 'Question added successfully', question });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: 'Server error', error });
+    }
   }
-};
+];
 
 
 exports.getQuestions = async (req, res) => {
@@ -142,9 +159,19 @@ async function generateDocxFromTemplate(data) {
 
     const content = fs.readFileSync(templateFilePath, 'binary');
     const zip = new PizZip(content);
+
+    const imageOpts = {
+      centered: false,
+      getImage: (tagValue) => fs.readFileSync(tagValue),
+      getSize: (img, tagValue, tagName) => [150, 150], // Adjust size as needed
+    };
+
+    const imageModule = new ImageModule(imageOpts);
+
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
+      modules: [imageModule], // Add image module here
     });
 
     doc.setData(data);
@@ -155,9 +182,12 @@ async function generateDocxFromTemplate(data) {
 
     return outputDocxFilePath;
   } catch (error) {
+    console.error('Error generating DOCX file:', error);
     throw new Error(`Error generating DOCX file: ${error.message}`);
   }
 }
+
+
 
 exports.downloadAssessment = async (req, res) => {
   try {
@@ -182,10 +212,8 @@ exports.downloadAssessment = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
-    // Option letters array
     const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
-    // Prepare data for DOCX generation
     const data = {
       termId: assessment.termId,
       assessmentName: assessment.name,
@@ -200,6 +228,7 @@ exports.downloadAssessment = async (req, res) => {
           courseOutcome: question.courseOutcome,
           bloomLevel: question.bloomLevel,
           marks: question.marks,
+          image: question.image ? path.resolve(__dirname, '../', question.image) : null, // Include image path
           options: question.type === 'MCQ' ? question.options.map((option, i) => ({ option: `${optionLetters[i]}. ${option}` })) : []
         };
       })),
@@ -213,4 +242,6 @@ exports.downloadAssessment = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+
 

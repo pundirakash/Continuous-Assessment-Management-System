@@ -5,7 +5,7 @@ const auth = require('../middleware/auth');
 
 router.get('/faculties',  auth(['HOD']), hodController.getFaculties);
 router.get('/faculties/course/:courseId',  auth(['HOD']), hodController.getFacultiesByCourse);
-// router.get('/faculties/department',  auth(['HOD']), hodController.getFacultiesByDepartment);
+router.get('/faculties/department',  auth(['HOD']), hodController.getFacultiesByDepartment);
 router.post('/assign-course',  auth(['HOD']), hodController.assignCourse);
 router.post('/appoint-coordinator',  auth(['HOD']), hodController.appointCoordinator);
 router.post('/create-assessment',  auth(['HOD']), hodController.createAssessment);

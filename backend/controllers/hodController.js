@@ -33,15 +33,15 @@ exports.getFacultiesByCourse = async (req, res) => {
   }
 };
 
-// exports.getFacultiesByDepartment = async (req, res) => {
-//   const department = req.user.department;
-//   try {
-//     const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'], department });
-//     res.status(200).json(faculties);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Server error', error });
-//   }
-// };
+exports.getFacultiesByDepartment = async (req, res) => {
+  const department = req.user.department;
+  try {
+    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'], department });
+    res.status(200).json(faculties);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
 
 exports.assignCourse = async (req, res) => {
   try {
