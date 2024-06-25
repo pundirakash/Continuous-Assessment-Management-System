@@ -10,6 +10,7 @@ const Docxtemplater = require('docxtemplater');
 const multer = require('multer');
 const ImageModule = require('docxtemplater-image-module-free');
 
+// Get courses for a faculty
 exports.getCourses = async (req, res) => {
   try {
     const faculty = await User.findById(req.user.id).populate('courses');
@@ -22,80 +23,44 @@ exports.getCourses = async (req, res) => {
   }
 };
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const upload = multer({ storage });
-
-exports.createQuestion = [
-  upload.single('image'), 
-  async (req, res) => {
-    try {
-      const { assessmentId, setName, text, type, options, bloomLevel, courseOutcome, marks } = req.body;
-      const assessment = await Assessment.findById(assessmentId);
-
-      if (!assessment) {
-        return res.status(404).json({ message: 'Assessment not found' });
-      }
-
-      const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
-
-      if (!facultyQuestions) {
-        return res.status(403).json({ message: 'Not authorized to add questions to this assessment' });
-      }
-
-      let questionSet = facultyQuestions.sets.find(set => set.setName === setName);
-
-      if (!questionSet) {
-        questionSet = {
-          setName,
-          questions: [],
-        };
-        facultyQuestions.sets.push(questionSet);
-      }
-
-      const question = new Question({
-        assessment: assessmentId,
-        text,
-        type,
-        options,
-        bloomLevel,
-        courseOutcome,
-        marks,
-        image: req.file ? req.file.path : null
-      });
-
-      await question.save();
-
-      questionSet.questions.push(question._id);
-
-      facultyQuestions.sets = facultyQuestions.sets.map(set => {
-        if (set.setName === setName) {
-          return questionSet;
-        }
-        return set;
-      });
-      
-      await assessment.save();
-
-      res.status(201).json({ message: 'Question added successfully', question });
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: 'Server error', error });
-    }
-  }
-];
-
-
-exports.getQuestions = async (req, res) => {
+// Get assessments for a specific course
+exports.getAssignments = async (req, res) => {
   try {
-    const { assessmentId, setName } = req.query;
+    const { courseId } = req.query; // Get the courseId from query parameters
+
+    const course = await Course.findById(courseId).populate('assessments');
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    res.status(200).json(course.assessments);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.getSetsForAssessment = async (req, res) => {
+  try {
+    const { assessmentId } = req.params;
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
+    if (!facultyQuestions) {
+      return res.status(403).json({ message: 'Not authorized to view sets for this assessment' });
+    }
+
+    res.status(200).json(facultyQuestions.sets);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.getQuestionsForSet = async (req, res) => {
+  try {
+    const { assessmentId, setName } = req.params;
     const assessment = await Assessment.findById(assessmentId).populate('facultyQuestions.sets.questions');
 
     if (!assessment) {
@@ -103,19 +68,16 @@ exports.getQuestions = async (req, res) => {
     }
 
     const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
-
     if (!facultyQuestions) {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
     }
 
     const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
-
     if (!questionSet) {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
     const populatedQuestions = await Question.find({ _id: { $in: questionSet.questions } });
-
     res.status(200).json(populatedQuestions);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
@@ -132,13 +94,11 @@ exports.submitAssessment = async (req, res) => {
     }
 
     const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
-
     if (!facultyQuestions) {
       return res.status(403).json({ message: 'Not authorized to submit questions for this assessment' });
     }
 
     const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
-
     if (!questionSet) {
       return res.status(404).json({ message: 'Question set not found' });
     }
@@ -199,13 +159,11 @@ exports.downloadAssessment = async (req, res) => {
     }
 
     const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
-
     if (!facultyQuestions) {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
     }
 
     const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
-
     if (!questionSet) {
       return res.status(404).json({ message: 'Question set not found' });
     }
@@ -249,6 +207,91 @@ exports.downloadAssessment = async (req, res) => {
   }
 };
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
 
+const upload = multer({ storage });
 
+exports.createQuestion = [
+  upload.single('image'),
+  async (req, res) => {
+    try {
+      const { assessmentId, setName, text, type, options, bloomLevel, courseOutcome, marks } = req.body;
+      const assessment = await Assessment.findById(assessmentId);
 
+      if (!assessment) {
+        return res.status(404).json({ message: 'Assessment not found' });
+      }
+
+      const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
+      if (!facultyQuestions) {
+        return res.status(403).json({ message: 'Not authorized to add questions to this assessment' });
+      }
+
+      let questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+      if (!questionSet) {
+        questionSet = {
+          setName,
+          questions: [],
+        };
+        facultyQuestions.sets.push(questionSet);
+      }
+
+      const question = new Question({
+        assessment: assessmentId,
+        text,
+        type,
+        options,
+        bloomLevel,
+        courseOutcome,
+        marks,
+        image: req.file ? req.file.path : null
+      });
+
+      await question.save();
+
+      questionSet.questions.push(question._id);
+      facultyQuestions.sets = facultyQuestions.sets.map(set => {
+        if (set.setName === setName) {
+          return questionSet;
+        }
+        return set;
+      });
+
+      await assessment.save();
+
+      res.status(201).json({ message: 'Question added successfully', question });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: 'Server error', error });
+    }
+  }
+];
+
+exports.deleteQuestions = async (req, res) => {
+  try {
+    const { questionIds } = req.body; // Array of question IDs to delete
+
+    if (!Array.isArray(questionIds) || questionIds.length === 0) {
+      return res.status(400).json({ message: 'No question IDs provided' });
+    }
+
+    const questions = await Question.find({ _id: { $in: questionIds }, faculty: req.user.id });
+
+    if (questions.length !== questionIds.length) {
+      return res.status(403).json({ message: 'Some questions not found or you do not have permission to delete them' });
+    }
+
+    await Question.deleteMany({ _id: { $in: questionIds } });
+
+    res.status(200).json({ message: 'Questions deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};

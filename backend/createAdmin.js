@@ -9,7 +9,7 @@ const createAdmin = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
 
-    const hashedPassword = await bcrypt.hash('adminpassword', 10); // Change 'adminpassword' to a strong password
+    const hashedPassword = await bcrypt.hash('Test@123', 10); // Change 'adminpassword' to a strong password
     const admin = new User({
       name: 'Admin',
       email: 'admin@example.com', 
