@@ -123,7 +123,7 @@ async function generateDocxFromTemplate(data) {
     const imageOpts = {
       centered: false,
       getImage: (tagValue) => fs.readFileSync(tagValue),
-      getSize: (img, tagValue, tagName) => [150, 150], // Adjust size as needed
+      getSize: (img, tagValue, tagName) => [150, 150], 
     };
 
     const imageModule = new ImageModule(imageOpts);
@@ -131,7 +131,7 @@ async function generateDocxFromTemplate(data) {
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
-      modules: [imageModule], // Add image module here
+      modules: [imageModule], 
     });
 
     doc.setData(data);
@@ -274,24 +274,90 @@ exports.createQuestion = [
   }
 ];
 
-exports.deleteQuestions = async (req, res) => {
+exports.deleteQuestion = async (req, res) => {
   try {
-    const { questionIds } = req.body; // Array of question IDs to delete
+    const { questionId } = req.params;
+    const userId = req.user.id;
 
-    if (!Array.isArray(questionIds) || questionIds.length === 0) {
-      return res.status(400).json({ message: 'No question IDs provided' });
+    const assessment = await Assessment.findOne({
+      'facultyQuestions.sets.questions': questionId,
+      'facultyQuestions.faculty': userId
+    });
+
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found or you do not have permission to delete this question' });
     }
 
-    const questions = await Question.find({ _id: { $in: questionIds }, faculty: req.user.id });
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(userId));
+    const questionSet = facultyQuestions.sets.find(set => set.questions.includes(questionId));
 
-    if (questions.length !== questionIds.length) {
-      return res.status(403).json({ message: 'Some questions not found or you do not have permission to delete them' });
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
     }
 
-    await Question.deleteMany({ _id: { $in: questionIds } });
+    questionSet.questions = questionSet.questions.filter(qId => qId.toString() !== questionId);
 
-    res.status(200).json({ message: 'Questions deleted successfully' });
+    await assessment.save();
+
+    await Question.deleteOne({ _id: questionId });
+
+    res.status(200).json({ message: 'Question deleted successfully' });
   } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.editQuestion = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { text, type, options, bloomLevel, courseOutcome, marks } = req.body;
+    const userId = req.user.id;
+
+    const assessment = await Assessment.findOne({
+      'facultyQuestions.faculty': userId,
+      'facultyQuestions.sets.questions': questionId
+    });
+
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found or you do not have permission to edit this question' });
+    }
+
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(userId));
+
+    if (!facultyQuestions) {
+      return res.status(404).json({ message: 'Faculty questions not found' });
+    }
+
+    let questionSet;
+    for (const set of facultyQuestions.sets) {
+      if (set.questions.includes(questionId)) {
+        questionSet = set;
+        break;
+      }
+    }
+
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
+    }
+
+    const question = await Question.findById(questionId);
+
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    question.text = text || question.text;
+    question.type = type || question.type;
+    question.options = options || question.options;
+    question.bloomLevel = bloomLevel || question.bloomLevel;
+    question.courseOutcome = courseOutcome || question.courseOutcome;
+    question.marks = marks || question.marks;
+
+    await question.save();
+
+    res.status(200).json({ message: 'Question updated successfully', question });
+  } catch (error) {
+    console.log(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };

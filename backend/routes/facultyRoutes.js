@@ -7,7 +7,8 @@ const {
   downloadAssessment,
   createQuestion,
   getQuestionsForSet,
-  deleteQuestions 
+  deleteQuestion,
+  editQuestion 
 } = require('../controllers/facultyController');
 const auth = require('../middleware/auth');
 const router = express.Router();
@@ -19,6 +20,7 @@ router.get('/questions/:assessmentId/:setName', auth(['Faculty', 'CourseCoordina
 router.post('/submit-assessment', auth(['Faculty', 'CourseCoordinator', 'HOD']), submitAssessment);
 router.get('/download-assessment/:assessmentId/:setName', auth(['Faculty', 'CourseCoordinator', 'HOD']), downloadAssessment);
 router.post('/create-question', auth(['Faculty', 'CourseCoordinator', 'HOD']), createQuestion);
-router.delete('/delete-questions', auth(['Faculty', 'CourseCoordinator', 'HOD']), deleteQuestions); // Add deleteQuestions route
+router.delete('/delete-question/:questionId', auth(['Faculty', 'CourseCoordinator', 'HOD']), deleteQuestion);
+router.put('/edit-question/:questionId', auth(['Faculty', 'CourseCoordinator', 'HOD']), editQuestion);
 
 module.exports = router;
