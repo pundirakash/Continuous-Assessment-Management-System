@@ -8,7 +8,8 @@ const {
   createQuestion,
   getQuestionsForSet,
   deleteQuestion,
-  editQuestion 
+  editQuestion,
+  createSet 
 } = require('../controllers/facultyController');
 const auth = require('../middleware/auth');
 const router = express.Router();
@@ -22,5 +23,5 @@ router.get('/download-assessment/:assessmentId/:setName', auth(['Faculty', 'Cour
 router.post('/create-question', auth(['Faculty', 'CourseCoordinator', 'HOD']), createQuestion);
 router.delete('/delete-question/:questionId', auth(['Faculty', 'CourseCoordinator', 'HOD']), deleteQuestion);
 router.put('/edit-question/:questionId', auth(['Faculty', 'CourseCoordinator', 'HOD']), editQuestion);
-
+router.post('/create-set',auth(['Faculty', 'CourseCoordinator', 'HOD']), createSet);
 module.exports = router;

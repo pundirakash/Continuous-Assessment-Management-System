@@ -222,7 +222,14 @@ exports.createQuestion = [
   upload.single('image'),
   async (req, res) => {
     try {
-      const { assessmentId, setName, text, type, options, bloomLevel, courseOutcome, marks } = req.body;
+      const { assessmentId, setName, text, type, bloomLevel, courseOutcome, marks } = req.body;
+      let { options } = req.body;
+
+      // Ensure options is an array
+      if (typeof options === 'string') {
+        options = options.split(',').map(option => option.trim());
+      }
+
       const assessment = await Assessment.findById(assessmentId);
 
       if (!assessment) {
@@ -361,3 +368,37 @@ exports.editQuestion = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+exports.createSet= async (req, res) => {
+  const { assessmentId, setName } = req.body;
+
+  try {
+    const assessment = await Assessment.findById(assessmentId);
+
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
+    if (!facultyQuestions) {
+      return res.status(403).json({ message: 'Not authorized to add sets to this assessment' });
+    }
+
+    const newSet = {
+      setName,
+      questions: [],
+      hodStatus: 'Pending',
+      coordinatorStatus: 'Pending'
+    };
+
+    facultyQuestions.sets.push(newSet);
+
+    await assessment.save();
+
+    res.status(201).json({ message: 'Set created successfully', newSet });
+  } catch (error) {
+    console.error('Error creating set', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
