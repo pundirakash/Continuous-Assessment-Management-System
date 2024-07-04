@@ -306,6 +306,17 @@ exports.deleteQuestion = async (req, res) => {
 
     await assessment.save();
 
+    const question = await Question.findById(questionId);
+
+    if (question.image) {
+      const imagePath = path.resolve(__dirname, '../', question.image);
+      fs.unlink(imagePath, (err) => {
+        if (err) {
+          console.error('Error deleting image file:', err);
+        }
+      });
+    }
+
     await Question.deleteOne({ _id: questionId });
 
     res.status(200).json({ message: 'Question deleted successfully' });

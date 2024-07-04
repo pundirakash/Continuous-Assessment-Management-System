@@ -9,4 +9,5 @@ router.get('/users/:department', auth(['Admin']), getUsersByDepartment);
 router.put('/users/:userId', auth(['Admin']), editUser);
 router.delete('/users/:userId', auth(['Admin']), deleteUser);
 
+
 module.exports = router;
