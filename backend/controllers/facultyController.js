@@ -103,7 +103,7 @@ exports.submitAssessment = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
-    questionSet.status = 'Pending';
+    questionSet.hodStatus = 'Submitted';
     await assessment.save();
 
     res.status(200).json({ message: 'Assessment set submitted successfully for review' });
@@ -112,10 +112,10 @@ exports.submitAssessment = async (req, res) => {
   }
 };
 
-async function generateDocxFromTemplate(data) {
+async function generateDocxFromTemplate(data, templateNumber) {
   try {
-    const templateFilePath = path.resolve(__dirname, '../templates/template3.docx');
-    const outputDocxFilePath = path.resolve(__dirname, 'output.docx');
+    const templateFilePath = path.resolve(__dirname, `../templates/template${templateNumber}.docx`);
+    const outputDocxFilePath = path.resolve(__dirname, `output_${templateNumber}.docx`);
 
     const content = fs.readFileSync(templateFilePath, 'binary');
     const zip = new PizZip(content);
@@ -123,7 +123,7 @@ async function generateDocxFromTemplate(data) {
     const imageOpts = {
       centered: false,
       getImage: (tagValue) => fs.readFileSync(tagValue),
-      getSize: (img, tagValue, tagName) => [150, 150], 
+      getSize: (img, tagValue, tagName) => [150, 150],
     };
 
     const imageModule = new ImageModule(imageOpts);
@@ -131,7 +131,7 @@ async function generateDocxFromTemplate(data) {
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
-      modules: [imageModule], 
+      modules: [imageModule],
     });
 
     doc.setData(data);
@@ -149,7 +149,7 @@ async function generateDocxFromTemplate(data) {
 
 exports.downloadAssessment = async (req, res) => {
   try {
-    const { assessmentId, setName } = req.params;
+    const { assessmentId, setName, templateNumber } = req.params; 
     const assessment = await Assessment.findById(assessmentId)
       .populate('facultyQuestions.sets.questions')
       .populate('course');
@@ -198,7 +198,7 @@ exports.downloadAssessment = async (req, res) => {
       })),
     };
 
-    const docxFilePath = await generateDocxFromTemplate(data);
+    const docxFilePath = await generateDocxFromTemplate(data, templateNumber);
 
     res.download(docxFilePath, `assessment_${assessmentId}_${setName}.docx`);
   } catch (error) {

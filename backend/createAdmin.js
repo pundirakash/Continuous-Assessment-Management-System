@@ -15,6 +15,7 @@ const createAdmin = async () => {
       email: 'admin@example.com', 
       password: hashedPassword,
       role: 'Admin',
+      uid:'001'
     });
 
     await admin.save();

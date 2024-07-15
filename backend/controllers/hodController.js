@@ -11,7 +11,7 @@ const ImageModule = require('docxtemplater-image-module-free');
 exports.getFaculties = async (req, res) => {
   try {
     const department = req.user.department; 
-    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'], department });
+    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator', 'HOD'], department });
     res.status(200).json(faculties);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
@@ -27,7 +27,7 @@ exports.getFacultiesByCourse = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to view faculties for this course' });
     }
 
-    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'], courses: courseId }).populate('courses');
+    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator', 'HOD'], courses: courseId }).populate('courses');
     res.status(200).json(faculties);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
@@ -37,8 +37,18 @@ exports.getFacultiesByCourse = async (req, res) => {
 exports.getFacultiesByDepartment = async (req, res) => {
   const department = req.user.department;
   try {
-    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator'], department });
+    const faculties = await User.find({ role: ['Faculty', 'CourseCoordinator','HOD'], department });
     res.status(200).json(faculties);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.getCoursesByDepartment = async (req, res) => {
+  try {
+    const department = req.user.department;
+    const courses = await Course.find({ department });
+    res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -56,8 +66,6 @@ exports.assignCourse = async (req, res) => {
 
     faculty.courses.push(courseId);
     await faculty.save();
-
-
     course.faculties.push(facultyId);
     await course.save();
 
@@ -67,14 +75,50 @@ exports.assignCourse = async (req, res) => {
   }
 };
 
-exports.appointCoordinator = async (req, res) => {
+exports.deallocateCourse = async (req, res) => {
   try {
     const { facultyId, courseId } = req.body;
+
     const faculty = await User.findById(facultyId);
     const course = await Course.findById(courseId);
 
     if (!faculty || !course || faculty.department !== req.user.department) {
+      return res.status(403).json({ message: 'Not authorized to deallocate this course' });
+    }
+
+    // Remove the course from the faculty's courses array
+    faculty.courses = faculty.courses.filter(id => !id.equals(courseId));
+    await faculty.save();
+
+    // Remove the faculty from the course's faculties array
+    course.faculties = course.faculties.filter(id => !id.equals(facultyId));
+    await course.save();
+
+    res.status(200).json({ message: 'Course deallocated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.appointCoordinator = async (req, res) => {
+  try {
+    const { facultyId, courseId } = req.body;
+
+    const faculty = await User.findById(facultyId);
+    const course = await Course.findById(courseId);
+
+    // Check if faculty and course exist, and if the faculty belongs to the department
+    if (!faculty || !course || faculty.department !== req.user.department) {
       return res.status(403).json({ message: 'Not authorized to appoint this coordinator' });
+    }
+
+    // Change the role of the current coordinator back to 'Faculty'
+    if (course.coordinator && !course.coordinator.equals(facultyId)) {
+      const previousCoordinator = await User.findById(course.coordinator);
+      if (previousCoordinator) {
+        previousCoordinator.role = 'Faculty';
+        await previousCoordinator.save();
+      }
     }
 
     faculty.role = 'CourseCoordinator';
@@ -159,16 +203,33 @@ exports.reviewAssessment = async (req, res) => {
 exports.createCourse = async (req, res) => {
   try {
     const { name, code } = req.body;
-    const existingCourse = await Course.findOne({ code});
+    const department = req.user.department;
+
+    const existingCourse = await Course.findOne({ code, department });
 
     if (existingCourse) {
       return res.status(400).json({ message: 'Course with this code already exists in your department' });
     }
 
-    const course = new Course({ name, code});
+    const course = new Course({ name, code, department });
     await course.save();
 
     res.status(201).json({ message: 'Course created successfully', course });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.getCoursesByFaculty = async (req, res) => {
+  try {
+    const { facultyId } = req.params;
+    const faculty = await User.findById(facultyId).populate('courses');
+
+    if (!faculty || faculty.department !== req.user.department) {
+      return res.status(403).json({ message: 'Not authorized to view courses for this faculty' });
+    }
+
+    res.status(200).json(faculty.courses);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }

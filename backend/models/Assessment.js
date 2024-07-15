@@ -10,9 +10,9 @@ const assessmentSchema = new mongoose.Schema({
     sets: [{
       setName: { type: String, required: true },
       questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
-      hodStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'Approved with Remarks'], default: 'Pending' },
+      hodStatus: { type: String, enum: ['Pending', 'Submitted', 'Approved', 'Rejected', 'Approved with Remarks'], default: 'Pending' },
       hodRemarks: { type: String },
-      coordinatorStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'Approved with Remarks'], default: 'Pending' },
+      coordinatorStatus: { type: String, enum: ['Pending', 'Submitted', 'Approved', 'Rejected', 'Approved with Remarks'], default: 'Pending' },
       coordinatorRemarks: { type: String },
       allotmentDate: { type: Date },
       submissionDate: { type: Date },
