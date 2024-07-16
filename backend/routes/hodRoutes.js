@@ -17,5 +17,6 @@ router.post('/approve-assessment/:assessmentId/faculty/:facultyId/set/:setName',
 router.get('/download-assessment-questions/:courseId/:assessmentId', auth(['HOD']), hodController.downloadAssessmentQuestions);
 router.get('/download-course-questions/:courseId', auth(['HOD']), hodController.downloadCourseQuestions);
 router.get('/faculties/:facultyId/courses', auth(['HOD']), hodController.getCoursesByFaculty);
+router.get('/get-sets/:facultyId/:assessmentId', auth(['HOD']), hodController.getSetsByFaculty);
 
 module.exports = router;

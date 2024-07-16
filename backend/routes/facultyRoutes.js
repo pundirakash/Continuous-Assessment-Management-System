@@ -9,7 +9,10 @@ const {
   getQuestionsForSet,
   deleteQuestion,
   editQuestion,
-  createSet 
+  createSet,
+  deleteSet,
+  downloadRandomApprovedQuestions
+
 } = require('../controllers/facultyController');
 const auth = require('../middleware/auth');
 const router = express.Router();
@@ -24,4 +27,7 @@ router.post('/create-question', auth(['Faculty', 'CourseCoordinator', 'HOD']), c
 router.delete('/delete-question/:questionId', auth(['Faculty', 'CourseCoordinator', 'HOD']), deleteQuestion);
 router.put('/edit-question/:questionId', auth(['Faculty', 'CourseCoordinator', 'HOD']), editQuestion);
 router.post('/create-set',auth(['Faculty', 'CourseCoordinator', 'HOD']), createSet);
+router.delete('/delete-set/:assessmentId/:facultyId/:setName', auth(['Faculty', 'CourseCoordinator', 'HOD']), deleteSet);
+router.post('/download-random-questions', auth(['Faculty', 'CourseCoordinator', 'HOD']), downloadRandomApprovedQuestions);
+
 module.exports = router;

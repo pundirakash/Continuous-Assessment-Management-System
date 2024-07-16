@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
 import EditQuestionModal from './EditQuestionModal';
 import CreateQuestionModal from './CreateQuestionModal';
+import ErrorModal from '../ErrorModal';
 
 const QuestionsList = ({ assessment, setName }) => {
   const [questions, setQuestions] = useState([]);
@@ -11,6 +12,10 @@ const QuestionsList = ({ assessment, setName }) => {
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   const [hodStatus, setHodStatus] = useState('');
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); 
+  const [showRandomDownloadModal, setShowRandomDownloadModal] = useState(false);
+const [numberOfQuestions, setNumberOfQuestions] = useState(0);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -78,6 +83,20 @@ const QuestionsList = ({ assessment, setName }) => {
       console.error('Error downloading assessment', error);
     }
   };
+  const handleDownloadRandomQuestions = async () => {
+    try {
+      const blob = await userService.downloadRandomApprovedQuestions(assessment._id, numberOfQuestions);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `assessment_${assessment._id}_random_${numberOfQuestions}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading random approved questions', error);
+    }
+  };
 
   const handleCreateQuestion = async () => {
     const response = await userService.getQuestionsForSet(assessment._id, setName);
@@ -102,11 +121,14 @@ const QuestionsList = ({ assessment, setName }) => {
     try {
       await userService.submitAssessment(assessment._id, setName);
       setHodStatus('Submitted');
-      setShowSubmitConfirmation(false); 
+      setShowSubmitConfirmation(false);
     } catch (error) {
       console.error('Error submitting assessment', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
+  
 
   const renderSubmitButton = () => {
     switch (hodStatus) {
@@ -140,6 +162,9 @@ const QuestionsList = ({ assessment, setName }) => {
                   </button>
                   <button className="btn btn-secondary" onClick={() => handleDownloadAssessment(getTemplateNumber(assessmentType))}>
                     {`${assessmentType} Format`}
+                  </button>
+                  <button className="btn btn-secondary" onClick={() => setShowRandomDownloadModal(true)}>
+                    Random Approved Questions
                   </button>
                 </>
               )}
@@ -241,6 +266,39 @@ const QuestionsList = ({ assessment, setName }) => {
             </div>
           </div>
         )}
+        {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
+    {showRandomDownloadModal && (
+  <div className="modal fade show" tabIndex="-1" style={{ display: 'block' }}>
+    <div className="modal-dialog">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">Download Random Approved Questions</h5>
+          <button type="button" className="close" onClick={() => setShowRandomDownloadModal(false)}>
+            <span>&times;</span>
+          </button>
+        </div>
+        <div className="modal-body">
+          <p>Enter the number of questions to download:</p>
+          <input
+            type="number"
+            className="form-control"
+            value={numberOfQuestions}
+            onChange={(e) => setNumberOfQuestions(e.target.value)}
+          />
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={() => setShowRandomDownloadModal(false)}>Cancel</button>
+          <button type="button" className="btn btn-primary" onClick={handleDownloadRandomQuestions}>Download</button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );

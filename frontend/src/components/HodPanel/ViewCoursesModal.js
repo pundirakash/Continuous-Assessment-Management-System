@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import userService from '../../services/userService'; // Ensure you import the userService
+import userService from '../../services/userService';
 
 const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocateCourse }) => {
   const [assessments, setAssessments] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [sets, setSets] = useState([]);
 
   const handleViewAssessments = async (courseId) => {
     const response = await userService.getAssessments(courseId);
     setAssessments(response);
     setSelectedCourse(courseId);
+  };
+
+  const handleViewSets = async (assessmentId) => {
+    const response = await userService.getSetsForAssessmentByHOD(faculty._id, assessmentId);
+    setSets(response);
   };
 
   return (
@@ -35,9 +41,34 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
                 <h6 className="mb-3">Assessments for Course ID: {selectedCourse}</h6>
                 <ul className="list-group">
                   {assessments.map((assessment) => (
-                    <li key={assessment._id} className="list-group-item">
-                      {assessment.name}
-                      {/* Add more details or actions for each assessment here if needed */}
+                    <li key={assessment._id} className="list-group-item d-flex justify-content-between align-items-center">
+                      <span>{assessment.name}</span>
+                      <button className="btn btn-link btn-sm" onClick={() => handleViewSets(assessment._id)}>View Sets</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {sets.length > 0 && (
+              <div className="mt-3">
+                <h6 className="mb-3">Sets</h6>
+                <ul className="list-group">
+                  {sets.map((set) => (
+                    <li key={set._id} className="list-group-item d-flex justify-content-between align-items-center">
+                      <span>{set.setName}</span>
+                      <button className="btn btn-link btn-sm" data-toggle="collapse" data-target={`#set-${set._id}`} aria-expanded="false" aria-controls={`set-${set._id}`}>
+                        View Questions
+                      </button>
+                      <div className="collapse" id={`set-${set._id}`}>
+                        <ul className="list-group mt-2">
+                          {set.questions.map((question) => (
+                            <li key={question._id} className="list-group-item">
+                              {question.text}
+                              {/* Add more question details here if needed */}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </li>
                   ))}
                 </ul>

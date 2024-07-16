@@ -107,12 +107,10 @@ exports.appointCoordinator = async (req, res) => {
     const faculty = await User.findById(facultyId);
     const course = await Course.findById(courseId);
 
-    // Check if faculty and course exist, and if the faculty belongs to the department
     if (!faculty || !course || faculty.department !== req.user.department) {
       return res.status(403).json({ message: 'Not authorized to appoint this coordinator' });
     }
 
-    // Change the role of the current coordinator back to 'Faculty'
     if (course.coordinator && !course.coordinator.equals(facultyId)) {
       const previousCoordinator = await User.findById(course.coordinator);
       if (previousCoordinator) {
@@ -265,10 +263,20 @@ exports.approveAssessment = async (req, res) => {
 
     questionSet.hodStatus = status;
     questionSet.hodRemarks = remarks;
+    
+    // Update the status of each question in the set to 'Approved' if the set is approved
+    if (status === 'Approved') {
+      await Question.updateMany(
+        { _id: { $in: questionSet.questions } },
+        { $set: { status: 'Approved' } }
+      );
+    }
+
     await assessment.save();
 
     res.status(200).json({ message: 'Assessment set reviewed successfully by HOD' });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
@@ -395,6 +403,30 @@ exports.downloadCourseQuestions = async (req, res) => {
     const docxFilePath = await generateDocxFromTemplate(data, 'template3.docx');
 
     res.download(docxFilePath, `course_${courseId}_questions.docx`);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.getSetsByFaculty = async (req, res) => {
+  const { facultyId, assessmentId } = req.params;
+
+  try {
+    const assessment = await Assessment.findById(assessmentId)
+      .populate('facultyQuestions.sets.questions');
+
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(facultyId));
+
+    if (!facultyQuestions) {
+      return res.status(404).json({ message: 'No question sets found for this faculty' });
+    }
+
+    res.status(200).json(facultyQuestions.sets);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error });

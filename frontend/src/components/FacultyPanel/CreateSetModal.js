@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 
 const CreateSetModal = ({ onClose, onSave }) => {
-  const [setName, setSetName] = useState('');
+  const [numSets, setNumSets] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (setName.trim()) {
-      onSave(setName.trim());
+    const num = parseInt(numSets.trim(), 10);
+    if (num > 0) {
+      onSave(num);
     }
   };
 
@@ -15,7 +16,7 @@ const CreateSetModal = ({ onClose, onSave }) => {
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Create New Set</h5>
+            <h5 className="modal-title">Create New Sets</h5>
             <button type="button" className="close" onClick={onClose}>
               <span>&times;</span>
             </button>
@@ -23,14 +24,15 @@ const CreateSetModal = ({ onClose, onSave }) => {
           <div className="modal-body">
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="setName">Set Name:</label>
+                <label htmlFor="numSets">Number of Sets:</label>
                 <input
-                  type="text"
+                  type="number"
                   className="form-control"
-                  id="setName"
-                  value={setName}
-                  onChange={(e) => setSetName(e.target.value)}
+                  id="numSets"
+                  value={numSets}
+                  onChange={(e) => setNumSets(e.target.value)}
                   required
+                  min="1"
                 />
               </div>
               <button type="submit" className="btn btn-primary">Create</button>

@@ -1,4 +1,3 @@
-// src/services/userService.js
 import axios from 'axios';
 
 const API_URL = 'http://localhost:3002/api/admin';
@@ -107,6 +106,20 @@ const downloadAssessment = async (assessmentId, setName, templateNumber) => {
   return response.data;
 };
 
+const downloadRandomApprovedQuestions = async (assessmentId, numberOfQuestions) => {
+  const response = await axios.post(`${API_URL_FACULTY}/download-random-questions`, {
+    assessmentId,
+    numberOfQuestions
+  }, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+    responseType: 'blob'
+  });
+  console.log(response);
+  return response.data;
+};
+
 const createSetForAssessment = async (assessmentId, setName) => {
   const response = await axios.post(`${API_URL_FACULTY}/create-set`, { assessmentId, setName }, {
     headers: {
@@ -117,7 +130,15 @@ const createSetForAssessment = async (assessmentId, setName) => {
   return response.data;
 };
 
-
+const deleteSetForAssessment = async (assessmentId, facultyId, setName) => {
+  const response = await axios.delete(`${API_URL_FACULTY}/delete-set/${assessmentId}/${facultyId}/${setName}`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  return response.data;
+};
 
 const submitAssessment = async (assessmentId, setName) => {
   const response = await axios.post(
@@ -196,6 +217,15 @@ const createAssessment = async (courseId, assignmentData) => {
   return response.data;
 };
 
+const getSetsForAssessmentByHOD = async (facultyId, assessmentId) => {
+  const response = await axios.get(`${API_URL_HOD}/get-sets/${facultyId}/${assessmentId}`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+  });
+  return response.data;
+};
+
 
 const userService = {
   register,
@@ -216,7 +246,10 @@ const userService = {
   assignCourseToFaculty,
   removeCourseFromFaculty,
   getCoursesByFaculty,
-  createAssessment
+  createAssessment,
+  getSetsForAssessmentByHOD,
+  deleteSetForAssessment,
+  downloadRandomApprovedQuestions
 };
 
 export default userService;

@@ -13,7 +13,7 @@ const FacultyDashboard = () => {
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [selectedSetName, setSelectedSetName] = useState(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
-  const [user, setUser] = useState({ username: '', uid: '' });
+  const [user, setUser] = useState({ username: '', uid: '',_id:'' });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,7 +21,7 @@ const FacultyDashboard = () => {
     if (token) {
       const decodedToken = jwtDecode(token);
       console.log(decodedToken);
-      setUser({ username: decodedToken.user, uid: decodedToken.uid });
+      setUser({ username: decodedToken.user, uid: decodedToken.uid,_id:decodedToken._id });
     }
   }, []);
 
@@ -45,6 +45,7 @@ const FacultyDashboard = () => {
           {selectedAssessment && (
             <QuestionSetsList
               assessmentId={selectedAssessment._id}
+              facultyId={user._id}
               onSetSelect={setSelectedSetName}
               onCreateSet={() => console.log('Create Set')}
             />

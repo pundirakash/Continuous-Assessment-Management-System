@@ -23,11 +23,10 @@ exports.getCourses = async (req, res) => {
   }
 };
 
-// Get assessments for a specific course
 exports.getAssignments = async (req, res) => {
   try {
-    const { courseId } = req.query; // Get the courseId from query parameters
-
+    const { courseId } = req.query;
+    
     const course = await Course.findById(courseId).populate('assessments');
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
@@ -103,11 +102,21 @@ exports.submitAssessment = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
+    if (!questionSet.questions || questionSet.questions.length === 0) {
+      return res.status(400).json({ message: 'Cannot submit an empty question set' });
+    }
+
+    await Question.updateMany(
+      { _id: { $in: questionSet.questions } },
+      { $set: { status: 'Submitted' } }
+    );
+
     questionSet.hodStatus = 'Submitted';
     await assessment.save();
 
     res.status(200).json({ message: 'Assessment set submitted successfully for review' });
   } catch (error) {
+    console.error('Error submitting assessment', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
@@ -207,6 +216,78 @@ exports.downloadAssessment = async (req, res) => {
   }
 };
 
+exports.downloadRandomApprovedQuestions = async (req, res) => {
+  try {
+    const { assessmentId, numberOfQuestions } = req.body;
+    const userId = req.user.id;
+
+    const assessment = await Assessment.findById(assessmentId)
+      .populate('facultyQuestions.sets.questions')
+      .populate('course');
+
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(userId));
+    if (!facultyQuestions) {
+      return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
+    }
+
+    const uploadedQuestionsCount = facultyQuestions.sets.reduce((count, set) => count + set.questions.length, 0);
+    if (uploadedQuestionsCount < numberOfQuestions) {
+      return res.status(403).json({ message: 'You have not uploaded enough questions to download this many questions' });
+    }
+
+    const approvedQuestions = [];
+    for (const fq of assessment.facultyQuestions) {
+      for (const set of fq.sets) {
+        for (const questionId of set.questions) {
+          const question = await Question.findById(questionId);
+          if (question.status === 'Approved') {
+            approvedQuestions.push(question);
+          }
+        }
+      }
+    }
+
+    if (approvedQuestions.length < numberOfQuestions) {
+      return res.status(400).json({ message: 'Not enough approved questions available' });
+    }
+
+    const selectedQuestions = [];
+    const shuffledQuestions = approvedQuestions.sort(() => 0.5 - Math.random());
+    for (let i = 0; i < numberOfQuestions; i++) {
+      selectedQuestions.push(shuffledQuestions[i]);
+    }
+
+    const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    const data = {
+      termId: assessment.termId,
+      assessmentName: assessment.name,
+      courseCode: assessment.course.code,
+      courseName: assessment.course.name,
+      setName: `Random_${numberOfQuestions}_Questions`,
+      questions: selectedQuestions.map((question, index) => ({
+        number: index + 1,
+        text: question.text,
+        courseOutcome: question.courseOutcome,
+        bloomLevel: question.bloomLevel,
+        marks: question.marks,
+        image: question.image ? path.resolve(__dirname, '../', question.image) : null,
+        options: question.type === 'MCQ' ? question.options.map((option, i) => ({ option: `${optionLetters[i]}. ${option}` })) : []
+      }))
+    };
+
+    const docxFilePath = await generateDocxFromTemplate(data, 1);
+
+    res.download(docxFilePath, `assessment_${assessmentId}_random_${numberOfQuestions}.docx`);
+  } catch (error) {
+    console.error('Error downloading random questions', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -225,7 +306,6 @@ exports.createQuestion = [
       const { assessmentId, setName, text, type, bloomLevel, courseOutcome, marks } = req.body;
       let { options } = req.body;
 
-      // Ensure options is an array
       if (typeof options === 'string') {
         options = options.split(',').map(option => option.trim());
       }
@@ -353,7 +433,6 @@ exports.editQuestion = async (req, res) => {
         break;
       }
     }
-
     if (!questionSet) {
       return res.status(404).json({ message: 'Question set not found' });
     }
@@ -409,6 +488,40 @@ exports.createSet= async (req, res) => {
     res.status(201).json({ message: 'Set created successfully', newSet });
   } catch (error) {
     console.error('Error creating set', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.deleteSet = async (req, res) => {
+  const { assessmentId, facultyId, setName } = req.params;
+
+  try {
+    const assessment = await Assessment.findById(assessmentId);
+
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(facultyId));
+    if (!facultyQuestions) {
+      return res.status(404).json({ message: 'No questions found for this faculty' });
+    }
+
+    const setIndex = facultyQuestions.sets.findIndex(set => set.setName === setName);
+    if (setIndex === -1) {
+      return res.status(404).json({ message: 'Set not found' });
+    }
+
+    const setToDelete = facultyQuestions.sets[setIndex];
+    facultyQuestions.sets.splice(setIndex, 1);
+
+    await Question.deleteMany({ _id: { $in: setToDelete.questions } });
+
+    await assessment.save();
+
+    res.status(200).json({ message: 'Set deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting set', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };

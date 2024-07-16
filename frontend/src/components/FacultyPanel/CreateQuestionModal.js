@@ -87,7 +87,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
                 <label>Question Type</label>
                 <select className="form-control" value={type} onChange={e => setType(e.target.value)}>
                   <option value="MCQ">MCQ</option>
-                  <option value="Theory">Theory</option>
+                  <option value="Subjective">Subjective</option>
                 </select>
               </div>
               {type === 'MCQ' && (
