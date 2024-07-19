@@ -226,6 +226,28 @@ const getSetsForAssessmentByHOD = async (facultyId, assessmentId) => {
   return response.data;
 };
 
+const deleteQuestionByHod = async (questionId) => {
+  const response = await axios.delete(`${API_URL_HOD}/delete-question/${questionId}`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  return response.data;
+};
+
+const editQuestionByHod = async (questionId, questionData) => {
+  const response = await axios.put(`${API_URL_HOD}/edit-question/${questionId}`, questionData, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  console.log(questionData);
+  console.log(questionId);
+  return response.data;
+};
+
 
 const userService = {
   register,
@@ -249,7 +271,9 @@ const userService = {
   createAssessment,
   getSetsForAssessmentByHOD,
   deleteSetForAssessment,
-  downloadRandomApprovedQuestions
+  downloadRandomApprovedQuestions,
+  deleteQuestionByHod,
+  editQuestionByHod
 };
 
 export default userService;

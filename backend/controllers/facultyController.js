@@ -10,7 +10,6 @@ const Docxtemplater = require('docxtemplater');
 const multer = require('multer');
 const ImageModule = require('docxtemplater-image-module-free');
 
-// Get courses for a faculty
 exports.getCourses = async (req, res) => {
   try {
     const faculty = await User.findById(req.user.id).populate('courses');

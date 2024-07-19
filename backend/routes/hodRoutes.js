@@ -18,5 +18,6 @@ router.get('/download-assessment-questions/:courseId/:assessmentId', auth(['HOD'
 router.get('/download-course-questions/:courseId', auth(['HOD']), hodController.downloadCourseQuestions);
 router.get('/faculties/:facultyId/courses', auth(['HOD']), hodController.getCoursesByFaculty);
 router.get('/get-sets/:facultyId/:assessmentId', auth(['HOD']), hodController.getSetsByFaculty);
-
+router.delete('/delete-question/:questionId', auth(['HOD']), hodController.deleteQuestionByHOD);
+router.put('/edit-question/:questionId', auth(['HOD']), hodController.editQuestionByHOD);
 module.exports = router;

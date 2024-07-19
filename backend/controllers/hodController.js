@@ -432,3 +432,71 @@ exports.getSetsByFaculty = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+exports.editQuestionByHOD = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { text, type, options, bloomLevel, courseOutcome, marks } = req.body;
+
+    const question = await Question.findById(questionId);
+
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+    
+    question.text = text || question.text;
+    question.type = type || question.type;
+    question.options = options || question.options;
+    question.bloomLevel = bloomLevel || question.bloomLevel;
+    question.courseOutcome = courseOutcome || question.courseOutcome;
+    question.marks = marks || question.marks;
+
+    await question.save();
+
+    res.status(200).json({ message: 'Question updated successfully', question });
+  } catch (error) {
+    console.error('Error updating question', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.deleteQuestionByHOD = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+
+    // Find the assessment that contains this question
+    const assessment = await Assessment.findOne({
+      'facultyQuestions.sets.questions': questionId
+    });
+
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    // Remove the question from all sets in the assessment
+    assessment.facultyQuestions.forEach(fq => {
+      fq.sets.forEach(set => {
+        set.questions = set.questions.filter(qId => qId.toString() !== questionId);
+      });
+    });
+
+    await assessment.save();
+
+    // Delete the question document
+    const question = await Question.findById(questionId);
+    if (question.image) {
+      const imagePath = path.resolve(__dirname, '../', question.image);
+      fs.unlink(imagePath, (err) => {
+        if (err) {
+          console.error('Error deleting image file:', err);
+        }
+      });
+    }
+    await Question.deleteOne({ _id: questionId });
+
+    res.status(200).json({ message: 'Question deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting question', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};

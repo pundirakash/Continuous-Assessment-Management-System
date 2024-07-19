@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {jwtDecode} from 'jwt-decode';
 import userService from '../services/userService';
+import authService from '../services/authService';
 import CreateCourseModal from '../components/HodPanel/CreateCourseModal';
 import ViewCoursesModal from '../components/HodPanel/ViewCoursesModal';
 import AssignCourseModal from '../components/HodPanel/AssignCourseModal';
-import CreateAssignmentModal from '../components/HodPanel/CreateAssignmentModal';  // Import the new modal component
+import CreateAssignmentModal from '../components/HodPanel/CreateAssignmentModal';
 import FacultyList from '../components/HodPanel/FacultyList';
 import CourseList from '../components/HodPanel/CourseList';
 
@@ -13,12 +16,20 @@ const HodDashboard = () => {
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
   const [showFacultyCoursesModal, setShowFacultyCoursesModal] = useState(false);
   const [showAssignCourseModal, setShowAssignCourseModal] = useState(false);
-  const [showCreateAssignmentModal, setShowCreateAssignmentModal] = useState(false);  // New state for the create assignment modal
+  const [showCreateAssignmentModal, setShowCreateAssignmentModal] = useState(false);
   const [selectedFaculty, setSelectedFaculty] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [facultyCourses, setFacultyCourses] = useState([]);
+  const [user, setUser] = useState({ username: '', uid: '', _id: '' });
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const decodedToken = jwtDecode(token);
+      setUser({ username: decodedToken.user, uid: decodedToken.uid, _id: decodedToken._id });
+    }
+
     const fetchFaculties = async () => {
       const response = await userService.getFacultiesByDepartment();
       setFaculties(response);
@@ -53,7 +64,7 @@ const HodDashboard = () => {
   };
   const handleCloseAssignCourse = () => setShowAssignCourseModal(false);
 
-  const handleShowCreateAssignment = (course) => {  
+  const handleShowCreateAssignment = (course) => {
     setSelectedCourse(course);
     setShowCreateAssignmentModal(true);
   };
@@ -101,41 +112,86 @@ const HodDashboard = () => {
     }
   };
 
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/login');
+  };
+
   return (
     <div className="container mt-5">
-      <h2 className="text-center mb-4">HOD Dashboard</h2>
+      <Header user={user} onLogout={handleLogout} />
       <div className="row">
         <FacultyList faculties={faculties} onFacultyClick={handleFacultyClick} />
-        <CourseList courses={courses} onAddCourse={handleShowAddCourse} onAssignCourse={handleShowAssignCourse} onCreateAssignment={handleShowCreateAssignment} /> 
+        <CourseList courses={courses} onAddCourse={handleShowAddCourse} onAssignCourse={handleShowAssignCourse} onCreateAssignment={handleShowCreateAssignment} />
       </div>
-      <CreateCourseModal show={showAddCourseModal} handleClose={handleCloseAddCourse} addCourse={addCourse} />
-      {selectedFaculty && (
-        <ViewCoursesModal
-          show={showFacultyCoursesModal}
-          handleClose={handleCloseFacultyCourses}
-          faculty={selectedFaculty}
-          courses={facultyCourses}
-          handleDeallocateCourse={handleDeallocateCourse}
-        />
-      )}
-      {selectedCourse && (
+      <Modals
+        showAddCourseModal={showAddCourseModal}
+        handleCloseAddCourse={handleCloseAddCourse}
+        addCourse={addCourse}
+        selectedFaculty={selectedFaculty}
+        showFacultyCoursesModal={showFacultyCoursesModal}
+        handleCloseFacultyCourses={handleCloseFacultyCourses}
+        facultyCourses={facultyCourses}
+        handleDeallocateCourse={handleDeallocateCourse}
+        selectedCourse={selectedCourse}
+        showAssignCourseModal={showAssignCourseModal}
+        handleCloseAssignCourse={handleCloseAssignCourse}
+        handleAssignCourse={handleAssignCourse}
+        showCreateAssignmentModal={showCreateAssignmentModal}
+        handleCloseCreateAssignment={handleCloseCreateAssignment}
+        handleCreateAssignment={handleCreateAssignment}
+      />
+    </div>
+  );
+};
+
+const Header = ({ user, onLogout }) => (
+  <div className="row mb-4">
+    <div className="col-md-8">
+      <h2 className="text-center">HOD Dashboard</h2>
+    </div>
+    <div className="col-md-4 text-right">
+      <h4>Welcome, {user.username}!</h4>
+      <button className="btn btn-danger mt-2" onClick={onLogout}>Logout</button>
+    </div>
+  </div>
+);
+
+const Modals = ({
+  showAddCourseModal, handleCloseAddCourse, addCourse,
+  selectedFaculty, showFacultyCoursesModal, handleCloseFacultyCourses,
+  facultyCourses, handleDeallocateCourse,
+  selectedCourse, showAssignCourseModal, handleCloseAssignCourse, handleAssignCourse,
+  showCreateAssignmentModal, handleCloseCreateAssignment, handleCreateAssignment
+}) => (
+  <>
+    <CreateCourseModal show={showAddCourseModal} handleClose={handleCloseAddCourse} addCourse={addCourse} />
+    {selectedFaculty && (
+      <ViewCoursesModal
+        show={showFacultyCoursesModal}
+        handleClose={handleCloseFacultyCourses}
+        faculty={selectedFaculty}
+        courses={facultyCourses}
+        handleDeallocateCourse={handleDeallocateCourse}
+      />
+    )}
+    {selectedCourse && (
+      <>
         <AssignCourseModal
           show={showAssignCourseModal}
           handleClose={handleCloseAssignCourse}
           course={selectedCourse}
           assignCourse={handleAssignCourse}
         />
-      )}
-      {selectedCourse && (
         <CreateAssignmentModal
           show={showCreateAssignmentModal}
           handleClose={handleCloseCreateAssignment}
           course={selectedCourse}
           createAssignment={handleCreateAssignment}
         />
-      )}
-    </div>
-  );
-};
+      </>
+    )}
+  </>
+);
 
 export default HodDashboard;
