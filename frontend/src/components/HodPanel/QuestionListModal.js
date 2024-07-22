@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import userService from '../../services/userService'; 
-import EditQuestionModal from '../FacultyPanel/EditQuestionModal'; 
+import userService from '../../services/userService';
+import EditQuestionModal from '../FacultyPanel/EditQuestionModal';
 
-const QuestionListModal = ({ show, handleClose, initialQuestions = [] }) => {
+const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, onApprove }) => {
   const [questions, setQuestions] = useState(initialQuestions);
   const [editingQuestion, setEditingQuestion] = useState(null);
 
@@ -34,6 +34,12 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [] }) => {
       setEditingQuestion(null);
     } catch (error) {
       console.error('Error editing question', error);
+    }
+  };
+
+  const handleApprove = () => {
+    if (onApprove && setName) {
+      onApprove(setName);
     }
   };
 
@@ -112,6 +118,7 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [] }) => {
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={handleClose}>Close</button>
+            {setName && <button className="btn btn-success" onClick={handleApprove}>Approve Set</button>}
           </div>
         </div>
       </div>

@@ -75,9 +75,16 @@ exports.getQuestionsForSet = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
+    // Check if the number of questions is zero
+    if (questionSet.questions.length === 0) {
+      questionSet.hodStatus = 'Pending'; // Set status to Pending if no questions are present
+      await assessment.save(); // Save changes to the assessment
+    }
+
     const populatedQuestions = await Question.find({ _id: { $in: questionSet.questions } });
     res.status(200).json(populatedQuestions);
   } catch (error) {
+    console.error('Error fetching questions for set', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };

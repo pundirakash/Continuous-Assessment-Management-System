@@ -86,11 +86,9 @@ exports.deallocateCourse = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to deallocate this course' });
     }
 
-    // Remove the course from the faculty's courses array
     faculty.courses = faculty.courses.filter(id => !id.equals(courseId));
     await faculty.save();
 
-    // Remove the faculty from the course's faculties array
     course.faculties = course.faculties.filter(id => !id.equals(facultyId));
     await course.save();
 
@@ -264,7 +262,6 @@ exports.approveAssessment = async (req, res) => {
     questionSet.hodStatus = status;
     questionSet.hodRemarks = remarks;
     
-    // Update the status of each question in the set to 'Approved' if the set is approved
     if (status === 'Approved') {
       await Question.updateMany(
         { _id: { $in: questionSet.questions } },

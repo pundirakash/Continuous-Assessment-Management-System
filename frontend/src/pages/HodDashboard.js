@@ -147,15 +147,15 @@ const HodDashboard = () => {
 
 const Header = ({ user, onLogout }) => (
   <div className="row mb-4">
-    <div className="col-md-8">
-      <h2 className="text-center">HOD Dashboard</h2>
-    </div>
-    <div className="col-md-4 text-right">
-      <h4>Welcome, {user.username}!</h4>
-      <button className="btn btn-danger mt-2" onClick={onLogout}>Logout</button>
+    <div className="col-12">
+      <h1 className="display-2">Welcome</h1>
+      <h1 className="display-2">{user.username}!</h1>
+      <p className="lead">UID: {user.uid}</p>
+      <button className="btn btn-danger mt-2 btn-lg" onClick={onLogout}>Logout</button>
     </div>
   </div>
 );
+
 
 const Modals = ({
   showAddCourseModal, handleCloseAddCourse, addCourse,

@@ -248,6 +248,21 @@ const editQuestionByHod = async (questionId, questionData) => {
   return response.data;
 };
 
+const approveAssessment = async (assessmentId, facultyId, setName, status, remarks) => {
+  console.log(assessmentId,facultyId,setName, status, remarks)
+  const response = await axios.post(
+    `${API_URL_HOD}/approve-assessment/${assessmentId}/faculty/${facultyId}/set/${setName}`,
+    { status, remarks },
+    {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  return response.data;
+};
+
 
 const userService = {
   register,
@@ -273,7 +288,8 @@ const userService = {
   deleteSetForAssessment,
   downloadRandomApprovedQuestions,
   deleteQuestionByHod,
-  editQuestionByHod
+  editQuestionByHod,
+  approveAssessment
 };
 
 export default userService;
