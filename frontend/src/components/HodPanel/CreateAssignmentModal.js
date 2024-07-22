@@ -30,23 +30,28 @@ const CreateAssignmentModal = ({ show, handleClose, course, createAssignment }) 
             </div>
             <div className="mb-3">
               <label htmlFor="termId" className="form-label">Term ID</label>
-              <input
-                type="text"
+              <select
                 id="termId"
-                className="form-control"
+                className="form-select"
                 value={termId}
                 onChange={(e) => setTermId(e.target.value)}
-              />
+              >
+                <option value="">Select Term ID</option>
+                <option value="24251">24251</option>
+              </select>
             </div>
             <div className="mb-3">
               <label htmlFor="type" className="form-label">Type</label>
-              <input
-                type="text"
+              <select
                 id="type"
-                className="form-control"
+                className="form-select"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-              />
+              >
+                <option value="">Select Type</option>
+                <option value="MCQ">MCQ</option>
+                <option value="Subjective">Subjective</option>
+              </select>
             </div>
           </div>
           <div className="modal-footer">
