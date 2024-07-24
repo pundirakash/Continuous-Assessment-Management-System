@@ -5,10 +5,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import FacultyDashboard from './pages/FacultyDashboard';
 import HodDashboard from './pages/HodDashboard';
 import PrivateRoute from './utils/PrivateRoute';
+import RoleSelection from './pages/RoleSelection';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-
-
 
 function App() {
   return (
@@ -36,6 +35,14 @@ function App() {
           element={
             <PrivateRoute role="HOD">
               <HodDashboard />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/role-selection" 
+          element={
+            <PrivateRoute role="HOD">
+              <RoleSelection />
             </PrivateRoute>
           } 
         />

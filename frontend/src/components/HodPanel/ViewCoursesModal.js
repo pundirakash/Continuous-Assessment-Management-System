@@ -114,7 +114,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
                   <li key={course._id} className="list-group-item d-flex justify-content-between align-items-center">
                     <span className="font-weight-bold">{course.name}</span> {course.code}
                     <div>
-                      <button className="btn btn-primary btn-sm mr-2" onClick={() => handleViewAssessments(course)}>Assessments</button>
+                      <button className="btn btn-primary btn-sm me-2" onClick={() => handleViewAssessments(course)}>Assessments</button>
                       <button className="btn btn-danger btn-sm" onClick={() => handleDeallocateCourse(course._id)}>Deallocate</button>
                     </div>
                   </li>

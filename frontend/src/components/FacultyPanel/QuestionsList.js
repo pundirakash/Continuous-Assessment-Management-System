@@ -11,6 +11,7 @@ const QuestionsList = ({ assessment, setName }) => {
   const [assessmentType, setAssessmentType] = useState('');
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   const [hodStatus, setHodStatus] = useState('');
+  const [hodRemarks,setHodRemarks]=useState('');
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false); 
@@ -32,6 +33,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         const response = await userService.getSetsForAssessment(assessment._id);
         const currentSet = response.find(set => set.setName === setName);
         setHodStatus(currentSet.hodStatus);
+        setHodRemarks(currentSet.hodRemarks);
       } catch (error) {
         console.error('Error fetching set details', error);
       }
@@ -180,6 +182,11 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
     <div className="card">
       <div className="card-body">
         <h3 className="card-title">Questions for Set {setName}</h3>
+        {(hodStatus === 'Rejected' || hodStatus === 'Approved with Remarks') && (
+  <div className="alert alert-info mt-3">
+    <strong>HOD Remarks: </strong>{hodRemarks}
+  </div>
+)}
         <table className="table table-striped">
           <thead>
             <tr>
@@ -235,7 +242,6 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
     Delete
   </button>
 </td>
-
               </tr>
             ))}
           </tbody>

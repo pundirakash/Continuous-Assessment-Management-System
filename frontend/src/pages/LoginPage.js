@@ -21,7 +21,7 @@ const LoginPage = () => {
       } else if (role === 'Faculty') {
         navigate('/faculty');
       }else if (role === 'HOD') { 
-        navigate('/hod');
+        navigate('/role-selection');
       }
     } catch (error) {
       setError('Invalid email or password');
