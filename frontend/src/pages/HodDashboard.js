@@ -27,7 +27,7 @@ const HodDashboard = () => {
     const token = localStorage.getItem('token');
     if (token) {
       const decodedToken = jwtDecode(token);
-      setUser({ username: decodedToken.user, uid: decodedToken.uid, _id: decodedToken._id });
+      setUser({ username: decodedToken.user, uid: decodedToken.uid, _id: decodedToken._id,department:decodedToken.department });
     }
 
     const fetchFaculties = async () => {
@@ -151,6 +151,7 @@ const Header = ({ user, onLogout }) => (
       <h1 className="display-2">Welcome</h1>
       <h1 className="display-2">{user.username}!</h1>
       <p className="lead">UID: {user.uid}</p>
+      <p className="lead">{user.department}</p>
       <button className="btn btn-danger mt-2 btn-lg" onClick={onLogout}>Logout</button>
     </div>
   </div>

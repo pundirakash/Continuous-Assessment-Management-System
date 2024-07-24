@@ -161,8 +161,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
       <div className="modal-content">
         <div className="modal-header">
           <h5 className="modal-title">Approve Set</h5>
-          <button type="button" className="close" onClick={() => setShowApproveDialog(false)}>
-            <span>&times;</span>
+          <button type="button" className="btn-close" onClick={() => setShowApproveDialog(false)}>
           </button>
         </div>
         <div className="modal-body">
@@ -188,8 +187,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
       <div className="modal-content">
         <div className="modal-header">
           <h5 className="modal-title">Reject Set</h5>
-          <button type="button" className="close" onClick={() => setShowRejectDialog(false)}>
-            <span>&times;</span>
+          <button type="button" className="btn-close" onClick={() => setShowRejectDialog(false)}>
           </button>
         </div>
         <div className="modal-body">

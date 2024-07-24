@@ -67,7 +67,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">Edit Question</h5>
-            <button type="button" className="close" onClick={onClose}>
+            <button type="button" className="close position-absolute top-0 end-0" onClick={onClose}>
               <span>&times;</span>
             </button>
           </div>

@@ -56,8 +56,7 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
         <div className="modal-content">
           <div className="modal-header bg-primary text-white">
             <h5 className="modal-title">Questions</h5>
-            <button type="button" className="close" onClick={handleClose}>
-              <span>&times;</span>
+            <button type="button" className="btn-close" onClick={handleClose}>
             </button>
           </div>
           <div className="modal-body">

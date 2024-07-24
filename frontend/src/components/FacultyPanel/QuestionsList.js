@@ -136,12 +136,12 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
     switch (hodStatus) {
       case 'Pending':
         return (
-          <button className="btn btn-primary" onClick={() => setShowSubmitConfirmation(true)}>
+          <button className="btn btn-primary me-2" onClick={() => setShowSubmitConfirmation(true)}>
             Submit
           </button>
         );
       case 'Submitted':
-        return <button className="btn btn-secondary" disabled>Awaiting HOD Approval</button>;
+        return <button className="btn btn-secondary me-2" disabled>Awaiting HOD Approval</button>;
       case 'Rejected':
         return (
           <button className="btn btn-warning" onClick={() => setShowSubmitConfirmation(true)}>
@@ -152,20 +152,20 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       case 'Approved with Remarks':
         return (
           <>
-            <button className="btn btn-secondary" disabled>Submit</button>
+            <button className="btn btn-secondary me-2" disabled>Submit</button>
             <div className="btn-group">
-              <button className="btn btn-secondary" onClick={() => setShowDownloadOptions(!showDownloadOptions)}>
+              <button className="btn btn-secondary me-2" onClick={() => setShowDownloadOptions(!showDownloadOptions)}>
                 Download Options
               </button>
               {showDownloadOptions && (
                 <>
-                  <button className="btn btn-secondary" onClick={() => handleDownloadAssessment(2)}>
+                  <button className="btn btn-secondary me-2" onClick={() => handleDownloadAssessment(2)}>
                     Course File Format
                   </button>
-                  <button className="btn btn-secondary" onClick={() => handleDownloadAssessment(getTemplateNumber(assessmentType))}>
+                  <button className="btn btn-secondary me-2" onClick={() => handleDownloadAssessment(getTemplateNumber(assessmentType))}>
                     {`${assessmentType} Format`}
                   </button>
-                  <button className="btn btn-secondary" onClick={() => setShowRandomDownloadModal(true)}>
+                  <button className="btn btn-secondary me-2" onClick={() => setShowRandomDownloadModal(true)}>
                     Random Approved Questions
                   </button>
                 </>
@@ -230,14 +230,14 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
   <button
     className="btn btn-sm btn-primary mr-2"
     onClick={() => handleEditQuestion(question)}
-    disabled={hodStatus === 'Approved'}
+    disabled={hodStatus === 'Approved'|| hodStatus === 'Submitted'}
   >
     Edit
   </button>
   <button
     className="btn btn-sm btn-danger"
     onClick={() => handleDeleteQuestion(question._id)}
-    disabled={hodStatus === 'Approved' || hodStatus === 'Approved with Remarks'}
+    disabled={hodStatus === 'Approved' || hodStatus === 'Approved with Remarks'|| hodStatus === 'Submitted'}
   >
     Delete
   </button>
@@ -246,7 +246,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
             ))}
           </tbody>
         </table>
-        <button className="btn btn-primary mr-2" onClick={() => setShowCreateQuestion(true)}>
+        <button className="btn btn-primary me-2" onClick={() => setShowCreateQuestion(true)} disabled={hodStatus === 'Approved'|| hodStatus === 'Submitted'}>
           Create New Question
         </button>
 
@@ -266,8 +266,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
               <div className="modal-content">
                 <div className="modal-header">
                   <h5 className="modal-title">Confirm Submission</h5>
-                  <button type="button" className="close" onClick={() => setShowSubmitConfirmation(false)}>
-                    <span>&times;</span>
+                  <button type="button" className="btn-close" onClick={() => setShowSubmitConfirmation(false)}>
                   </button>
                 </div>
                 <div className="modal-body">

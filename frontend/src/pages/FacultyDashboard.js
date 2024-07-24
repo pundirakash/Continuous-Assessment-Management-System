@@ -21,7 +21,7 @@ const FacultyDashboard = () => {
     if (token) {
       const decodedToken = jwtDecode(token);
       console.log(decodedToken);
-      setUser({ username: decodedToken.user, uid: decodedToken.uid,_id:decodedToken._id });
+      setUser({ username: decodedToken.user, uid: decodedToken.uid,_id:decodedToken._id,department:decodedToken.department });
     }
   }, []);
 
@@ -56,6 +56,7 @@ const FacultyDashboard = () => {
             <div className="card-body text-center">
               <h1 className="display-2">Welcome {user.username}!</h1>
               <p className="lead">UID: {user.uid}</p>
+              <p className="lead">{user.department}</p>
               <button className="btn btn-danger mt-3" onClick={handleLogout}>Logout</button>
             </div>
           </div>

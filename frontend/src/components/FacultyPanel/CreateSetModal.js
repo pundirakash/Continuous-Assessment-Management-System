@@ -17,7 +17,7 @@ const CreateSetModal = ({ onClose, onSave }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">Create New Sets</h5>
-            <button type="button" className="close" onClick={onClose}>
+            <button type="button" className="close position-absolute top-0 end-0" onClick={onClose}>
               <span>&times;</span>
             </button>
           </div>
@@ -27,7 +27,7 @@ const CreateSetModal = ({ onClose, onSave }) => {
                 <label htmlFor="numSets">Number of Sets:</label>
                 <input
                   type="number"
-                  className="form-control"
+                  className="form-control mb-2"
                   id="numSets"
                   value={numSets}
                   onChange={(e) => setNumSets(e.target.value)}
