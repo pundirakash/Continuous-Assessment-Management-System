@@ -75,10 +75,9 @@ exports.getQuestionsForSet = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
-    // Check if the number of questions is zero
     if (questionSet.questions.length === 0) {
-      questionSet.hodStatus = 'Pending'; // Set status to Pending if no questions are present
-      await assessment.save(); // Save changes to the assessment
+      questionSet.hodStatus = 'Pending';
+      await assessment.save();
     }
 
     const populatedQuestions = await Question.find({ _id: { $in: questionSet.questions } });
@@ -336,6 +335,11 @@ exports.createQuestion = [
         facultyQuestions.sets.push(questionSet);
       }
 
+      // Check and update the hodStatus of the first set if it's 'Approved'
+      if (facultyQuestions.sets.length > 0 && facultyQuestions.sets[0].hodStatus === 'Approved') {
+        facultyQuestions.sets[0].hodStatus = 'Pending';
+      }
+
       const question = new Question({
         assessment: assessmentId,
         text,
@@ -344,7 +348,8 @@ exports.createQuestion = [
         bloomLevel,
         courseOutcome,
         marks,
-        image: req.file ? req.file.path : null
+        image: req.file ? req.file.path : null,
+        status: 'Pending' // Adding the status field to the question model
       });
 
       await question.save();
@@ -388,6 +393,11 @@ exports.deleteQuestion = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
+    // Check if hodStatus is 'Approved' or 'Approved with Remarks'
+    if (['Approved', 'Approved with Remarks'].includes(questionSet.hodStatus)) {
+      return res.status(403).json({ message: 'Question cannot be deleted because the set is approved or approved with remarks' });
+    }
+
     questionSet.questions = questionSet.questions.filter(qId => qId.toString() !== questionId);
 
     await assessment.save();
@@ -410,6 +420,7 @@ exports.deleteQuestion = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 exports.editQuestion = async (req, res) => {
   try {

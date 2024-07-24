@@ -259,13 +259,26 @@ exports.approveAssessment = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
+    if ((status === 'Approved with Remarks' || status === 'Rejected') && !remarks) {
+      return res.status(400).json({ message: 'Remarks are required for Approved with Remarks and Rejected statuses' });
+    }
+
     questionSet.hodStatus = status;
     questionSet.hodRemarks = remarks;
-    
+
+    let questionStatus;
     if (status === 'Approved') {
+      questionStatus = 'Approved';
+    } else if (status === 'Approved with Remarks') {
+      questionStatus = 'Approved';
+    } else if (status === 'Rejected') {
+      questionStatus = 'Rejected';
+    }
+
+    if (questionStatus) {
       await Question.updateMany(
         { _id: { $in: questionSet.questions } },
-        { $set: { status: 'Approved' } }
+        { $set: { status: questionStatus } }
       );
     }
 

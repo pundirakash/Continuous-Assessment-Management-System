@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import userService from '../../services/userService';
 import EditQuestionModal from '../FacultyPanel/EditQuestionModal';
 
-const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, onApprove }) => {
+const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, onApprove, onReject }) => {
   const [questions, setQuestions] = useState(initialQuestions);
   const [editingQuestion, setEditingQuestion] = useState(null);
 
@@ -42,6 +42,13 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
       onApprove(setName);
     }
   };
+
+  const handleReject = () => {
+    if (onReject && setName) {
+      onReject(setName);
+    }
+  };
+  
 
   return (
     <div className={`modal fade ${show ? 'show d-block' : 'd-none'}`} tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -118,6 +125,7 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={handleClose}>Close</button>
+            {setName && <button className="btn btn-danger" onClick={handleReject}>Reject Set</button>}
             {setName && <button className="btn btn-success" onClick={handleApprove}>Approve Set</button>}
           </div>
         </div>

@@ -108,7 +108,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
     switch (type) {
       case 'Mix':
         return 2;
-      case 'Theory':
+      case 'Subjective':
         return 3;
       case 'MCQ':
         return 3;
@@ -220,13 +220,22 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
                   )}
                 </td>
                 <td>
-                  <button className="btn btn-sm btn-primary mr-2" onClick={() => handleEditQuestion(question)}>
-                    Edit
-                  </button>
-                  <button className="btn btn-sm btn-danger" onClick={() => handleDeleteQuestion(question._id)}>
-                    Delete
-                  </button>
-                </td>
+  <button
+    className="btn btn-sm btn-primary mr-2"
+    onClick={() => handleEditQuestion(question)}
+    disabled={hodStatus === 'Approved'}
+  >
+    Edit
+  </button>
+  <button
+    className="btn btn-sm btn-danger"
+    onClick={() => handleDeleteQuestion(question._id)}
+    disabled={hodStatus === 'Approved' || hodStatus === 'Approved with Remarks'}
+  >
+    Delete
+  </button>
+</td>
+
               </tr>
             ))}
           </tbody>

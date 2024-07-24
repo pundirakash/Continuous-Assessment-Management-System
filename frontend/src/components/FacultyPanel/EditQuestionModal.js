@@ -3,13 +3,13 @@ import React, { useState, useEffect } from 'react';
 const EditQuestionModal = ({ question, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     ...question,
-    options: question.options.join(', ') 
+    options: question.options ? question.options : ['', '', '', ''] // Initialize options with 4 empty strings for MCQ
   });
 
   useEffect(() => {
     setFormData({
       ...question,
-      options: question.options.join(', ') 
+      options: question.options ? question.options : ['', '', '', ''] // Initialize options with 4 empty strings for MCQ
     });
   }, [question]);
 
@@ -21,11 +21,34 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
     }));
   };
 
-  const handleOptionsChange = (e) => {
+  const handleTypeChange = (e) => {
     const { value } = e.target;
+    if (value === 'MCQ') {
+      setFormData(prevState => ({
+        ...prevState,
+        type: value,
+        options: ['', '', '', ''] // Initialize options with 4 empty strings for MCQ
+      }));
+    } else if (value === 'Subjective') {
+      setFormData(prevState => ({
+        ...prevState,
+        type: value,
+        options: [] // Clear options for Theory
+      }));
+    } else {
+      setFormData(prevState => ({
+        ...prevState,
+        type: value
+      }));
+    }
+  };
+
+  const handleOptionChange = (index, value) => {
+    const newOptions = [...formData.options];
+    newOptions[index] = value;
     setFormData(prevState => ({
       ...prevState,
-      options: value
+      options: newOptions
     }));
   };
 
@@ -33,7 +56,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
     e.preventDefault();
     const updatedFormData = {
       ...formData,
-      options: formData.options.split(',').map(option => option.trim())
+      options: formData.options.filter(option => option.trim() !== '') // Filter out empty options
     };
     onSave(updatedFormData);
   };
@@ -69,24 +92,29 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
                   id="type"
                   name="type"
                   value={formData.type}
-                  onChange={handleChange}
+                  onChange={handleTypeChange}
                   required
                 >
                   <option value="MCQ">MCQ</option>
-                  <option value="Theory">Theory</option>
+                  <option value="Subjective">Subjective</option>
                 </select>
               </div>
 
               {formData.type === 'MCQ' && (
                 <div>
                   <h4>Options</h4>
-                  <textarea
-                    className="form-control"
-                    id="options"
-                    name="options"
-                    value={formData.options}
-                    onChange={handleOptionsChange}
-                  />
+                  {formData.options.map((option, index) => (
+                    <div key={index} className="form-group">
+                      <label htmlFor={`option${index}`}>Option {index + 1}</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id={`option${index}`}
+                        value={option}
+                        onChange={(e) => handleOptionChange(index, e.target.value)}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
 

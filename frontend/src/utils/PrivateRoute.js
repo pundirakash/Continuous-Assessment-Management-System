@@ -1,18 +1,21 @@
 import React from 'react';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode';
 import { Navigate } from 'react-router-dom';
 
 const PrivateRoute = ({ children, role }) => {
-  
   const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  
   const decodedToken = jwtDecode(token);
-  const user=decodedToken;
-  console.log(user);
+  const user = decodedToken;
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== role) {
+  if (user.role !== role && !(role === 'Faculty' && user.role === 'HOD')) {
     return <Navigate to="/login" replace />;
   }
 

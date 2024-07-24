@@ -4,9 +4,9 @@ import userService from '../../services/userService';
 const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose }) => {
   const [text, setText] = useState('');
   const [type, setType] = useState('MCQ');
-  const [options, setOptions] = useState(['', '', '', '']); // Start with 4 empty options for MCQ
-  const [bloomLevel, setBloomLevel] = useState('L1'); // Default to L1
-  const [courseOutcome, setCourseOutcome] = useState('CO1'); // Default to CO1
+  const [options, setOptions] = useState(['', '', '', '']); 
+  const [bloomLevel, setBloomLevel] = useState('L1'); 
+  const [courseOutcome, setCourseOutcome] = useState('CO1'); 
   const [marks, setMarks] = useState('');
   const [image, setImage] = useState(null);
 

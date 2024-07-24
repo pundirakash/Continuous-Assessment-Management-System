@@ -13,6 +13,10 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [selectedSet, setSelectedSet] = useState(null);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [remarks, setRemarks] = useState('');
+
 
   const handleViewAssessments = async (course) => {
     try {
@@ -50,17 +54,46 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
   };
 
   const handleApproveSet = async (setName) => {
+    setShowApproveDialog(true);
+    setSelectedSet(setName);
+  };
+  
+  const handleConfirmApprove = async () => {
     try {
-      await userService.approveAssessment(selectedAssessmentId, faculty._id, setName, 'Approved', 'Approved by HOD');
-      setSets(prevSets => prevSets.map(set => set.setName === setName ? { ...set, status: 'Approved' } : set));
+      const status = remarks ? 'Approved with Remarks' : 'Approved';
+      await userService.approveAssessment(selectedAssessmentId, faculty._id, selectedSet, status, remarks);
+      setSets(prevSets => prevSets.map(set => set.setName === selectedSet ? { ...set, status } : set));
       setShowQuestionsModal(false);
       setSelectedQuestions([]);
       setSelectedSet(null);
+      setShowApproveDialog(false);
+      setRemarks('');
     } catch (error) {
       setErrorMessage('Error approving set. Please try again.');
       setShowErrorModal(true);
     }
   };
+  
+  const handleRejectSet = async (setName) => {
+    setShowRejectDialog(true);
+    setSelectedSet(setName);
+  };
+  
+  const handleConfirmReject = async () => {
+    try {
+      await userService.approveAssessment(selectedAssessmentId, faculty._id, selectedSet, 'Rejected', remarks);
+      setSets(prevSets => prevSets.map(set => set.setName === selectedSet ? { ...set, status: 'Rejected' } : set));
+      setShowQuestionsModal(false);
+      setSelectedQuestions([]);
+      setSelectedSet(null);
+      setShowRejectDialog(false);
+      setRemarks('');
+    } catch (error) {
+      setErrorMessage('Error rejecting set. Please try again.');
+      setShowErrorModal(true);
+    }
+  };
+  
 
   const handleCloseErrorModal = () => {
     setShowErrorModal(false);
@@ -120,8 +153,61 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
           </div>
         </div>
       </div>
-      <QuestionListModal show={showQuestionsModal} handleClose={handleCloseQuestionsModal} initialQuestions={selectedQuestions} setName={selectedSet} onApprove={handleApproveSet} />
+      <QuestionListModal show={showQuestionsModal} handleClose={handleCloseQuestionsModal} initialQuestions={selectedQuestions} setName={selectedSet} onApprove={handleApproveSet} onReject={handleRejectSet} />
       {showErrorModal && <ErrorModal message={errorMessage} onClose={handleCloseErrorModal} />}
+      {showApproveDialog && (
+  <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+    <div className="modal-dialog modal-dialog-centered" role="document">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">Approve Set</h5>
+          <button type="button" className="close" onClick={() => setShowApproveDialog(false)}>
+            <span>&times;</span>
+          </button>
+        </div>
+        <div className="modal-body">
+          <textarea
+            className="form-control"
+            placeholder="Enter any remarks (optional)"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+          />
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={() => setShowApproveDialog(false)}>Cancel</button>
+          <button className="btn btn-success" onClick={handleConfirmApprove}>Approve</button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+{showRejectDialog && (
+  <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+    <div className="modal-dialog modal-dialog-centered" role="document">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">Reject Set</h5>
+          <button type="button" className="close" onClick={() => setShowRejectDialog(false)}>
+            <span>&times;</span>
+          </button>
+        </div>
+        <div className="modal-body">
+          <textarea
+            className="form-control"
+            placeholder="Enter remarks for rejection"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+          />
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={() => setShowRejectDialog(false)}>Cancel</button>
+          <button className="btn btn-danger" onClick={handleConfirmReject}>Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 };
