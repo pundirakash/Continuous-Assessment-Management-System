@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import userService from '../../services/userService';
+import ErrorModal from '../ErrorModal';
 
 const CreateCourseModal = ({ show, handleClose, addCourse }) => {
   const [courseName, setCourseName] = useState('');
   const [courseCode, setCourseCode] = useState('');
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,6 +16,8 @@ const CreateCourseModal = ({ show, handleClose, addCourse }) => {
       handleClose();
     } catch (error) {
       console.error('Error creating course:', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -39,6 +44,12 @@ const CreateCourseModal = ({ show, handleClose, addCourse }) => {
           </div>
         </div>
       </div>
+      {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
     </div>
   );
 };

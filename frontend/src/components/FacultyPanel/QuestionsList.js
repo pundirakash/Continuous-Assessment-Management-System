@@ -25,6 +25,8 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         setQuestions(response.data);
       } catch (error) {
         console.error('Error fetching questions', error);
+        setError(error.message); 
+        setShowErrorModal(true); 
       }
     };
 
@@ -36,6 +38,8 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         setHodRemarks(currentSet.hodRemarks);
       } catch (error) {
         console.error('Error fetching set details', error);
+        setError(error.message); 
+      setShowErrorModal(true); 
       }
     };    
 
@@ -57,6 +61,8 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       setEditingQuestion(null);
     } catch (error) {
       console.error('Error editing question', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -67,6 +73,8 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         setQuestions(questions.filter(question => question._id !== questionId));
       } catch (error) {
         console.error('Error deleting question', error);
+        setError(error.message); 
+      setShowErrorModal(true); 
       }
     }
   };
@@ -83,6 +91,8 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       link.parentNode.removeChild(link);
     } catch (error) {
       console.error('Error downloading assessment', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
   const handleDownloadRandomQuestions = async () => {
@@ -97,6 +107,8 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       link.parentNode.removeChild(link);
     } catch (error) {
       console.error('Error downloading random approved questions', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -280,20 +292,14 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
             </div>
           </div>
         )}
-        {showErrorModal && (
-      <ErrorModal
-        message={error}
-        onClose={() => setShowErrorModal(false)}
-      />
-    )}
+        
     {showRandomDownloadModal && (
   <div className="modal fade show" tabIndex="-1" style={{ display: 'block' }}>
     <div className="modal-dialog">
       <div className="modal-content">
         <div className="modal-header">
           <h5 className="modal-title">Download Random Approved Questions</h5>
-          <button type="button" className="close" onClick={() => setShowRandomDownloadModal(false)}>
-            <span>&times;</span>
+          <button type="button" className="btn-close" onClick={() => setShowRandomDownloadModal(false)}>
           </button>
         </div>
         <div className="modal-body">
@@ -311,6 +317,12 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         </div>
       </div>
     </div>
+    {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
   </div>
 )}
       </div>

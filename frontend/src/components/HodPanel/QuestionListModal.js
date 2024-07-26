@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import userService from '../../services/userService';
 import EditQuestionModal from '../FacultyPanel/EditQuestionModal';
+import ErrorModal from '../ErrorModal';
 
 const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, onApprove, onReject }) => {
   const [questions, setQuestions] = useState(initialQuestions);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); 
 
   useEffect(() => {
     setQuestions(initialQuestions);
@@ -21,6 +24,8 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
         setQuestions(prevQuestions => prevQuestions.filter(q => q._id !== questionId));
       } catch (error) {
         console.error('Error deleting question', error);
+        setError(error.message); 
+      setShowErrorModal(true); 
       }
     }
   };
@@ -34,6 +39,8 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
       setEditingQuestion(null);
     } catch (error) {
       console.error('Error editing question', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -137,6 +144,12 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
           onSave={handleSaveEdit}
         />
       )}
+      {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
     </div>
   );
 };

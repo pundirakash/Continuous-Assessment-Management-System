@@ -349,7 +349,7 @@ exports.createQuestion = [
         courseOutcome,
         marks,
         image: req.file ? req.file.path : null,
-        status: 'Pending' // Adding the status field to the question model
+        status: 'Pending'
       });
 
       await question.save();

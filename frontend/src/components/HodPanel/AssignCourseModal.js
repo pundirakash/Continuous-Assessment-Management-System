@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import userService from '../../services/userService';
+import ErrorModal from '../ErrorModal';
 
 const AssignCourseModal = ({ show, handleClose, course, assignCourse }) => {
   const [faculties, setFaculties] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState('');
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); 
 
   useEffect(() => {
     const fetchFaculties = async () => {
@@ -28,6 +31,8 @@ const AssignCourseModal = ({ show, handleClose, course, assignCourse }) => {
       }
     } catch (error) {
       console.error("Error checking course assignment:", error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -63,6 +68,12 @@ const AssignCourseModal = ({ show, handleClose, course, assignCourse }) => {
           </div>
         </div>
       </div>
+      {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
     </div>
   );
 };

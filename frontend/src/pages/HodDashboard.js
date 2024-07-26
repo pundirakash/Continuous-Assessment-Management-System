@@ -9,6 +9,7 @@ import AssignCourseModal from '../components/HodPanel/AssignCourseModal';
 import CreateAssignmentModal from '../components/HodPanel/CreateAssignmentModal';
 import FacultyList from '../components/HodPanel/FacultyList';
 import CourseList from '../components/HodPanel/CourseList';
+import ErrorModal from '../components/ErrorModal';
 
 const HodDashboard = () => {
   const [faculties, setFaculties] = useState([]);
@@ -21,6 +22,8 @@ const HodDashboard = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [facultyCourses, setFacultyCourses] = useState([]);
   const [user, setUser] = useState({ username: '', uid: '', _id: '' });
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); 
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -85,6 +88,8 @@ const HodDashboard = () => {
         setFacultyCourses(updatedCourses);
       } catch (error) {
         console.error("Error deallocating course:", error);
+        setError(error.message); 
+      setShowErrorModal(true); 
       }
     }
   };
@@ -141,7 +146,14 @@ const HodDashboard = () => {
         handleCloseCreateAssignment={handleCloseCreateAssignment}
         handleCreateAssignment={handleCreateAssignment}
       />
+      {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
     </div>
+    
   );
 };
 
@@ -193,6 +205,7 @@ const Modals = ({
       </>
     )}
   </>
+  
 );
 
 export default HodDashboard;

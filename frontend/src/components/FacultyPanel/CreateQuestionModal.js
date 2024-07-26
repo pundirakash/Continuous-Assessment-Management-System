@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import userService from '../../services/userService';
+import ErrorModal from '../ErrorModal';
 
 const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose }) => {
   const [text, setText] = useState('');
@@ -9,6 +10,8 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
   const [courseOutcome, setCourseOutcome] = useState('CO1'); 
   const [marks, setMarks] = useState('');
   const [image, setImage] = useState(null);
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); 
 
   useEffect(() => {
     if (type === 'Theory') {
@@ -52,6 +55,8 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       setImage(null);
     } catch (error) {
       console.error('Error creating question', error);
+      setError(error.message); 
+        setShowErrorModal(true); 
     }
   };
 
@@ -153,6 +158,12 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
           </div>
         </div>
       </div>
+      {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
     </div>
   );
 };

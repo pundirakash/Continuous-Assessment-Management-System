@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import ErrorModal from '../ErrorModal';
 
 const CreateUser = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,8 @@ const CreateUser = () => {
     password: '',
     role: '',
   });
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); 
 
   const handleChange = (e) => {
     setFormData({
@@ -29,6 +32,8 @@ const CreateUser = () => {
       alert('User created successfully');
     } catch (error) {
       console.error('Error creating user', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -117,6 +122,12 @@ const CreateUser = () => {
         </div>
         <button type="submit" className="btn btn-primary">Create User</button>
       </form>
+      {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
     </div>
   );
 };

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
 import CreateSetModal from './CreateSetModal';
+import ErrorModal from '../ErrorModal';
 
 const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
   const [sets, setSets] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  console.log(facultyId);
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); 
+
   useEffect(() => {
     const fetchSets = async () => {
       try {
@@ -13,6 +16,8 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
         setSets(data);
       } catch (error) {
         console.error('Error fetching sets', error);
+        setError(error.message); 
+        setShowErrorModal(true); 
       }
     };
 
@@ -34,6 +39,8 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
       setSets(updatedSets);
     } catch (error) {
       console.error('Error creating sets', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -44,6 +51,8 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
       setSets(updatedSets);
     } catch (error) {
       console.error('Error deleting set', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -82,6 +91,12 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
           onSave={handleCreateSet}
         />
       )}
+      {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
     </div>
   );
 };

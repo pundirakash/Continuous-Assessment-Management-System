@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import ErrorModal from '../ErrorModal';
+
 
 const FetchUsersByDepartment = () => {
   const [department, setDepartment] = useState('');
   const [users, setUsers] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const departments = [
     'System Programming',
@@ -25,6 +29,8 @@ const FetchUsersByDepartment = () => {
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -44,6 +50,8 @@ const FetchUsersByDepartment = () => {
       handleFetchUsers();
     } catch (error) {
       console.error('Error deleting user', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -66,6 +74,8 @@ const FetchUsersByDepartment = () => {
       handleFetchUsers();
     } catch (error) {
       console.error('Error updating user', error);
+      setError(error.message); 
+      setShowErrorModal(true); 
     }
   };
 
@@ -196,6 +206,12 @@ const FetchUsersByDepartment = () => {
           </table>
         </div>
       )}
+      {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
     </div>
   );
 };

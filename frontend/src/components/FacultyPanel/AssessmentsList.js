@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
+import ErrorModal from '../ErrorModal';
 
 const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
   const [assessments, setAssessments] = useState([]);
+  const [error, setError] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); 
 
   useEffect(() => {
     const fetchAssessments = async () => {
@@ -11,6 +14,8 @@ const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
         setAssessments(data);
       } catch (error) {
         console.error('Error fetching assessments', error);
+        setError(error.message); 
+        setShowErrorModal(true); 
       }
     };
 
@@ -34,6 +39,12 @@ const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
           ))}
         </ul>
       </div>
+      {showErrorModal && (
+      <ErrorModal
+        message={error}
+        onClose={() => setShowErrorModal(false)}
+      />
+    )}
     </div>
   );
 };

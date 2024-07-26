@@ -27,13 +27,13 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
       setFormData(prevState => ({
         ...prevState,
         type: value,
-        options: ['', '', '', ''] // Initialize options with 4 empty strings for MCQ
+        options: ['', '', '', ''] 
       }));
     } else if (value === 'Subjective') {
       setFormData(prevState => ({
         ...prevState,
         type: value,
-        options: [] // Clear options for Theory
+        options: []
       }));
     } else {
       setFormData(prevState => ({
@@ -56,7 +56,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
     e.preventDefault();
     const updatedFormData = {
       ...formData,
-      options: formData.options.filter(option => option.trim() !== '') // Filter out empty options
+      options: formData.options.filter(option => option.trim() !== '')
     };
     onSave(updatedFormData);
   };
@@ -67,8 +67,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">Edit Question</h5>
-            <button type="button" className="close position-absolute top-0 end-0" onClick={onClose}>
-              <span>&times;</span>
+            <button type="button" className="btn-close" onClick={onClose}>
             </button>
           </div>
           <div className="modal-body">
@@ -156,7 +155,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
                 </select>
               </div>
 
-              <div className="form-group">
+              <div className="form-group mb-2">
                 <label htmlFor="marks">Marks:</label>
                 <input
                   type="number"

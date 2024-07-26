@@ -8,6 +8,7 @@ const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment }
           <h4 className="card-title mb-0">Courses</h4>
           <button className="btn btn-outline-primary btn-sm" onClick={onAddCourse}>Add Course</button>
         </div>
+        
         <ul className="list-group list-group-flush">
           {courses.map((course) => (
             <li key={course._id} className="list-group-item d-flex justify-content-between align-items-center">
