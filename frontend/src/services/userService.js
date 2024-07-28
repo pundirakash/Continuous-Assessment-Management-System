@@ -263,6 +263,15 @@ const approveAssessment = async (assessmentId, facultyId, setName, status, remar
   return response.data;
 };
 
+const getPendingAssessmentSets = async () => {
+  const response = await axios.get(`${API_URL_HOD }//pending-assessment-sets`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+  });
+  return response.data;
+};
+
 
 const userService = {
   register,
@@ -289,7 +298,8 @@ const userService = {
   downloadRandomApprovedQuestions,
   deleteQuestionByHod,
   editQuestionByHod,
-  approveAssessment
+  approveAssessment,
+  getPendingAssessmentSets
 };
 
 export default userService;

@@ -20,4 +20,5 @@ router.get('/faculties/:facultyId/courses', auth(['HOD']), hodController.getCour
 router.get('/get-sets/:facultyId/:assessmentId', auth(['HOD']), hodController.getSetsByFaculty);
 router.delete('/delete-question/:questionId', auth(['HOD']), hodController.deleteQuestionByHOD);
 router.put('/edit-question/:questionId', auth(['HOD']), hodController.editQuestionByHOD);
+router.get('/pending-assessment-sets', auth(['HOD']), hodController.getPendingAssessmentSets);
 module.exports = router;

@@ -14,6 +14,7 @@ import ErrorModal from '../components/ErrorModal';
 const HodDashboard = () => {
   const [faculties, setFaculties] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [pendingAssessmentSets, setPendingAssessmentSets] = useState([]);
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
   const [showFacultyCoursesModal, setShowFacultyCoursesModal] = useState(false);
   const [showAssignCourseModal, setShowAssignCourseModal] = useState(false);
@@ -21,30 +22,32 @@ const HodDashboard = () => {
   const [selectedFaculty, setSelectedFaculty] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [facultyCourses, setFacultyCourses] = useState([]);
+  const [facultyPendingSets, setFacultyPendingSets] = useState([]); // Add this state
   const [user, setUser] = useState({ username: '', uid: '', _id: '' });
   const [error, setError] = useState(null);
-  const [showErrorModal, setShowErrorModal] = useState(false); 
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       const decodedToken = jwtDecode(token);
-      setUser({ username: decodedToken.user, uid: decodedToken.uid, _id: decodedToken._id,department:decodedToken.department });
+      setUser({ username: decodedToken.user, uid: decodedToken.uid, _id: decodedToken._id, department: decodedToken.department });
     }
 
-    const fetchFaculties = async () => {
-      const response = await userService.getFacultiesByDepartment();
-      setFaculties(response);
+    const fetchInitialData = async () => {
+      const [facultiesResponse, coursesResponse, pendingSetsResponse] = await Promise.all([
+        userService.getFacultiesByDepartment(),
+        userService.getCoursesByDepartment(),
+        userService.getPendingAssessmentSets()
+      ]);
+
+      setFaculties(facultiesResponse);
+      setCourses(coursesResponse);
+      setPendingAssessmentSets(pendingSetsResponse);
     };
 
-    const fetchCourses = async () => {
-      const response = await userService.getCoursesByDepartment();
-      setCourses(response);
-    };
-
-    fetchFaculties();
-    fetchCourses();
+    fetchInitialData();
   }, []);
 
   const addCourse = async () => {
@@ -77,6 +80,8 @@ const HodDashboard = () => {
     setSelectedFaculty(faculty);
     const response = await userService.getCoursesByFaculty(faculty._id);
     setFacultyCourses(response);
+    const facultyPending = pendingAssessmentSets.filter(set => set.facultyId === faculty._id);
+    setFacultyPendingSets(facultyPending);
     handleShowFacultyCourses();
   };
 
@@ -88,8 +93,8 @@ const HodDashboard = () => {
         setFacultyCourses(updatedCourses);
       } catch (error) {
         console.error("Error deallocating course:", error);
-        setError(error.message); 
-      setShowErrorModal(true); 
+        setError(error.message);
+        setShowErrorModal(true);
       }
     }
   };
@@ -126,7 +131,7 @@ const HodDashboard = () => {
     <div className="container mt-5">
       <Header user={user} onLogout={handleLogout} />
       <div className="row">
-        <FacultyList faculties={faculties} onFacultyClick={handleFacultyClick} />
+        <FacultyList faculties={faculties} onFacultyClick={handleFacultyClick} pendingAssessmentSets={pendingAssessmentSets}/>
         <CourseList courses={courses} onAddCourse={handleShowAddCourse} onAssignCourse={handleShowAssignCourse} onCreateAssignment={handleShowCreateAssignment} />
       </div>
       <Modals
@@ -137,6 +142,7 @@ const HodDashboard = () => {
         showFacultyCoursesModal={showFacultyCoursesModal}
         handleCloseFacultyCourses={handleCloseFacultyCourses}
         facultyCourses={facultyCourses}
+        facultyPendingSets={facultyPendingSets}
         handleDeallocateCourse={handleDeallocateCourse}
         selectedCourse={selectedCourse}
         showAssignCourseModal={showAssignCourseModal}
@@ -147,13 +153,12 @@ const HodDashboard = () => {
         handleCreateAssignment={handleCreateAssignment}
       />
       {showErrorModal && (
-      <ErrorModal
-        message={error}
-        onClose={() => setShowErrorModal(false)}
-      />
-    )}
+        <ErrorModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
-    
   );
 };
 
@@ -169,11 +174,10 @@ const Header = ({ user, onLogout }) => (
   </div>
 );
 
-
 const Modals = ({
   showAddCourseModal, handleCloseAddCourse, addCourse,
   selectedFaculty, showFacultyCoursesModal, handleCloseFacultyCourses,
-  facultyCourses, handleDeallocateCourse,
+  facultyCourses, facultyPendingSets, handleDeallocateCourse,
   selectedCourse, showAssignCourseModal, handleCloseAssignCourse, handleAssignCourse,
   showCreateAssignmentModal, handleCloseCreateAssignment, handleCreateAssignment
 }) => (
@@ -185,6 +189,7 @@ const Modals = ({
         handleClose={handleCloseFacultyCourses}
         faculty={selectedFaculty}
         courses={facultyCourses}
+        pendingAssessmentSets={facultyPendingSets}
         handleDeallocateCourse={handleDeallocateCourse}
       />
     )}
@@ -205,7 +210,6 @@ const Modals = ({
       </>
     )}
   </>
-  
 );
 
 export default HodDashboard;

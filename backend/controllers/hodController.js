@@ -510,3 +510,45 @@ exports.deleteQuestionByHOD = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+exports.getPendingAssessmentSets = async (req, res) => {
+  try {
+    const department = req.user.department;
+
+    // Find all courses in the department
+    const courses = await Course.find({ department });
+
+    // Extract course IDs
+    const courseIds = courses.map(course => course._id);
+
+    // Find assessments for these courses with sets whose hodStatus is 'Submitted'
+    const assessments = await Assessment.find({
+      course: { $in: courseIds },
+      'facultyQuestions.sets.hodStatus': 'Submitted'
+    }).populate('course facultyQuestions.faculty');
+
+    // Filter the assessments to only include relevant sets
+    const pendingSets = assessments.map(assessment => {
+      return assessment.facultyQuestions.flatMap(facultyQuestion => {
+        const submittedSets = facultyQuestion.sets.filter(set => set.hodStatus === 'Submitted');
+        if (submittedSets.length > 0) {
+          return submittedSets.map(set => ({
+            assessmentId: assessment._id,
+            assessmentName: assessment.name,
+            courseName: assessment.course.name,
+            facultyId: facultyQuestion.faculty._id,
+            setName: set.setName,
+            hodStatus: set.hodStatus
+          }));
+        }
+        return [];
+      });
+    }).flat();
+
+    res.status(200).json(pendingSets);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+

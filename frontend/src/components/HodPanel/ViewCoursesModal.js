@@ -3,7 +3,7 @@ import userService from '../../services/userService';
 import QuestionListModal from './QuestionListModal';
 import ErrorModal from '../ErrorModal';
 
-const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocateCourse }) => {
+const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocateCourse,pendingAssessmentSets }) => {
   const [assessments, setAssessments] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState(null);
@@ -100,6 +100,18 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
     setErrorMessage('');
   };
 
+  const hasPendingAssessments = (courseName) => {
+    return pendingAssessmentSets.some(set => set.courseName === courseName);
+  };
+
+  const hasPendingSet = (assessmentId) => {
+    return pendingAssessmentSets.some(set => set.assessmentId === assessmentId);
+  };
+
+  const hasPendingQuestion = (setName) => {
+    return pendingAssessmentSets.some(set => set.setName === setName);
+  };
+
   return (
     <>
       <div className={`modal fade ${show ? 'show d-block' : 'd-none'}`} tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -114,9 +126,14 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
                   <li key={course._id} className="list-group-item d-flex justify-content-between align-items-center">
                     <span className="font-weight-bold">{course.name}</span> {course.code}
                     <div>
-                      <button className="btn btn-primary btn-sm me-2" onClick={() => handleViewAssessments(course)}>Assessments</button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDeallocateCourse(course._id)}>Deallocate</button>
+                    <button className="btn btn-danger btn-sm me-2" onClick={() => handleDeallocateCourse(course._id)}>Deallocate</button>
+                    <button className="btn btn-primary btn-sm me-2" onClick={() => handleViewAssessments(course)}>Assessments</button>
                     </div>
+                    {hasPendingAssessments(course.name) && (
+                  <span className="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle">
+                    <span className="visually-hidden">New alerts</span>
+                  </span>
+                )}
                   </li>
                 ))}
               </ul>
@@ -125,9 +142,14 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
                   <h6 className="mb-3">Assessments for Course: {selectedCourse}</h6>
                   <ul className="list-group">
                     {assessments.map((assessment) => (
-                      <li key={assessment._id} className="list-group-item d-flex justify-content-between align-items-center">
+                      <li key={assessment._id} className="list-group-item d-flex justify-content-between align-items-center mb-1">
                         <span>{assessment.name}</span>
                         <button className="btn btn-link btn-sm" onClick={() => handleViewSets(assessment._id)}>View Sets</button>
+                        {hasPendingSet(assessment._id) && (
+                  <span className="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle">
+                    <span className="visually-hidden">New alerts</span>
+                  </span>
+                )}
                       </li>
                     ))}
                   </ul>
@@ -138,9 +160,14 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
                   <h6 className="mb-3">Sets</h6>
                   <ul className="list-group">
                     {sets.map((set) => (
-                      <li key={set._id} className="list-group-item d-flex justify-content-between align-items-center">
+                      <li key={set._id} className="list-group-item d-flex justify-content-between align-items-center mb-1">
                         <span>{set.setName}</span>
                         <button className="btn btn-link btn-sm" onClick={() => handleViewQuestions(set.questions, set.setName)}>View Questions</button>
+                        {hasPendingQuestion(set.setName) && (
+                  <span className="position-absolute top-0 start-100 translate-middle p-2 bg-warning border border-light rounded-circle">
+                    <span className="visually-hidden">New alerts</span>
+                  </span>
+                )}
                       </li>
                     ))}
                   </ul>
