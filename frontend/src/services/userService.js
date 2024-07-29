@@ -272,6 +272,43 @@ const getPendingAssessmentSets = async () => {
   return response.data;
 };
 
+const deleteCourse = async (courseId) => {
+  const response = await axios.delete(`${API_URL_HOD}/course/${courseId}`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+  });
+  return response.data;
+};
+
+const getAssessmentsByCourse = async (courseId) => {
+  const response = await axios.get(`${API_URL_HOD}/assessments/course/${courseId}`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+  });
+  return response.data;
+};
+
+const editAssessment = async (assessmentId, assessmentData) => {
+  const response = await axios.put(`${API_URL_HOD}/assessment/${assessmentId}`, assessmentData, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  return response.data;
+};
+
+const deleteAssessment = async (assessmentId) => {
+  const response = await axios.delete(`${API_URL_HOD}/assessment/${assessmentId}`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+  });
+  return response.data;
+};
+
 
 const userService = {
   register,
@@ -299,7 +336,11 @@ const userService = {
   deleteQuestionByHod,
   editQuestionByHod,
   approveAssessment,
-  getPendingAssessmentSets
+  getPendingAssessmentSets,
+  deleteCourse,
+  getAssessmentsByCourse,
+  editAssessment,
+  deleteAssessment,
 };
 
 export default userService;

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment }) => {
+const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment, onViewAssignments, onDeleteCourse }) => {
   return (
     <div className="col-md-6 mb-4">
       <div className="card shadow-sm">
@@ -14,8 +14,10 @@ const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment }
             <li key={course._id} className="list-group-item d-flex justify-content-between align-items-center">
               {course.name} ({course.code})
               <div>
-                <button className="btn btn-outline-primary btn-sm me-2" onClick={() => onAssignCourse(course)}>Assign</button>
-                <button className="btn btn-outline-secondary btn-sm" onClick={() => onCreateAssignment(course)}>Create Assignment</button>
+                <button className="btn btn-outline-danger btn-sm me-2" onClick={() => onDeleteCourse(course._id)}>Delete</button>
+                <button className="btn btn-outline-primary btn-sm me-2" onClick={() => onAssignCourse(course)}>Assign Course</button>
+                <button className="btn btn-outline-secondary btn-sm me-2" onClick={() => onCreateAssignment(course)}>Create Task</button>
+                <button className="btn btn-outline-info btn-sm" onClick={() => onViewAssignments(course)}>View Tasks</button>
               </div>
             </li>
           ))}

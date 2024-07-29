@@ -3,11 +3,11 @@ import userService from '../../services/userService';
 import EditQuestionModal from '../FacultyPanel/EditQuestionModal';
 import ErrorModal from '../ErrorModal';
 
-const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, onApprove, onReject }) => {
+const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, onApprove, onReject, hodStatus }) => {
   const [questions, setQuestions] = useState(initialQuestions);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [error, setError] = useState(null);
-  const [showErrorModal, setShowErrorModal] = useState(false); 
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     setQuestions(initialQuestions);
@@ -131,8 +131,8 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={handleClose}>Close</button>
-            {setName && <button className="btn btn-danger" onClick={handleReject}>Reject Set</button>}
-            {setName && <button className="btn btn-success" onClick={handleApprove}>Approve Set</button>}
+            {setName && <button className="btn btn-danger" onClick={handleReject} disabled={hodStatus!== 'Submitted'}>Reject Set</button>}
+            {setName && <button className="btn btn-success" onClick={handleApprove} disabled={hodStatus!== 'Submitted'}>Approve Set</button>}
           </div>
         </div>
       </div>

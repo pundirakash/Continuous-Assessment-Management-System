@@ -551,4 +551,77 @@ exports.getPendingAssessmentSets = async (req, res) => {
   }
 };
 
+// Delete Course with Course Id
+exports.deleteCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    await Course.findByIdAndDelete(courseId);
+    res.status(200).json({ message: 'Course deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+// Get Assessments for a course with Course Id
+exports.getAssessmentsByCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId).populate('assessments');
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    res.status(200).json(course.assessments);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+// Edit Assessment
+exports.editAssessment = async (req, res) => {
+  try {
+    const { assessmentId } = req.params;
+    const { name, termId, type } = req.body;
+
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    assessment.name = name;
+    assessment.termId = termId;
+    assessment.type = type;
+
+    await assessment.save();
+    res.status(200).json({ message: 'Assessment updated successfully', assessment });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+// Delete Assessment
+exports.deleteAssessment = async (req, res) => {
+  try {
+    const { assessmentId } = req.params;
+
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    await Assessment.findByIdAndDelete(assessmentId);
+    res.status(200).json({ message: 'Assessment deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+
 

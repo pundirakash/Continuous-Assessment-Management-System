@@ -38,7 +38,7 @@ const LoginPage = () => {
               {error && <div className="alert alert-danger" role="alert">{error}</div>}
               <form onSubmit={handleLogin}>
                 <div className="form-group mb-3">
-                  <label>Email</label>
+                  <label className='mb-1'>Email</label>
                   <input
                     type="email"
                     className="form-control"
@@ -49,7 +49,7 @@ const LoginPage = () => {
                   />
                 </div>
                 <div className="form-group mb-4">
-                  <label>Password</label>
+                  <label className='mb-1'>Password</label>
                   <input
                     type="password"
                     className="form-control"

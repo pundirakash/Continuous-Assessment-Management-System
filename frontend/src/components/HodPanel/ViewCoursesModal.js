@@ -13,6 +13,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [selectedSet, setSelectedSet] = useState(null);
+  const [hodStatus, setHodStatus]=useState(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [remarks, setRemarks] = useState('');
@@ -41,9 +42,10 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
     }
   };
 
-  const handleViewQuestions = (questions, set) => {
+  const handleViewQuestions = (questions, set, hodStatus) => {
     setSelectedQuestions(questions);
     setSelectedSet(set);
+    setHodStatus(hodStatus);
     setShowQuestionsModal(true);
   };
 
@@ -56,6 +58,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
   const handleApproveSet = async (setName) => {
     setShowApproveDialog(true);
     setSelectedSet(setName);
+    setHodStatus("Approved");
   };
   
   const handleConfirmApprove = async () => {
@@ -130,7 +133,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
                     <button className="btn btn-primary btn-sm me-2" onClick={() => handleViewAssessments(course)}>Assessments</button>
                     </div>
                     {hasPendingAssessments(course.name) && (
-                  <span className="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle">
+                  <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
                     <span className="visually-hidden">New alerts</span>
                   </span>
                 )}
@@ -146,7 +149,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
                         <span>{assessment.name}</span>
                         <button className="btn btn-link btn-sm" onClick={() => handleViewSets(assessment._id)}>View Sets</button>
                         {hasPendingSet(assessment._id) && (
-                  <span className="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle">
+                  <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
                     <span className="visually-hidden">New alerts</span>
                   </span>
                 )}
@@ -162,9 +165,9 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
                     {sets.map((set) => (
                       <li key={set._id} className="list-group-item d-flex justify-content-between align-items-center mb-1">
                         <span>{set.setName}</span>
-                        <button className="btn btn-link btn-sm" onClick={() => handleViewQuestions(set.questions, set.setName)}>View Questions</button>
+                        <button className="btn btn-link btn-sm" onClick={() => handleViewQuestions(set.questions, set.setName, set.hodStatus)}>View Questions</button>
                         {hasPendingQuestion(set.setName) && (
-                  <span className="position-absolute top-0 start-100 translate-middle p-2 bg-warning border border-light rounded-circle">
+                  <span className="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle">
                     <span className="visually-hidden">New alerts</span>
                   </span>
                 )}
@@ -180,7 +183,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
           </div>
         </div>
       </div>
-      <QuestionListModal show={showQuestionsModal} handleClose={handleCloseQuestionsModal} initialQuestions={selectedQuestions} setName={selectedSet} onApprove={handleApproveSet} onReject={handleRejectSet} />
+      <QuestionListModal show={showQuestionsModal} handleClose={handleCloseQuestionsModal} initialQuestions={selectedQuestions} setName={selectedSet} onApprove={handleApproveSet} onReject={handleRejectSet} hodStatus={hodStatus}/>
       {showErrorModal && <ErrorModal message={errorMessage} onClose={handleCloseErrorModal} />}
       {showApproveDialog && (
   <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
