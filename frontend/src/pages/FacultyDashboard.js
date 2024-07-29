@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import CoursesList from '../components/FacultyPanel/CoursesList';
 import AssessmentsList from '../components/FacultyPanel/AssessmentsList';
 import QuestionSetsList from '../components/FacultyPanel/QuestionSetsList';
 import QuestionsList from '../components/FacultyPanel/QuestionsList';
 import CreateQuestionModal from '../components/FacultyPanel/CreateQuestionModal';
+import UpdateSetDetailsModal from '../components/FacultyPanel/UpdateSetDetailsModal'; // Import the modal
 import authService from '../services/authService';
+import userService from '../services/userService'; // Import userService
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const FacultyDashboard = () => {
@@ -14,6 +16,7 @@ const FacultyDashboard = () => {
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [selectedSetName, setSelectedSetName] = useState(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
+  const [showUpdateSetDetails, setShowUpdateSetDetails] = useState(false); // State for modal
   const [user, setUser] = useState({ username: '', uid: '', _id: '' });
   const [loading, setLoading] = useState(false); // Add loading state
   const navigate = useNavigate();
@@ -36,10 +39,24 @@ const FacultyDashboard = () => {
     setShowCreateQuestion(false);
   };
 
+  const handleSetDetailsUpdated = () => {
+    setShowUpdateSetDetails(false);
+  };
+
   const handleLoading = async (operation) => {
     setLoading(true);
     await operation();
     setLoading(false);
+  };
+
+  const handleSetSelect = async (name) => {
+    setSelectedSetName(name);
+
+    // Check if the details have already been added
+    const details = await userService.getSetDetails(selectedAssessment._id, name);
+    if (!details || !details.allotmentDate || !details.submissionDate || !details.maximumMarks) {
+      setShowUpdateSetDetails(true);
+    }
   };
 
   return (
@@ -56,7 +73,7 @@ const FacultyDashboard = () => {
               <QuestionSetsList
                 assessmentId={selectedAssessment._id}
                 facultyId={user._id}
-                onSetSelect={(name) => handleLoading(() => setSelectedSetName(name))}
+                onSetSelect={handleSetSelect}
                 onCreateSet={() => handleLoading(() => console.log('Create Set'))}
               />
             )}
@@ -89,6 +106,14 @@ const FacultyDashboard = () => {
             />
           )}
         </div>
+      )}
+      {showUpdateSetDetails && selectedAssessment && (
+        <UpdateSetDetailsModal
+          assessmentId={selectedAssessment._id}
+          setName={selectedSetName}
+          onClose={() => setShowUpdateSetDetails(false)}
+          onDetailsUpdated={handleSetDetailsUpdated}
+        />
       )}
     </div>
   );

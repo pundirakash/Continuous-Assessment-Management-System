@@ -309,6 +309,24 @@ const deleteAssessment = async (assessmentId) => {
   return response.data;
 };
 
+const updateSetDetails = async (assessmentId, setName, details) => {
+  const response = await axios.put(`${API_URL_FACULTY}/update-set-details/${assessmentId}/${setName}`, details, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+  });
+  return response.data;
+};
+
+const getSetDetails = async (assessmentId, setName) => {
+    const response = await axios.get(`${API_URL_FACULTY}/sets/${assessmentId}/${setName}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    return response.data;
+};
+
 
 const userService = {
   register,
@@ -341,6 +359,8 @@ const userService = {
   getAssessmentsByCourse,
   editAssessment,
   deleteAssessment,
+  updateSetDetails,
+  getSetDetails
 };
 
 export default userService;
