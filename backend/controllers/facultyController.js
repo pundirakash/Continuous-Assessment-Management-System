@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
+const moment=require('moment');
 const multer = require('multer');
 const ImageModule = require('docxtemplater-image-module-free');
 
@@ -197,6 +198,10 @@ exports.downloadAssessment = async (req, res) => {
       courseCode: assessment.course.code,
       courseName: assessment.course.name,
       setName: questionSet.setName,
+      taskType: assessment.type,
+      allotmentDate: moment(questionSet.allotmentDate).format('DD/MM/YYYY'),
+      submissionDate: moment(questionSet.submissionDate).format('DD/MM/YYYY'),
+      maximumMarks: questionSet.maximumMarks,
       questions: await Promise.all(questionSet.questions.map(async (questionId, index) => {
         const question = await Question.findById(questionId);
         return {
@@ -205,7 +210,7 @@ exports.downloadAssessment = async (req, res) => {
           courseOutcome: question.courseOutcome,
           bloomLevel: question.bloomLevel,
           marks: question.marks,
-          image: question.image ? path.resolve(__dirname, '../', question.image) : null, // Include image path
+          image: question.image ? path.resolve(__dirname, '../', question.image) : null,
           options: question.type === 'MCQ' ? question.options.map((option, i) => ({ option: `${optionLetters[i]}. ${option}` })) : []
         };
       })),

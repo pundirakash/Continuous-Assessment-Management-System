@@ -171,7 +171,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
               </button>
               {showDownloadOptions && (
                 <>
-                  <button className="btn btn-secondary me-2" onClick={() => handleDownloadAssessment(2)}>
+                  <button className="btn btn-secondary me-2" onClick={() => handleDownloadAssessment(1)}>
                     Course File Format
                   </button>
                   <button className="btn btn-secondary me-2" onClick={() => handleDownloadAssessment(getTemplateNumber(assessmentType))}>

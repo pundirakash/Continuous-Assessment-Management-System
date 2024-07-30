@@ -77,6 +77,7 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
                   e.stopPropagation();
                   handleDeleteSet(assessmentId, facultyId, set.setName);
                 }}
+                disabled={set.hodStatus!=='Pending'}
               >
                 Delete
               </button>
