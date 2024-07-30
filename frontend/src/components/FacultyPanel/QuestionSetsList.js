@@ -45,14 +45,16 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
   };
 
   const handleDeleteSet = async (assessmentId, facultyId, setName) => {
-    try {
-      await userService.deleteSetForAssessment(assessmentId, facultyId, setName);
-      const updatedSets = await userService.getSetsForAssessment(assessmentId);
-      setSets(updatedSets);
-    } catch (error) {
-      console.error('Error deleting set', error);
-      setError(error.message); 
-      setShowErrorModal(true); 
+    if (window.confirm(`Are you sure you want to delete the set "${setName}"?`)) {
+      try {
+        await userService.deleteSetForAssessment(assessmentId, facultyId, setName);
+        const updatedSets = await userService.getSetsForAssessment(assessmentId);
+        setSets(updatedSets);
+      } catch (error) {
+        console.error('Error deleting set', error);
+        setError(error.message); 
+        setShowErrorModal(true); 
+      }
     }
   };
 
@@ -92,11 +94,11 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
         />
       )}
       {showErrorModal && (
-      <ErrorModal
-        message={error}
-        onClose={() => setShowErrorModal(false)}
-      />
-    )}
+        <ErrorModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };

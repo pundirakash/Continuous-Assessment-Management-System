@@ -6,9 +6,9 @@ import AssessmentsList from '../components/FacultyPanel/AssessmentsList';
 import QuestionSetsList from '../components/FacultyPanel/QuestionSetsList';
 import QuestionsList from '../components/FacultyPanel/QuestionsList';
 import CreateQuestionModal from '../components/FacultyPanel/CreateQuestionModal';
-import UpdateSetDetailsModal from '../components/FacultyPanel/UpdateSetDetailsModal'; // Import the modal
+import UpdateSetDetailsModal from '../components/FacultyPanel/UpdateSetDetailsModal'; 
 import authService from '../services/authService';
-import userService from '../services/userService'; // Import userService
+import userService from '../services/userService'; 
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const FacultyDashboard = () => {
@@ -16,9 +16,9 @@ const FacultyDashboard = () => {
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [selectedSetName, setSelectedSetName] = useState(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
-  const [showUpdateSetDetails, setShowUpdateSetDetails] = useState(false); // State for modal
+  const [showUpdateSetDetails, setShowUpdateSetDetails] = useState(false); 
   const [user, setUser] = useState({ username: '', uid: '', _id: '' });
-  const [loading, setLoading] = useState(false); // Add loading state
+  const [loading, setLoading] = useState(false); 
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,8 +31,10 @@ const FacultyDashboard = () => {
   }, []);
 
   const handleLogout = () => {
+    if (window.confirm(`Are you sure you want to logout ?`)) {
     authService.logout();
     navigate('/login');
+    }
   };
 
   const handleQuestionCreated = async () => {
@@ -52,7 +54,6 @@ const FacultyDashboard = () => {
   const handleSetSelect = async (name) => {
     setSelectedSetName(name);
 
-    // Check if the details have already been added
     const details = await userService.getSetDetails(selectedAssessment._id, name);
     if (!details || !details.allotmentDate || !details.submissionDate || !details.maximumMarks) {
       setShowUpdateSetDetails(true);

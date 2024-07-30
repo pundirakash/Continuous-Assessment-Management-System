@@ -90,6 +90,7 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
   };
 
   const handleDeallocateCourse = async (courseId) => {
+    if (window.confirm('Are you sure you want to deallocate this course from the faculty?')) {
     if (selectedFaculty) {
       try {
         await userService.removeCourseFromFaculty(selectedFaculty._id, courseId);
@@ -101,6 +102,7 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
         setShowErrorModal(true);
       }
     }
+  }
   };
 
   const handleAssignCourse = async (facultyId, courseId) => {
@@ -127,8 +129,10 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
   };
 
   const handleLogout = () => {
+    if (window.confirm(`Are you sure you want to logout ?` )) {
     authService.logout();
     navigate('/login');
+    }
   };
 
   const handleShowViewAssignments = async (course) => {
