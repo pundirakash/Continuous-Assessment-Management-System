@@ -3,6 +3,7 @@ import userService from '../../services/userService';
 import EditQuestionModal from './EditQuestionModal';
 import CreateQuestionModal from './CreateQuestionModal';
 import ErrorModal from '../ErrorModal';
+import '../../css/QuestionList.css';
 
 const QuestionsList = ({ assessment, setName }) => {
   const [questions, setQuestions] = useState([]);
@@ -198,7 +199,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
   <div className="alert alert-info mt-3">
     <strong>HOD Remarks: </strong>{hodRemarks}
   </div>
-)}
+)}<div className="table-container">
         <table className="table table-striped">
           <thead>
             <tr>
@@ -258,6 +259,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
             ))}
           </tbody>
         </table>
+        </div>
         <button className="btn btn-primary me-2" onClick={() => setShowCreateQuestion(true)} disabled={hodStatus === 'Approved'|| hodStatus === 'Submitted'}>
           Create New Question
         </button>

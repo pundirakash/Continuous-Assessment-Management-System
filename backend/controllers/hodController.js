@@ -231,13 +231,13 @@ exports.getCoursesByFaculty = async (req, res) => {
   }
 };
 
+
 exports.approveAssessment = async (req, res) => {
   try {
     const { assessmentId, facultyId, setName } = req.params;
     const { status, remarks } = req.body;
 
     const assessment = await Assessment.findById(assessmentId);
-
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
     }
@@ -248,13 +248,11 @@ exports.approveAssessment = async (req, res) => {
     }
 
     const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(facultyId));
-
     if (!facultyQuestions) {
       return res.status(404).json({ message: 'No questions found for this faculty' });
     }
 
     const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
-
     if (!questionSet) {
       return res.status(404).json({ message: 'Question set not found' });
     }
@@ -283,6 +281,14 @@ exports.approveAssessment = async (req, res) => {
     }
 
     await assessment.save();
+
+    // Create and add notification
+    const faculty = await User.findById(facultyId);
+    if (faculty) {
+      const notification = `Dear ${faculty.name}, Your Set ${setName} for ${assessment.name} of ${course.name} is ${status}.`;
+      faculty.notifications.unshift(notification); // Add notification to the beginning
+      await faculty.save();
+    }
 
     res.status(200).json({ message: 'Assessment set reviewed successfully by HOD' });
   } catch (error) {
@@ -515,19 +521,15 @@ exports.getPendingAssessmentSets = async (req, res) => {
   try {
     const department = req.user.department;
 
-    // Find all courses in the department
     const courses = await Course.find({ department });
 
-    // Extract course IDs
     const courseIds = courses.map(course => course._id);
 
-    // Find assessments for these courses with sets whose hodStatus is 'Submitted'
     const assessments = await Assessment.find({
       course: { $in: courseIds },
       'facultyQuestions.sets.hodStatus': 'Submitted'
     }).populate('course facultyQuestions.faculty');
 
-    // Filter the assessments to only include relevant sets
     const pendingSets = assessments.map(assessment => {
       return assessment.facultyQuestions.flatMap(facultyQuestion => {
         const submittedSets = facultyQuestion.sets.filter(set => set.hodStatus === 'Submitted');
@@ -551,7 +553,6 @@ exports.getPendingAssessmentSets = async (req, res) => {
   }
 };
 
-// Delete Course with Course Id
 exports.deleteCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -568,7 +569,6 @@ exports.deleteCourse = async (req, res) => {
   }
 };
 
-// Get Assessments for a course with Course Id
 exports.getAssessmentsByCourse = async (req, res) => {
   try {
     const { courseId } = req.params;

@@ -327,6 +327,15 @@ const getSetDetails = async (assessmentId, setName) => {
     return response.data;
 };
 
+const getNotifications = async () => {
+  const response = await axios.get(`${API_URL_FACULTY}/notifications`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+  });
+  return response.data;
+};
+
 
 const userService = {
   register,
@@ -360,7 +369,8 @@ const userService = {
   editAssessment,
   deleteAssessment,
   updateSetDetails,
-  getSetDetails
+  getSetDetails,
+  getNotifications
 };
 
 export default userService;

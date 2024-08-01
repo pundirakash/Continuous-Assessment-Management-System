@@ -10,6 +10,7 @@ import UpdateSetDetailsModal from '../components/FacultyPanel/UpdateSetDetailsMo
 import authService from '../services/authService';
 import userService from '../services/userService'; 
 import LoadingSpinner from '../components/LoadingSpinner';
+import '../css/FacultyDashboard.css';
 
 const FacultyDashboard = () => {
   const [selectedCourseId, setSelectedCourseId] = useState(null);
@@ -17,7 +18,8 @@ const FacultyDashboard = () => {
   const [selectedSetName, setSelectedSetName] = useState(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
   const [showUpdateSetDetails, setShowUpdateSetDetails] = useState(false); 
-  const [user, setUser] = useState({ username: '', uid: '', _id: '' });
+  const [user, setUser] = useState({ username: '', uid: '', _id: '', department: '' });
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false); 
   const navigate = useNavigate();
 
@@ -25,15 +27,27 @@ const FacultyDashboard = () => {
     const token = localStorage.getItem('token');
     if (token) {
       const decodedToken = jwtDecode(token);
-      console.log(decodedToken);
       setUser({ username: decodedToken.user, uid: decodedToken.uid, _id: decodedToken._id, department: decodedToken.department });
     }
   }, []);
 
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const notificationsData = await userService.getNotifications();
+        setNotifications(notificationsData);
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
   const handleLogout = () => {
     if (window.confirm(`Are you sure you want to logout ?`)) {
-    authService.logout();
-    navigate('/login');
+      authService.logout();
+      navigate('/login');
     }
   };
 
@@ -85,7 +99,23 @@ const FacultyDashboard = () => {
                 <h1 className="display-2">Welcome! {user.username}</h1>
                 <p className="lead">UID: {user.uid}</p>
                 <p className="lead">{user.department}</p>
-                <button className="btn btn-danger mt-3" onClick={() => handleLoading(handleLogout)}>Logout</button>
+                <button className="btn btn-danger mt-3 mb-4" onClick={() => handleLoading(handleLogout)}>Logout</button>
+                <div className="mt-4">
+                  <h3>Notifications</h3>
+                  <div className="notification-container">
+                    {notifications.length > 0 ? (
+                      notifications.map((notification, index) => (
+                        <div key={index} className="notification-item">
+                          <ul>
+                            <li><strong>{notification}</strong></li>
+                          </ul>
+                        </div>
+                      ))
+                    ) : (
+                      <p>No notifications</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

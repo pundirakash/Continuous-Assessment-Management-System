@@ -627,4 +627,17 @@ exports.getSetDetails = async (req, res) => {
   }
 };
 
+exports.getNotifications = async (req, res) => {
+  try {
+    const faculty = await User.findById(req.user.id);
+    if (!faculty) {
+      return res.status(404).json({ message: 'Faculty not found' });
+    }
+
+    res.status(200).json(faculty.notifications);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
 

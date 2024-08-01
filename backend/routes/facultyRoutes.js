@@ -13,7 +13,8 @@ const {
   deleteSet,
   downloadRandomApprovedQuestions,
   updateSetDetails,
-  getSetDetails
+  getSetDetails,
+  getNotifications
 
 } = require('../controllers/facultyController');
 const auth = require('../middleware/auth');
@@ -33,4 +34,5 @@ router.delete('/delete-set/:assessmentId/:facultyId/:setName', auth(['Faculty', 
 router.post('/download-random-questions', auth(['Faculty', 'CourseCoordinator', 'HOD']), downloadRandomApprovedQuestions);
 router.put('/update-set-details/:assessmentId/:setName', auth(['Faculty', 'CourseCoordinator', 'HOD']), updateSetDetails);
 router.get('/sets/:assessmentId/:setName', auth(['Faculty', 'CourseCoordinator', 'HOD']), getSetDetails);
+router.get('/notifications', auth(['Faculty', 'CourseCoordinator', 'HOD']), getNotifications);
 module.exports = router;
