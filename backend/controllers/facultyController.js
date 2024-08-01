@@ -9,6 +9,7 @@ const Docxtemplater = require('docxtemplater');
 const moment=require('moment');
 const multer = require('multer');
 const ImageModule = require('docxtemplater-image-module-free');
+const archiver = require('archiver');
 
 exports.getCourses = async (req, res) => {
   try {
@@ -288,9 +289,27 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       }))
     };
 
-    const docxFilePath = await generateDocxFromTemplate(data, 1);
+    const docxFilePath1 = await generateDocxFromTemplate(data, 1);
 
-    res.download(docxFilePath, `assessment_${assessmentId}_random_${numberOfQuestions}.docx`);
+    let docxFilePath2;
+    if (assessment.type === 'MCQ') {
+      docxFilePath2 = await generateDocxFromTemplate(data, 3);
+    } else if (assessment.type === 'Subjective') {
+      docxFilePath2 = await generateDocxFromTemplate(data, 4);
+    }
+    const archive = archiver('zip');
+    res.attachment(`assessment_${assessmentId}_random_${numberOfQuestions}.zip`);
+
+    archive.on('error', (err) => {
+      throw err;
+    });
+
+    archive.pipe(res);
+
+    archive.file(docxFilePath1, { name: `CourseFileFormat_${assessmentId}_random_${numberOfQuestions}_1.docx` });
+    archive.file(docxFilePath2, { name: `assessment_${assessmentId}_random_${numberOfQuestions}_${assessment.type === 'MCQ' ? 3 : 4}.docx` });
+
+    await archive.finalize();
   } catch (error) {
     console.error('Error downloading random questions', error);
     res.status(500).json({ message: 'Server error', error });

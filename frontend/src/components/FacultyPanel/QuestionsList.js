@@ -101,7 +101,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `assessment_${assessment._id}_random_${numberOfQuestions}.docx`);
+      link.setAttribute('download', `assessment_${assessment._id}_random_${numberOfQuestions}.zip`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
@@ -123,7 +123,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       case 'Mix':
         return 2;
       case 'Subjective':
-        return 3;
+        return 4;
       case 'MCQ':
         return 3;
       default:
