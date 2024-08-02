@@ -6,21 +6,26 @@ import AssessmentsList from '../components/FacultyPanel/AssessmentsList';
 import QuestionSetsList from '../components/FacultyPanel/QuestionSetsList';
 import QuestionsList from '../components/FacultyPanel/QuestionsList';
 import CreateQuestionModal from '../components/FacultyPanel/CreateQuestionModal';
-import UpdateSetDetailsModal from '../components/FacultyPanel/UpdateSetDetailsModal'; 
+import UpdateSetDetailsModal from '../components/FacultyPanel/UpdateSetDetailsModal';
 import authService from '../services/authService';
-import userService from '../services/userService'; 
+import userService from '../services/userService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import '../css/FacultyDashboard.css';
+import { FaBell } from 'react-icons/fa';
 
 const FacultyDashboard = () => {
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [selectedSetName, setSelectedSetName] = useState(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
-  const [showUpdateSetDetails, setShowUpdateSetDetails] = useState(false); 
+  const [showUpdateSetDetails, setShowUpdateSetDetails] = useState(false);
+  const [isSetDetailsUpdated, setIsSetDetailsUpdated] = useState(true); // Default to true assuming details are filled
   const [user, setUser] = useState({ username: '', uid: '', _id: '', department: '' });
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false); 
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,6 +49,14 @@ const FacultyDashboard = () => {
     fetchNotifications();
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const handleLogout = () => {
     if (window.confirm(`Are you sure you want to logout ?`)) {
       authService.logout();
@@ -57,6 +70,7 @@ const FacultyDashboard = () => {
 
   const handleSetDetailsUpdated = () => {
     setShowUpdateSetDetails(false);
+    setIsSetDetailsUpdated(true);
   };
 
   const handleLoading = async (operation) => {
@@ -71,6 +85,9 @@ const FacultyDashboard = () => {
     const details = await userService.getSetDetails(selectedAssessment._id, name);
     if (!details || !details.allotmentDate || !details.submissionDate || !details.maximumMarks) {
       setShowUpdateSetDetails(true);
+      setIsSetDetailsUpdated(false);
+    } else {
+      setIsSetDetailsUpdated(true);
     }
   };
 
@@ -99,29 +116,57 @@ const FacultyDashboard = () => {
                 <h1 className="display-2">Welcome! {user.username}</h1>
                 <p className="lead">UID: {user.uid}</p>
                 <p className="lead">{user.department}</p>
-                <button className="btn btn-danger mt-3 mb-4" onClick={() => handleLoading(handleLogout)}>Logout</button>
-                <div className="mt-4">
+                <div className="clock-container">
+  <div className="clock">
+    <p className="time">
+      {currentTime.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour12: true,
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+      })}
+    </p>
+    <p className="date">
+      {currentTime.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })}
+    </p>
+  </div>
+</div>
+                <button className="btn btn-danger mt-2 mb-2" onClick={() => handleLoading(handleLogout)}>Logout</button>
+                <div className="mt-1">
                   <h3>Notifications</h3>
-                  <div className="notification-container">
-                    {notifications.length > 0 ? (
-                      notifications.map((notification, index) => (
-                        <div key={index} className="notification-item">
-                          <ul>
-                            <li><strong>{notification}</strong></li>
-                          </ul>
-                        </div>
-                      ))
-                    ) : (
-                      <p>No notifications</p>
-                    )}
+                  <div className="notification-icon" onClick={() => setShowNotifications(!showNotifications)}>
+                    <FaBell size={30} />
+                    {notifications.length > 0 && <span className="badge">{notifications.length}</span>}
                   </div>
+                  {showNotifications && (
+                    <div className="notification-container">
+                      {notifications.length > 0 ? (
+                        notifications.map((notification, index) => (
+                          <div key={index} className="notification-item">
+                            <ul>
+                              <li><strong>{notification}</strong></li>
+                            </ul>
+                          </div>
+                        ))
+                      ) : (
+                        <p>No notifications</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
       )}
-      {selectedSetName && selectedAssessment && (
+      {selectedSetName && selectedAssessment && isSetDetailsUpdated && (
         <div className="mt-5">
           <QuestionsList
             assessment={selectedAssessment}

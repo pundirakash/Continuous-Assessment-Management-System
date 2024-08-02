@@ -7,6 +7,8 @@ import '../../css/QuestionList.css';
 
 const QuestionsList = ({ assessment, setName }) => {
   const [questions, setQuestions] = useState([]);
+  const [filteredQuestions, setFilteredQuestions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
   const [assessmentType, setAssessmentType] = useState('');
@@ -50,6 +52,17 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       setAssessmentType(assessment.type);
     }
   }, [assessment, setName]);
+  useEffect(() => {
+    if (searchQuery) {
+      setFilteredQuestions(
+        questions.filter(question =>
+          question.text.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    } else {
+      setFilteredQuestions(questions);
+    }
+  }, [searchQuery, questions]);
 
   const handleEditQuestion = (question) => {
     setEditingQuestion(question);
@@ -199,10 +212,21 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
   <div className="alert alert-info mt-3">
     <strong>HOD Remarks: </strong>{hodRemarks}
   </div>
-)}<div className="table-container">
+)}
+ <div className="mb-3">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search questions..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+<div className="table-container">
         <table className="table table-striped">
           <thead>
             <tr>
+            <th>Question Number</th>
               <th>Question Text</th>
               <th>Type</th>
               <th>Bloom Level</th>
@@ -214,8 +238,9 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
             </tr>
           </thead>
           <tbody>
-            {questions.map((question = {}) => (
-              <tr key={question._id || Math.random()}>
+          {filteredQuestions.map((question, index) => (
+                <tr key={question._id || Math.random()}>
+                <td>{index + 1}</td>
                 <td>{question.text || 'N/A'}</td>
                 <td>{question.type || 'N/A'}</td>
                 <td>{question.bloomLevel || 'N/A'}</td>
