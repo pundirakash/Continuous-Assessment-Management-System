@@ -13,8 +13,12 @@ const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
         const data = await userService.getAssessments(courseId);
         setAssessments(data);
       } catch (error) {
-        console.error('Error fetching assessments', error);
-        setError(error.message); 
+        console.error('Error fetching assessment:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError(error.message);
+        }
         setShowErrorModal(true); 
       }
     };

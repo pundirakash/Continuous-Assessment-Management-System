@@ -19,7 +19,7 @@ const FacultyDashboard = () => {
   const [selectedSetName, setSelectedSetName] = useState(null);
   const [showCreateQuestion, setShowCreateQuestion] = useState(false);
   const [showUpdateSetDetails, setShowUpdateSetDetails] = useState(false);
-  const [isSetDetailsUpdated, setIsSetDetailsUpdated] = useState(true); // Default to true assuming details are filled
+  const [isSetDetailsUpdated, setIsSetDetailsUpdated] = useState(true);
   const [user, setUser] = useState({ username: '', uid: '', _id: '', department: '' });
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);

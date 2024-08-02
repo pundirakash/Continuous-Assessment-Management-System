@@ -13,8 +13,12 @@ const CoursesList = ({ onCourseSelect }) => {
         const data = await userService.getCourses();
         setCourses(data);
       } catch (error) {
-        console.error('Error fetching courses', error);
-        setError(error.message); 
+        console.error('Error fetching courses:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError(error.message);
+        }
         setShowErrorModal(true); 
       }
     };

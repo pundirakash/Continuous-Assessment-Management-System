@@ -27,8 +27,12 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         const response = await userService.getQuestionsForSet(assessment._id, setName);
         setQuestions(response.data);
       } catch (error) {
-        console.error('Error fetching questions', error);
-        setError(error.message); 
+        console.error('Error Fetching Questions', error);
+        if (error.response && error.response.data && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError(error.message);
+        }
         setShowErrorModal(true); 
       }
     };
@@ -40,9 +44,13 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         setHodStatus(currentSet.hodStatus);
         setHodRemarks(currentSet.hodRemarks);
       } catch (error) {
-        console.error('Error fetching set details', error);
-        setError(error.message); 
-      setShowErrorModal(true); 
+        console.error('Error Fetching Set Details:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError(error.message);
+        }
+        setShowErrorModal(true); 
       }
     };    
 
@@ -74,8 +82,12 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       setQuestions(questions.map(q => (q._id === updatedQuestion._id ? updatedQuestion : q)));
       setEditingQuestion(null);
     } catch (error) {
-      console.error('Error editing question', error);
-      setError(error.message); 
+      console.error('Error saving edit:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError(error.message);
+      }
       setShowErrorModal(true); 
     }
   };
@@ -86,9 +98,13 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         await userService.deleteQuestion(questionId);
         setQuestions(questions.filter(question => question._id !== questionId));
       } catch (error) {
-        console.error('Error deleting question', error);
-        setError(error.message); 
-      setShowErrorModal(true); 
+        console.error('Error deleting question:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError(error.message);
+        }
+        setShowErrorModal(true); 
       }
     }
   };
@@ -104,8 +120,12 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       link.click();
       link.parentNode.removeChild(link);
     } catch (error) {
-      console.error('Error downloading assessment', error);
-      setError(error.message); 
+      console.error('Error downloading assessment:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError(error.message);
+      }
       setShowErrorModal(true); 
     }
   };
@@ -120,8 +140,12 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       link.click();
       link.parentNode.removeChild(link);
     } catch (error) {
-      console.error('Error downloading random approved questions', error);
-      setError(error.message); 
+      console.error('Error Downloading assessment:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError(error.message);
+      }
       setShowErrorModal(true); 
     }
   };
@@ -151,11 +175,16 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       setHodStatus('Submitted');
       setShowSubmitConfirmation(false);
     } catch (error) {
-      console.error('Error submitting assessment', error);
-      setError(error.message); 
+      console.error('Error submitting assessment:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError(error.message);
+      }
       setShowErrorModal(true); 
     }
   };
+  
   
 
   const renderSubmitButton = () => {
@@ -344,14 +373,15 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         </div>
       </div>
     </div>
-    {showErrorModal && (
+    
+  </div>
+)}
+{showErrorModal && (
       <ErrorModal
         message={error}
         onClose={() => setShowErrorModal(false)}
       />
     )}
-  </div>
-)}
       </div>
     </div>
   );

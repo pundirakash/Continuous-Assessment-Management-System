@@ -54,9 +54,13 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       setMarks('');
       setImage(null);
     } catch (error) {
-      console.error('Error creating question', error);
-      setError(error.message); 
-        setShowErrorModal(true); 
+      console.error('Error creating question:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError(error.message);
+      }
+      setShowErrorModal(true); 
     }
   };
 

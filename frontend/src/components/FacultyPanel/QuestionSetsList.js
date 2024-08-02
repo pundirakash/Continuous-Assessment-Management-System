@@ -16,9 +16,13 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
         const data = await userService.getSetsForAssessment(assessmentId);
         setSets(data);
       } catch (error) {
-        console.error('Error fetching sets', error);
-        setError(error.message);
-        setShowErrorModal(true);
+        console.error('Error fetching sets:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError(error.message);
+        }
+        setShowErrorModal(true); 
       }
     };
 
