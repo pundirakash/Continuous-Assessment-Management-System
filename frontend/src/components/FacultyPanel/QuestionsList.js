@@ -131,7 +131,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
   };
   const handleDownloadRandomQuestions = async () => {
     try {
-      const blob = await userService.downloadRandomApprovedQuestions(assessment._id, numberOfQuestions);
+      const blob = await userService.downloadRandomApprovedQuestions(assessment._id, numberOfQuestions,setName,);
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;

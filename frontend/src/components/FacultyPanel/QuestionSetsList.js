@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
 import CreateSetModal from './CreateSetModal';
 import ErrorModal from '../ErrorModal';
-import '../../css/QuestionSetsList.css'
+import '../../css/QuestionSetsList.css';
 
 const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
   const [sets, setSets] = useState([]);
@@ -68,27 +68,31 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
       <div className="card-body">
         <h3 className="card-title">Question Sets</h3>
         <div className="question-sets-list">
-          <ul className="list-group">
-            {sets.map(set => (
-              <li
-                key={set._id}
-                className="list-group-item d-flex justify-content-between align-items-center"
-                onClick={() => onSetSelect(set.setName)}
-              >
-                {set.setName}
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteSet(assessmentId, facultyId, set.setName);
-                  }}
-                  disabled={set.hodStatus !== 'Pending'}
+          {sets.length > 0 ? (
+            <ul className="list-group">
+              {sets.map(set => (
+                <li
+                  key={set._id}
+                  className="list-group-item d-flex justify-content-between align-items-center"
+                  onClick={() => onSetSelect(set.setName)}
                 >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
+                  {set.setName}
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteSet(assessmentId, facultyId, set.setName);
+                    }}
+                    disabled={set.hodStatus !== 'Pending'}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No Set available</p>
+          )}
         </div>
         <button className="btn btn-primary mt-3" onClick={() => setShowCreateModal(true)}>
           Create New Sets

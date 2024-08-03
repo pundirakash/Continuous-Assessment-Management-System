@@ -5,7 +5,7 @@ import ErrorModal from '../ErrorModal';
 const CoursesList = ({ onCourseSelect }) => {
   const [courses, setCourses] = useState([]);
   const [error, setError] = useState(null);
-  const [showErrorModal, setShowErrorModal] = useState(false); 
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -19,7 +19,7 @@ const CoursesList = ({ onCourseSelect }) => {
         } else {
           setError(error.message);
         }
-        setShowErrorModal(true); 
+        setShowErrorModal(true);
       }
     };
 
@@ -31,32 +31,36 @@ const CoursesList = ({ onCourseSelect }) => {
       <div className="card-body">
         <h3 className="card-title">Courses</h3>
         <div className="table-responsive">
-          <table className="table table-striped table-hover">
-            <thead>
-              <tr>
-                <th scope="col">Serial No</th>
-                <th scope="col">Course Code</th>
-                <th scope="col">Course Name</th>
-              </tr>
-            </thead>
-            <tbody>
-              {courses.map((course, index) => (
-                <tr key={course._id} onClick={() => onCourseSelect(course._id)} style={{ cursor: 'pointer' }}>
-                  <td>{index + 1}</td>
-                  <td>{course.code}</td>
-                  <td>{course.name}</td>
+          {courses.length > 0 ? (
+            <table className="table table-striped table-hover">
+              <thead>
+                <tr>
+                  <th scope="col">Serial No</th>
+                  <th scope="col">Course Code</th>
+                  <th scope="col">Course Name</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {courses.map((course, index) => (
+                  <tr key={course._id} onClick={() => onCourseSelect(course._id)} style={{ cursor: 'pointer' }}>
+                    <td>{index + 1}</td>
+                    <td>{course.code}</td>
+                    <td>{course.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No Course Alloted</p>
+          )}
         </div>
       </div>
       {showErrorModal && (
-      <ErrorModal
-        message={error}
-        onClose={() => setShowErrorModal(false)}
-      />
-    )}
+        <ErrorModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };

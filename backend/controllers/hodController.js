@@ -66,14 +66,20 @@ exports.assignCourse = async (req, res) => {
 
     faculty.courses.push(courseId);
     await faculty.save();
+
     course.faculties.push(facultyId);
     await course.save();
+
+    const notificationMessage = `Dear ${faculty.name}, A new Course ${course.name} has been allotted to you.`;
+    faculty.notifications.unshift(notificationMessage);
+    await faculty.save();
 
     res.status(200).json({ message: 'Course assigned successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 exports.deallocateCourse = async (req, res) => {
   try {

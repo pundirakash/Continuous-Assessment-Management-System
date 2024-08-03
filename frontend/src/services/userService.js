@@ -106,10 +106,11 @@ const downloadAssessment = async (assessmentId, setName, templateNumber) => {
   return response.data;
 };
 
-const downloadRandomApprovedQuestions = async (assessmentId, numberOfQuestions) => {
+const downloadRandomApprovedQuestions = async (assessmentId, numberOfQuestions, setName) => {
   const response = await axios.post(`${API_URL_FACULTY}/download-random-questions`, {
     assessmentId,
-    numberOfQuestions
+    numberOfQuestions,
+    setName
   }, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,

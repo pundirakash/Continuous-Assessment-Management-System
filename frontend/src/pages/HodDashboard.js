@@ -97,9 +97,13 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
         const updatedCourses = facultyCourses.filter(course => course._id !== courseId);
         setFacultyCourses(updatedCourses);
       } catch (error) {
-        console.error("Error deallocating course:", error);
-        setError(error.message);
-        setShowErrorModal(true);
+        console.error('Error Deallocating Course', error);
+        if (error.response && error.response.data && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError(error.message);
+        }
+        setShowErrorModal(true); 
       }
     }
   }
@@ -115,7 +119,13 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
         alert('Course already assigned to this faculty.');
       }
     } catch (error) {
-      console.error("Error assigning course:", error);
+      console.error('Error Assigning Course', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError(error.message);
+      }
+      setShowErrorModal(true); 
     }
   };
 
@@ -124,7 +134,13 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
       await userService.createAssessment(courseId, assignmentData);
       handleCloseCreateAssignment();
     } catch (error) {
-      console.error("Error creating assignment:", error);
+      console.error('Error Creating Assignment', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError(error.message);
+      }
+      setShowErrorModal(true); 
     }
   };
 
@@ -243,7 +259,7 @@ const Modals = ({
   selectedFaculty, showFacultyCoursesModal, handleCloseFacultyCourses,
   facultyCourses, facultyPendingSets, handleDeallocateCourse,
   selectedCourse, showAssignCourseModal, handleCloseAssignCourse, handleAssignCourse,
-  showCreateAssignmentModal, handleCloseCreateAssignment, handleCreateAssignment
+  showCreateAssignmentModal, handleCloseCreateAssignment, handleCreateAssignment, showErrorModal
 }) => (
   <>
     <CreateCourseModal show={showAddCourseModal} handleClose={handleCloseAddCourse} addCourse={addCourse} />
@@ -273,6 +289,7 @@ const Modals = ({
         />
       </>
     )}
+    
   </>
 );
 

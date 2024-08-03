@@ -91,7 +91,7 @@ exports.getQuestionsForSet = async (req, res) => {
 
 exports.submitAssessment = async (req, res) => {
   try {
-    const { assessmentId, setName } = req.body;
+    const { assessmentId, setName} = req.body;
     const assessment = await Assessment.findById(assessmentId);
 
     if (!assessment) {
@@ -110,6 +110,10 @@ exports.submitAssessment = async (req, res) => {
 
     if (!questionSet.questions || questionSet.questions.length === 0) {
       return res.status(400).json({ message: 'Cannot submit an empty question set' });
+    }
+
+    if (questionSet.questions.length < questionSet.totalQuestions) {
+      return res.status(400).json({ message: `You must add at least ${questionSet.totalQuestions} questions to submit this assessment` });
     }
 
     await Question.updateMany(
@@ -228,7 +232,7 @@ exports.downloadAssessment = async (req, res) => {
 
 exports.downloadRandomApprovedQuestions = async (req, res) => {
   try {
-    const { assessmentId, numberOfQuestions } = req.body;
+    const { assessmentId, numberOfQuestions, setName } = req.body;
     const userId = req.user.id;
 
     const assessment = await Assessment.findById(assessmentId)
@@ -242,6 +246,11 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
     const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(userId));
     if (!facultyQuestions) {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
+    }
+
+    const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
     }
 
     const uploadedQuestionsCount = facultyQuestions.sets.reduce((count, set) => count + set.questions.length, 0);
@@ -278,6 +287,10 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       courseCode: assessment.course.code,
       courseName: assessment.course.name,
       setName: `Random_${numberOfQuestions}_Questions`,
+      taskType: assessment.type,
+      allotmentDate: moment(questionSet.allotmentDate).format('DD/MM/YYYY'),
+      submissionDate: moment(questionSet.submissionDate).format('DD/MM/YYYY'),
+      maximumMarks: questionSet.maximumMarks,
       questions: selectedQuestions.map((question, index) => ({
         number: index + 1,
         text: question.text,
@@ -569,7 +582,7 @@ exports.deleteSet = async (req, res) => {
 exports.updateSetDetails = async (req, res) => {
   try {
     const { assessmentId, setName } = req.params;
-    const { allotmentDate, submissionDate, maximumMarks } = req.body;
+    const { allotmentDate, submissionDate, maximumMarks, totalQuestions } = req.body; 
 
     const assessment = await Assessment.findById(assessmentId);
 
@@ -590,6 +603,7 @@ exports.updateSetDetails = async (req, res) => {
     questionSet.allotmentDate = allotmentDate;
     questionSet.submissionDate = submissionDate;
     questionSet.maximumMarks = maximumMarks;
+    questionSet.totalQuestions = totalQuestions; 
 
     await assessment.save();
 

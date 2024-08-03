@@ -140,27 +140,27 @@ const FacultyDashboard = () => {
 </div>
                 <button className="btn btn-danger mt-2 mb-2" onClick={() => handleLoading(handleLogout)}>Logout</button>
                 <div className="mt-1">
-                  <h3>Notifications</h3>
-                  <div className="notification-icon" onClick={() => setShowNotifications(!showNotifications)}>
-                    <FaBell size={30} />
-                    {notifications.length > 0 && <span className="badge">{notifications.length}</span>}
-                  </div>
-                  {showNotifications && (
-                    <div className="notification-container">
-                      {notifications.length > 0 ? (
-                        notifications.map((notification, index) => (
-                          <div key={index} className="notification-item">
-                            <ul>
-                              <li><strong>{notification}</strong></li>
-                            </ul>
-                          </div>
-                        ))
-                      ) : (
-                        <p>No notifications</p>
-                      )}
-                    </div>
-                  )}
-                </div>
+      <h3>Notifications</h3>
+      <div className="notification-icon" onClick={() => setShowNotifications(!showNotifications)}>
+        <FaBell size={30} />
+        {notifications.length > 0 && <span className="badge">{notifications.length}</span>}
+      </div>
+      {showNotifications && (
+        <div className="notification-container">
+          {notifications.length > 0 ? (
+            notifications.map((notification, index) => (
+              <div key={index} className="notification-item">
+                <ul>
+                  <li><strong>{notification}</strong></li>
+                </ul>
+              </div>
+            ))
+          ) : (
+            <p className="no-notifications">No notifications</p>
+          )}
+        </div>
+      )}
+    </div>
               </div>
             </div>
           </div>

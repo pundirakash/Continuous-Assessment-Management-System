@@ -26,7 +26,7 @@ const CreateCourseModal = ({ show, handleClose, addCourse }) => {
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Create New Course</h5>
+            <h5 className="modal-title text-left">Create New Course</h5>
             <button type="button" className="btn-close" aria-label="Close" onClick={handleClose}></button>
           </div>
           <div className="modal-body">

@@ -5,7 +5,7 @@ import ErrorModal from '../ErrorModal';
 const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
   const [assessments, setAssessments] = useState([]);
   const [error, setError] = useState(null);
-  const [showErrorModal, setShowErrorModal] = useState(false); 
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     const fetchAssessments = async () => {
@@ -19,7 +19,7 @@ const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
         } else {
           setError(error.message);
         }
-        setShowErrorModal(true); 
+        setShowErrorModal(true);
       }
     };
 
@@ -30,25 +30,31 @@ const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
     <div className="card">
       <div className="card-body">
         <h3 className="card-title">Assessments</h3>
-        <ul className="list-group">
-          {assessments.map(assessment => (
-            <li
-              key={assessment._id}
-              className="list-group-item list-group-item-action"
-              onClick={() => onAssessmentSelect(assessment)}
-              style={{ cursor: 'pointer' }}
-            >
-              {assessment.name}
-            </li>
-          ))}
-        </ul>
+        <div className="assessment-list">
+          {assessments.length > 0 ? (
+            <ul className="list-group">
+              {assessments.map(assessment => (
+                <li
+                  key={assessment._id}
+                  className="list-group-item list-group-item-action"
+                  onClick={() => onAssessmentSelect(assessment)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {assessment.name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No Assessment available</p>
+          )}
+        </div>
       </div>
       {showErrorModal && (
-      <ErrorModal
-        message={error}
-        onClose={() => setShowErrorModal(false)}
-      />
-    )}
+        <ErrorModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };

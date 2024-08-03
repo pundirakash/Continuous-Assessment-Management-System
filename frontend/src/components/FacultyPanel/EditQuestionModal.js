@@ -66,7 +66,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
       <div className="modal-dialog modal-lg">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Edit Question</h5>
+            <h5 className="modal-title text-left">Edit Question</h5>
             <button type="button" className="btn-close" onClick={onClose}>
             </button>
           </div>

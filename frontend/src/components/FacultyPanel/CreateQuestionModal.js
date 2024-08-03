@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import userService from '../../services/userService';
 import ErrorModal from '../ErrorModal';
+import '../../css/CreateQuestionModal.css';
 
 const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose }) => {
   const [text, setText] = useState('');
@@ -75,47 +76,48 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       <div className="modal-dialog modal-lg">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Create New Question</h5>
-            <button type="button" className="close position-absolute top-0 end-0" onClick={onClose}>
-              <span>&times;</span>
-            </button>
+            <h5 className="modal-title text-left">Create New Question</h5>
+            <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
           <div className="modal-body">
             <form>
               <div className="form-group">
-                <label>Question Text</label>
-                <input
-                  type="text"
+                <label className='mb-2'>Question Text</label>
+                <textarea
                   className="form-control"
                   placeholder="Enter question text"
                   value={text}
                   onChange={e => setText(e.target.value)}
+                  rows="3"
                 />
               </div>
               <div className="form-group">
-                <label>Question Type</label>
+                <label className='mb-2'>Question Type</label>
                 <select className="form-control" value={type} onChange={e => setType(e.target.value)}>
                   <option value="MCQ">MCQ</option>
                   <option value="Subjective">Subjective</option>
                 </select>
               </div>
               {type === 'MCQ' && (
-                <>
-                  {options.map((option, index) => (
-                    <div className="form-group" key={index}>
-                      <label>Option {index + 1}</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={option}
-                        onChange={e => handleOptionChange(index, e.target.value)}
-                      />
-                    </div>
-                  ))}
-                </>
+                <div className="form-group">
+                  <label className='mb-2'>Options</label>
+                  <div className="options-container">
+                    {options.map((option, index) => (
+                      <div key={index} className="option-item">
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={option}
+                          onChange={e => handleOptionChange(index, e.target.value)}
+                          placeholder={`Option ${index + 1}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
               <div className="form-group">
-                <label>Bloom Level</label>
+                <label className='mb-2'>Bloom Level</label>
                 <select className="form-control" value={bloomLevel} onChange={e => setBloomLevel(e.target.value)}>
                   <option value="L1">L1</option>
                   <option value="L2">L2</option>
@@ -126,7 +128,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
                 </select>
               </div>
               <div className="form-group">
-                <label>Course Outcome</label>
+                <label className='mb-2'>Course Outcome</label>
                 <select className="form-control" value={courseOutcome} onChange={e => setCourseOutcome(e.target.value)}>
                   <option value="CO1">CO1</option>
                   <option value="CO2">CO2</option>
@@ -137,7 +139,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
                 </select>
               </div>
               <div className="form-group">
-                <label>Marks</label>
+                <label className='mb-2'>Marks</label>
                 <input
                   type="number"
                   className="form-control"
@@ -147,7 +149,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
                 />
               </div>
               <div className="form-group">
-                <label>Image (optional)</label>
+                <label className='mb-2'>Image (optional)</label>
                 <input type="file" className="form-control-file" onChange={e => setImage(e.target.files[0])} />
               </div>
             </form>
@@ -163,11 +165,11 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
         </div>
       </div>
       {showErrorModal && (
-      <ErrorModal
-        message={error}
-        onClose={() => setShowErrorModal(false)}
-      />
-    )}
+        <ErrorModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };

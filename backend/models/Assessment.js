@@ -16,7 +16,8 @@ const assessmentSchema = new mongoose.Schema({
       coordinatorRemarks: { type: String },
       allotmentDate: { type: Date },
       submissionDate: { type: Date },
-      maximumMarks: { type: Number }
+      maximumMarks: { type: Number },
+      totalQuestions: { type: Number, default: 0 } 
     }]
   }],
 });
