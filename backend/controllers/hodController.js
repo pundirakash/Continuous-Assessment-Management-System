@@ -70,6 +70,22 @@ exports.assignCourse = async (req, res) => {
     course.faculties.push(facultyId);
     await course.save();
 
+    // Update assessments related to the course
+    const assessments = await Assessment.find({ course: courseId });
+    assessments.forEach(async (assessment) => {
+      const existingFacultyQuestion = assessment.facultyQuestions.find(
+        (fq) => fq.faculty.toString() === facultyId
+      );
+
+      if (!existingFacultyQuestion) {
+        assessment.facultyQuestions.push({
+          faculty: facultyId,
+          sets: [],
+        });
+        await assessment.save();
+      }
+    });
+
     const notificationMessage = `Dear ${faculty.name}, A new Course ${course.name} has been allotted to you.`;
     faculty.notifications.unshift(notificationMessage);
     await faculty.save();
@@ -79,6 +95,7 @@ exports.assignCourse = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 
 exports.deallocateCourse = async (req, res) => {

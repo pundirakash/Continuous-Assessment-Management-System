@@ -67,9 +67,9 @@
 
 .notification-container {
   position: absolute;
-  top: 50px;
+  top: 200px;
   right: 10px;
-  width: 300px;
+  width: 400px;
   max-height: 260px;
   overflow-y: auto;
   border: 1px solid #ddd;
