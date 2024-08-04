@@ -50,13 +50,15 @@ const ViewAssignmentsModal = ({ show, handleClose, assignments, course, onEditAs
                         onChange={(e) => setEditedTermId(e.target.value)} 
                         placeholder="Term ID" 
                       />
-                      <input 
-                        type="text" 
+                      <select 
                         className="form-control mb-2" 
                         value={editedType} 
-                        onChange={(e) => setEditedType(e.target.value)} 
-                        placeholder="Type" 
-                      />
+                        onChange={(e) => setEditedType(e.target.value)}
+                      >
+                        <option value="">Select Type</option>
+                        <option value="MCQ">MCQ</option>
+                        <option value="Subjective">Subjective</option>
+                      </select>
                       <button className="btn btn-primary me-2" onClick={handleSaveEdit}>Save</button>
                       <button className="btn btn-secondary" onClick={() => setEditableAssignment(null)}>Cancel</button>
                     </div>

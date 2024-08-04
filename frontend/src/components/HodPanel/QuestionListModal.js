@@ -5,13 +5,23 @@ import ErrorModal from '../ErrorModal';
 
 const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, onApprove, onReject, hodStatus }) => {
   const [questions, setQuestions] = useState(initialQuestions);
+  const [filteredQuestions, setFilteredQuestions] = useState(initialQuestions);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     setQuestions(initialQuestions);
+    setFilteredQuestions(initialQuestions);
   }, [initialQuestions]);
+
+  useEffect(() => {
+    const filtered = questions.filter(q =>
+      q.text.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredQuestions(filtered);
+  }, [searchTerm, questions]);
 
   const handleEditQuestion = (question) => {
     setEditingQuestion(question);
@@ -21,11 +31,13 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
     if (window.confirm('Are you sure you want to delete this question?')) {
       try {
         await userService.deleteQuestionByHod(questionId);
-        setQuestions(prevQuestions => prevQuestions.filter(q => q._id !== questionId));
+        const updatedQuestions = questions.filter(q => q._id !== questionId);
+        setQuestions(updatedQuestions);
+        setFilteredQuestions(updatedQuestions);
       } catch (error) {
         console.error('Error deleting question', error);
-        setError(error.message); 
-      setShowErrorModal(true); 
+        setError(error.message);
+        setShowErrorModal(true);
       }
     }
   };
@@ -33,14 +45,14 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
   const handleSaveEdit = async (updatedQuestion) => {
     try {
       await userService.editQuestionByHod(updatedQuestion._id, updatedQuestion);
-      setQuestions(prevQuestions =>
-        prevQuestions.map(q => (q._id === updatedQuestion._id ? updatedQuestion : q))
-      );
+      const updatedQuestions = questions.map(q => (q._id === updatedQuestion._id ? updatedQuestion : q));
+      setQuestions(updatedQuestions);
+      setFilteredQuestions(updatedQuestions);
       setEditingQuestion(null);
     } catch (error) {
       console.error('Error editing question', error);
-      setError(error.message); 
-      setShowErrorModal(true); 
+      setError(error.message);
+      setShowErrorModal(true);
     }
   };
 
@@ -55,22 +67,30 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
       onReject(setName);
     }
   };
-  
 
   return (
     <div className={`modal fade ${show ? 'show d-block' : 'd-none'}`} tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div className="modal-dialog modal-dialog-centered modal-xl" role="document">
         <div className="modal-content">
           <div className="modal-header bg-primary text-white">
             <h5 className="modal-title text-left">Questions</h5>
-            <button type="button" className="btn-close" onClick={handleClose}>
-            </button>
+            <button type="button" className="btn-close" onClick={handleClose}></button>
           </div>
           <div className="modal-body">
-            <div className="table-responsive">
-              <table className="table table-bordered">
-                <thead>
+            <div className="mb-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search questions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'scroll' }}>
+              <table className="table table-striped table-hover">
+                <thead className="thead-dark">
                   <tr>
+                    <th>S.No</th>
                     <th>Question</th>
                     <th>Type</th>
                     <th>Options</th>
@@ -84,16 +104,17 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
                   </tr>
                 </thead>
                 <tbody>
-                  {questions.length > 0 ? (
-                    questions.map((question) => (
+                  {filteredQuestions.length > 0 ? (
+                    filteredQuestions.map((question, index) => (
                       <tr key={question._id}>
+                        <td>{index + 1}</td>
                         <td>{question.text}</td>
                         <td>{question.type}</td>
                         <td>
                           {question.options && question.options.length > 0 ? (
                             <ol>
-                              {question.options.map((option, index) => (
-                                <li key={index}>{option || 'N/A'}</li>
+                              {question.options.map((option, idx) => (
+                                <li key={idx}>{option || 'N/A'}</li>
                               ))}
                             </ol>
                           ) : (
@@ -124,7 +145,7 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="9">No questions available</td>
+                      <td colSpan="11">No questions available</td>
                     </tr>
                   )}
                 </tbody>
@@ -133,8 +154,8 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={handleClose}>Close</button>
-            {setName && <button className="btn btn-danger" onClick={handleReject} disabled={hodStatus!== 'Submitted'}>Reject Set</button>}
-            {setName && <button className="btn btn-success" onClick={handleApprove} disabled={hodStatus!== 'Submitted'}>Approve Set</button>}
+            {setName && <button className="btn btn-danger" onClick={handleReject} disabled={hodStatus !== 'Submitted'}>Reject Set</button>}
+            {setName && <button className="btn btn-success" onClick={handleApprove} disabled={hodStatus !== 'Submitted'}>Approve Set</button>}
           </div>
         </div>
       </div>
@@ -147,11 +168,11 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
         />
       )}
       {showErrorModal && (
-      <ErrorModal
-        message={error}
-        onClose={() => setShowErrorModal(false)}
-      />
-    )}
+        <ErrorModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };

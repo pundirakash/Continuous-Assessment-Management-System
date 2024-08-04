@@ -243,6 +243,8 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
 };
 
 const Header = ({ user, onLogout }) => (
+  <div className='card w-100 h-100'>
+    <div className="card-body text-center">
   <div className="row mb-4">
     <div className="col-12">
       <h1 className="display-2">Welcome</h1>
@@ -251,6 +253,8 @@ const Header = ({ user, onLogout }) => (
       <p className="lead">{user.department}</p>
       <button className="btn btn-danger mt-2 btn-lg" onClick={onLogout}>Logout</button>
     </div>
+  </div>
+  </div>
   </div>
 );
 
