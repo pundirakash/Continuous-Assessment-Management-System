@@ -3,42 +3,46 @@ import React, { useState, useEffect } from 'react';
 const EditQuestionModal = ({ question, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     ...question,
-    options: question.options ? question.options : ['', '', '', ''] // Initialize options with 4 empty strings for MCQ
+    options: question.options ? question.options : ['', '', '', ''],
+    solution: question.solution || '', // Initialize solution
   });
 
   useEffect(() => {
     setFormData({
       ...question,
-      options: question.options ? question.options : ['', '', '', ''] // Initialize options with 4 empty strings for MCQ
+      options: question.options ? question.options : ['', '', '', ''],
+      solution: question.solution || '', // Initialize solution
     });
   }, [question]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleTypeChange = (e) => {
     const { value } = e.target;
     if (value === 'MCQ') {
-      setFormData(prevState => ({
+      setFormData((prevState) => ({
         ...prevState,
         type: value,
-        options: ['', '', '', ''] 
+        options: ['', '', '', ''],
+        solution: '', // Reset solution
       }));
     } else if (value === 'Subjective') {
-      setFormData(prevState => ({
+      setFormData((prevState) => ({
         ...prevState,
         type: value,
-        options: []
+        options: [],
+        solution: '', // Reset solution
       }));
     } else {
-      setFormData(prevState => ({
+      setFormData((prevState) => ({
         ...prevState,
-        type: value
+        type: value,
       }));
     }
   };
@@ -46,9 +50,9 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
   const handleOptionChange = (index, value) => {
     const newOptions = [...formData.options];
     newOptions[index] = value;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      options: newOptions
+      options: newOptions,
     }));
   };
 
@@ -56,7 +60,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
     e.preventDefault();
     const updatedFormData = {
       ...formData,
-      options: formData.options.filter(option => option.trim() !== '')
+      options: formData.options.filter((option) => option.trim() !== ''),
     };
     onSave(updatedFormData);
   };
@@ -67,8 +71,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title text-left">Edit Question</h5>
-            <button type="button" className="btn-close" onClick={onClose}>
-            </button>
+            <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
           <div className="modal-body">
             <form onSubmit={handleSubmit}>
@@ -100,20 +103,52 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
               </div>
 
               {formData.type === 'MCQ' && (
-                <div>
-                  <h4>Options</h4>
-                  {formData.options.map((option, index) => (
-                    <div key={index} className="form-group">
-                      <label htmlFor={`option${index}`}>Option {index + 1}</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id={`option${index}`}
-                        value={option}
-                        onChange={(e) => handleOptionChange(index, e.target.value)}
-                      />
-                    </div>
-                  ))}
+                <>
+                  <div>
+                    <h4>Options</h4>
+                    {formData.options.map((option, index) => (
+                      <div key={index} className="form-group">
+                        <label htmlFor={`option${index}`}>Option {index + 1}</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id={`option${index}`}
+                          value={option}
+                          onChange={(e) => handleOptionChange(index, e.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="solution">Correct Option:</label>
+                    <select
+                      className="form-control"
+                      id="solution"
+                      name="solution"
+                      value={formData.solution}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Correct Option</option>
+                      {formData.options.map(
+                        (option, index) => option.trim() !== '' && <option key={index} value={option}>{option}</option>
+                      )}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {formData.type === 'Subjective' && (
+                <div className="form-group">
+                  <label htmlFor="solution">Solution (optional):</label>
+                  <textarea
+                    className="form-control"
+                    id="solution"
+                    name="solution"
+                    value={formData.solution}
+                    onChange={handleChange}
+                    rows="3"
+                  />
                 </div>
               )}
 

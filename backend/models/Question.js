@@ -9,7 +9,8 @@ const questionSchema = new mongoose.Schema({
   courseOutcome: { type: String, required: true },
   marks: { type: Number, required: true },
   image: { type: String },
-  status:{type:String, enum :['Pending','Submitted','Approved','Rejected']} 
+  status: { type: String, enum: ['Pending', 'Submitted', 'Approved', 'Rejected'] },
+  solution: { type: String }
 });
 
 module.exports = mongoose.model('Question', questionSchema);

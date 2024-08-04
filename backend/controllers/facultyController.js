@@ -344,7 +344,7 @@ exports.createQuestion = [
   upload.single('image'),
   async (req, res) => {
     try {
-      const { assessmentId, setName, text, type, bloomLevel, courseOutcome, marks } = req.body;
+      const { assessmentId, setName, text, type, bloomLevel, courseOutcome, marks, solution } = req.body;
       let { options } = req.body;
 
       if (typeof options === 'string') {
@@ -371,7 +371,6 @@ exports.createQuestion = [
         facultyQuestions.sets.push(questionSet);
       }
 
-      // Check and update the hodStatus of the first set if it's 'Approved'
       if (facultyQuestions.sets.length > 0 && facultyQuestions.sets[0].hodStatus === 'Approved') {
         facultyQuestions.sets[0].hodStatus = 'Pending';
       }
@@ -385,6 +384,7 @@ exports.createQuestion = [
         courseOutcome,
         marks,
         image: req.file ? req.file.path : null,
+        solution,
         status: 'Pending'
       });
 
@@ -407,6 +407,7 @@ exports.createQuestion = [
     }
   }
 ];
+
 
 exports.deleteQuestion = async (req, res) => {
   try {
@@ -461,7 +462,7 @@ exports.deleteQuestion = async (req, res) => {
 exports.editQuestion = async (req, res) => {
   try {
     const { questionId } = req.params;
-    const { text, type, options, bloomLevel, courseOutcome, marks } = req.body;
+    const { text, type, options, bloomLevel, courseOutcome, marks,solution } = req.body;
     const userId = req.user.id;
 
     const assessment = await Assessment.findOne({
@@ -502,6 +503,7 @@ exports.editQuestion = async (req, res) => {
     question.bloomLevel = bloomLevel || question.bloomLevel;
     question.courseOutcome = courseOutcome || question.courseOutcome;
     question.marks = marks || question.marks;
+    question.solution = solution || question.solution;
 
     await question.save();
 

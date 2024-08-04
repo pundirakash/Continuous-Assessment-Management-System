@@ -11,20 +11,28 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
   const [courseOutcome, setCourseOutcome] = useState('CO1'); 
   const [marks, setMarks] = useState('');
   const [image, setImage] = useState(null);
+  const [solution, setSolution] = useState(''); // New state for solution
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false); 
 
   useEffect(() => {
-    if (type === 'Theory') {
+    if (type === 'Subjective') {
       setOptions([]);
+      setSolution('');
     } else {
       setOptions(['', '', '', '']);
+      setSolution('');
     }
   }, [type]);
 
   const handleCreate = async () => {
     if (!bloomLevel || !courseOutcome) {
       alert('Please select a Bloom Level and a Course Outcome.');
+      return;
+    }
+
+    if (type === 'MCQ' && !solution) {
+      alert('Please select the correct option for MCQ.');
       return;
     }
 
@@ -38,6 +46,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
         courseOutcome,
         marks,
         image,
+        solution, // Add solution to the question data
       };
 
       if (type === 'MCQ') {
@@ -54,6 +63,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       setCourseOutcome('CO1');
       setMarks('');
       setImage(null);
+      setSolution(''); // Reset solution
     } catch (error) {
       console.error('Error creating question:', error);
       if (error.response && error.response.data && error.response.data.message) {
@@ -99,21 +109,44 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
                 </select>
               </div>
               {type === 'MCQ' && (
-                <div className="form-group">
-                  <label className='mb-2'>Options</label>
-                  <div className="options-container">
-                    {options.map((option, index) => (
-                      <div key={index} className="option-item">
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={option}
-                          onChange={e => handleOptionChange(index, e.target.value)}
-                          placeholder={`Option ${index + 1}`}
-                        />
-                      </div>
-                    ))}
+                <>
+                  <div className="form-group">
+                    <label className='mb-2'>Options</label>
+                    <div className="options-container">
+                      {options.map((option, index) => (
+                        <div key={index} className="option-item">
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={option}
+                            onChange={e => handleOptionChange(index, e.target.value)}
+                            placeholder={`Option ${index + 1}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                  <div className="form-group">
+                    <label className='mb-2'>Correct Option</label>
+                    <select className="form-control" value={solution} onChange={e => setSolution(e.target.value)}>
+                      <option value="">Select Correct Option</option>
+                      {options.map((option, index) => option.trim() !== '' && (
+                        <option key={index} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+              {type === 'Subjective' && (
+                <div className="form-group">
+                  <label className='mb-2'>Solution (optional)</label>
+                  <textarea
+                    className="form-control"
+                    placeholder="Enter solution"
+                    value={solution}
+                    onChange={e => setSolution(e.target.value)}
+                    rows="3"
+                  />
                 </div>
               )}
               <div className="form-group">

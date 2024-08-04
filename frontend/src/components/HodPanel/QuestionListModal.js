@@ -62,7 +62,7 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
       <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div className="modal-content">
           <div className="modal-header bg-primary text-white">
-            <h5 className="modal-title">Questions</h5>
+            <h5 className="modal-title text-left">Questions</h5>
             <button type="button" className="btn-close" onClick={handleClose}>
             </button>
           </div>
@@ -78,6 +78,7 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
                     <th>Course Outcome</th>
                     <th>Marks</th>
                     <th>Image</th>
+                    <th>Solution</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
@@ -109,6 +110,7 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
                             'N/A'
                           )}
                         </td>
+                        <td>{question.solution}</td>
                         <td>{question.status}</td>
                         <td>
                           <button className="btn btn-sm btn-primary mr-2" onClick={() => handleEditQuestion(question)}>

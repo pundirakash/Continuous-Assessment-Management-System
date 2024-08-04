@@ -121,7 +121,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
         <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
           <div className="modal-content">
             <div className="modal-header bg-primary text-white">
-              <h5 className="modal-title">Courses Assigned to {faculty.name}</h5>
+              <h5 className="modal-title text-left">Courses Assigned to {faculty.name}</h5>
             </div>
             <div className="modal-body">
               <ul className="list-group">

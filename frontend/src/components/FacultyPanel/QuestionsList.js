@@ -131,7 +131,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
   };
   const handleDownloadRandomQuestions = async () => {
     try {
-      const blob = await userService.downloadRandomApprovedQuestions(assessment._id, numberOfQuestions,setName,);
+      const blob = await userService.downloadRandomApprovedQuestions(assessment._id, numberOfQuestions, setName);
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
@@ -141,14 +141,24 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       link.parentNode.removeChild(link);
     } catch (error) {
       console.error('Error Downloading assessment:', error);
-      if (error.response && error.response.data && error.response.data.message) {
-        setError(error.response.data.message);
+  
+      let errorMessage = 'An error occurred while downloading the assessment';
+      if (error.response) {
+        if (error.response.status === 403 && error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.status === 404 && error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
       } else {
-        setError(error.message);
+        errorMessage = error.message;
       }
-      setShowErrorModal(true); 
+  
+      setError(errorMessage);
+      setShowErrorModal(true);
     }
-  };
+  };  
 
   const handleCreateQuestion = async () => {
     const response = await userService.getQuestionsForSet(assessment._id, setName);
@@ -255,7 +265,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         <table className="table table-striped">
           <thead>
             <tr>
-            <th>Question Number</th>
+            <th>S.No</th>
               <th>Question Text</th>
               <th>Type</th>
               <th>Bloom Level</th>
@@ -263,6 +273,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
               <th>Marks</th>
               <th>Options</th>
               <th>Image</th>
+              <th>Solution</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -293,6 +304,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
                     'N/A'
                   )}
                 </td>
+                <td>{question.solution || 'N/A'}</td>
                 <td>
   <button
     className="btn btn-sm btn-primary mr-2"
