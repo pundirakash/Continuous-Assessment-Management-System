@@ -115,7 +115,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `assessment_${assessment._id}_${setName}.docx`);
+      link.setAttribute('download', `assessment_${assessment._name}_${setName}.docx`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
@@ -129,13 +129,35 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
       setShowErrorModal(true); 
     }
   };
+
+  const handleDownloadSolution = async (templateNumber) => {
+    try {
+      const blob = await userService.downloadSolution(assessment._id, setName, templateNumber);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `solution_${assessment.name}_${setName}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading solution:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError(error.message);
+      }
+      setShowErrorModal(true); 
+    }
+  };
+
   const handleDownloadRandomQuestions = async () => {
     try {
       const blob = await userService.downloadRandomApprovedQuestions(assessment._id, numberOfQuestions, setName);
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `assessment_${assessment._id}_random_${numberOfQuestions}.zip`);
+      link.setAttribute('download', `assessment_${assessment.name}_random_${numberOfQuestions}.zip`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
@@ -163,6 +185,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
   const handleCreateQuestion = async () => {
     const response = await userService.getQuestionsForSet(assessment._id, setName);
     setQuestions(response.data);
+    setHodStatus('Pending');
     setShowCreateQuestion(false); 
   };
 
@@ -174,6 +197,8 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
         return 4;
       case 'MCQ':
         return 3;
+      case 'Solution':
+        return 5;
       default:
         return 1; 
     }
@@ -229,6 +254,9 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
                   </button>
                   <button className="btn btn-secondary me-2" onClick={() => handleDownloadAssessment(getTemplateNumber(assessmentType))}>
                     {`${assessmentType} Format`}
+                  </button>
+                  <button className="btn btn-secondary me-2" onClick={() => handleDownloadSolution(getTemplateNumber('Solution'))}>
+                    {`Solutions`}
                   </button>
                   <button className="btn btn-secondary me-2" onClick={() => setShowRandomDownloadModal(true)}>
                     Random Approved Questions

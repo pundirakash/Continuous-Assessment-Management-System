@@ -79,9 +79,18 @@ exports.getQuestionsForSet = async (req, res) => {
     if (questionSet.questions.length === 0) {
       questionSet.hodStatus = 'Pending';
       await assessment.save();
+      return res.status(200).json([]);
     }
 
     const populatedQuestions = await Question.find({ _id: { $in: questionSet.questions } });
+
+    const allApproved = populatedQuestions.every(question => question.status === 'Approved');
+    
+    if (allApproved) {
+      questionSet.hodStatus = 'Approved with Remarks';
+      await assessment.save();
+    }
+
     res.status(200).json(populatedQuestions);
   } catch (error) {
     console.error('Error fetching questions for set', error);
@@ -230,6 +239,67 @@ exports.downloadAssessment = async (req, res) => {
   }
 };
 
+exports.downloadSolution = async (req, res) => {
+  try {
+    const { assessmentId, setName, templateNumber } = req.params; 
+    const assessment = await Assessment.findById(assessmentId)
+      .populate('facultyQuestions.sets.questions')
+      .populate('course');
+
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
+    if (!facultyQuestions) {
+      return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
+    }
+
+    const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
+    }
+
+    const allowedStatuses = ['Approved', 'Approved with Remarks'];
+    if (
+      !allowedStatuses.includes(questionSet.hodStatus) &&
+      !allowedStatuses.includes(questionSet.coordinatorStatus)
+    ) {
+      return res.status(403).json({ message: 'Question set is not approved yet' });
+    }
+
+    const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+
+    const data = {
+      termId: assessment.termId,
+      assessmentName: assessment.name,
+      courseCode: assessment.course.code,
+      courseName: assessment.course.name,
+      setName: questionSet.setName,
+      taskType: assessment.type,
+      allotmentDate: moment(questionSet.allotmentDate).format('DD/MM/YYYY'),
+      submissionDate: moment(questionSet.submissionDate).format('DD/MM/YYYY'),
+      maximumMarks: questionSet.maximumMarks,
+      questions: await Promise.all(questionSet.questions.map(async (questionId, index) => {
+        const question = await Question.findById(questionId);
+        return {
+          number: index + 1,
+          text: question.text,
+          solution: question.solution,
+          marks: question.marks,
+        };
+      })),
+    };
+
+    const docxFilePath = await generateDocxFromTemplate(data, templateNumber);
+
+    res.download(docxFilePath, `solution_${assessmentId}_${setName}.docx`);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
 exports.downloadRandomApprovedQuestions = async (req, res) => {
   try {
     const { assessmentId, numberOfQuestions, setName } = req.body;
@@ -302,6 +372,16 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       }))
     };
 
+    const solutionData = {
+      ...data,
+      questions: selectedQuestions.map((question, index) => ({
+        number: index + 1,
+        text: question.text,
+        solution: question.solution,
+        marks: question.marks,
+      }))
+    };
+
     const docxFilePath1 = await generateDocxFromTemplate(data, 1);
 
     let docxFilePath2;
@@ -310,8 +390,11 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
     } else if (assessment.type === 'Subjective') {
       docxFilePath2 = await generateDocxFromTemplate(data, 4);
     }
+
+    const docxFilePath3 = await generateDocxFromTemplate(solutionData, 5);
+
     const archive = archiver('zip');
-    res.attachment(`assessment_${assessmentId}_random_${numberOfQuestions}.zip`);
+    res.attachment(`assessment_${data.assessmentName}_random_${numberOfQuestions}.zip`);
 
     archive.on('error', (err) => {
       throw err;
@@ -319,8 +402,9 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
 
     archive.pipe(res);
 
-    archive.file(docxFilePath1, { name: `CourseFileFormat_${assessmentId}_random_${numberOfQuestions}_1.docx` });
-    archive.file(docxFilePath2, { name: `assessment_${assessmentId}_random_${numberOfQuestions}_${assessment.type === 'MCQ' ? 3 : 4}.docx` });
+    archive.file(docxFilePath1, { name: `CourseFileFormat_${data.assessmentName}_random_${numberOfQuestions}_1.docx` });
+    archive.file(docxFilePath2, { name: `assessment_${data.assessmentName}_random_${numberOfQuestions}_${assessment.type === 'MCQ' ? 3 : 4}.docx` });
+    archive.file(docxFilePath3, { name: `solution_${data.assessmentName}_random_${numberOfQuestions}_5.docx` });
 
     await archive.finalize();
   } catch (error) {
@@ -391,6 +475,7 @@ exports.createQuestion = [
       await question.save();
 
       questionSet.questions.push(question._id);
+      questionSet.hodStatus="Pending";
       facultyQuestions.sets = facultyQuestions.sets.map(set => {
         if (set.setName === setName) {
           return questionSet;

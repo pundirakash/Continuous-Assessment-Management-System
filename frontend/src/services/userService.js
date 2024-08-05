@@ -106,6 +106,16 @@ const downloadAssessment = async (assessmentId, setName, templateNumber) => {
   return response.data;
 };
 
+const downloadSolution = async (assessmentId, setName, templateNumber) => {
+  const response = await axios.get(`${API_URL_FACULTY}/download-solution/${assessmentId}/${setName}/${templateNumber}`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+    responseType: 'blob'
+  });
+  return response.data;
+};
+
 const downloadRandomApprovedQuestions = async (assessmentId, numberOfQuestions, setName) => {
   const response = await axios.post(`${API_URL_FACULTY}/download-random-questions`, {
     assessmentId,
@@ -349,6 +359,7 @@ const userService = {
   deleteQuestion,
   editQuestion,
   downloadAssessment,
+  downloadSolution,
   createSetForAssessment,
   submitAssessment,
   getCoursesByDepartment,

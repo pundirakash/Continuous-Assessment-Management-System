@@ -11,7 +11,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
   const [courseOutcome, setCourseOutcome] = useState('CO1'); 
   const [marks, setMarks] = useState('');
   const [image, setImage] = useState(null);
-  const [solution, setSolution] = useState(''); // New state for solution
+  const [solution, setSolution] = useState('');
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false); 
 
@@ -46,7 +46,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
         courseOutcome,
         marks,
         image,
-        solution, // Add solution to the question data
+        solution,
       };
 
       if (type === 'MCQ') {
@@ -63,7 +63,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       setCourseOutcome('CO1');
       setMarks('');
       setImage(null);
-      setSolution(''); // Reset solution
+      setSolution('');
     } catch (error) {
       console.error('Error creating question:', error);
       if (error.response && error.response.data && error.response.data.message) {
