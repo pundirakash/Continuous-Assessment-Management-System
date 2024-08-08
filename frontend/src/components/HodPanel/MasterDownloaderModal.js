@@ -58,7 +58,7 @@ const MasterDownloaderModal = ({ show, handleClose }) => {
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Master Downloader</h5>
+            <h5 className="modal-title text-left">Master Downloader</h5>
             <button type="button" className="btn-close" onClick={handleClose} />
           </div>
           <div className="modal-body">

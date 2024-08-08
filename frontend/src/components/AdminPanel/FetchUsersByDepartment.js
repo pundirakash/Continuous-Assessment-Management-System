@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import ErrorModal from '../ErrorModal';
-import authService from '../../services/authService'; // Adjust the import path if necessary
+import authService from '../../services/authService';
 
 const FetchUsersByDepartment = () => {
   const [department, setDepartment] = useState('');
@@ -227,9 +227,9 @@ const FetchUsersByDepartment = () => {
                   <td>{user.department}</td>
                   <td>{user.role}</td>
                   <td>
-                    <button className="btn btn-warning btn-sm me-2" onClick={() => handleEditUser(user)}>Edit</button>
-                    <button className="btn btn-danger btn-sm me-2" onClick={() => handleDeleteUser(user._id)}>Delete</button>
-                    <button className="btn btn-info btn-sm" onClick={() => handleResetPassword(user._id)}>Reset Password</button>
+                    <button className="btn btn-warning btn-sm me-2" onClick={() => handleEditUser(user)}>Edit</button><br/>
+                    <button className="btn btn-danger btn-sm me-2" onClick={() => handleDeleteUser(user._id)}>Delete</button><br/>
+                    <button className="btn btn-info btn-sm" onClick={() => handleResetPassword(user._id)}>Reset</button>
                   </td>
                 </tr>
               ))}
