@@ -11,6 +11,8 @@ import ViewAssignmentsModal from '../components/HodPanel/ViewAssignmentsModal';
 import FacultyList from '../components/HodPanel/FacultyList';
 import CourseList from '../components/HodPanel/CourseList';
 import ErrorModal from '../components/ErrorModal';
+import MasterDownloaderModal from '../components/HodPanel/MasterDownloaderModal';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 
 const HodDashboard = () => {
   const [faculties, setFaculties] = useState([]);
@@ -29,6 +31,8 @@ const HodDashboard = () => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showViewAssignmentsModal, setShowViewAssignmentsModal] = useState(false);
 const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
+const [showMasterDownloaderModal, setShowMasterDownloaderModal] = useState(false);
+const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -61,6 +65,12 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
 
   const handleShowAddCourse = () => setShowAddCourseModal(true);
   const handleCloseAddCourse = () => setShowAddCourseModal(false);
+
+  const openChangePasswordModal = () => {
+    setShowChangePasswordModal(true);
+  };
+const handleShowMasterDownloader = () => setShowMasterDownloaderModal(true);
+const handleCloseMasterDownloader = () => setShowMasterDownloaderModal(false);
 
   const handleShowFacultyCourses = () => setShowFacultyCoursesModal(true);
   const handleCloseFacultyCourses = () => {
@@ -187,11 +197,23 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
       setSelectedCourseAssignments(updatedAssignments);
     }
   };
+
+
+  const handleChangePassword = async (currentPassword, newPassword, confirmNewPassword) => {
+    try {
+      await authService.changePassword(currentPassword, newPassword, confirmNewPassword);
+      setShowChangePasswordModal(false);
+      alert('Password changed successfully');
+    } catch (error) {
+      console.error('Failed to change password:', error);
+      alert('Failed to change password');
+    }
+  }; 
   
 
   return (
     <div className="container mt-5">
-      <Header user={user} onLogout={handleLogout} />
+      <Header user={user} onLogout={handleLogout} handleShowMasterDownloader={handleShowMasterDownloader} openChangePasswordModal={openChangePasswordModal}/>
       <div className="row">
         <FacultyList faculties={faculties} onFacultyClick={handleFacultyClick} pendingAssessmentSets={pendingAssessmentSets}/>
         <CourseList 
@@ -237,12 +259,25 @@ const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
           onClose={() => setShowErrorModal(false)}
         />
       )}
+      {showMasterDownloaderModal && (
+  <MasterDownloaderModal 
+    show={showMasterDownloaderModal} 
+    handleClose={handleCloseMasterDownloader} 
+  />
+)}
+{showChangePasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePasswordModal(false)}
+          onChangePassword={handleChangePassword}
+        />
+      )}
+
     </div>
   );
   
 };
 
-const Header = ({ user, onLogout }) => (
+const Header = ({ user, onLogout,handleShowMasterDownloader, openChangePasswordModal }) => (
   <div className='card w-100 h-100'>
     <div className="card-body text-center">
   <div className="row mb-4">
@@ -251,7 +286,11 @@ const Header = ({ user, onLogout }) => (
       <h1 className="display-2">{user.username}!</h1>
       <p className="lead">UID: {user.uid}</p>
       <p className="lead">{user.department}</p>
-      <button className="btn btn-danger mt-2 btn-lg" onClick={onLogout}>Logout</button>
+      <button className="btn btn-primary mt-2" onClick={handleShowMasterDownloader}>
+  Master Downloader
+</button>
+<button className="btn btn-primary mt-2" onClick={openChangePasswordModal}>Change Password</button><br></br> 
+      <button className="btn btn-danger mt-4 btn-lg" onClick={onLogout}>Logout</button>
     </div>
   </div>
   </div>

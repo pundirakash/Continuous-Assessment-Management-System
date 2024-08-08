@@ -435,8 +435,12 @@ exports.createQuestion = [
         options = options.split(',').map(option => option.trim());
       }
 
-      const assessment = await Assessment.findById(assessmentId);
+      const existingQuestion = await Question.findOne({ text });
+      if (existingQuestion) {
+        return res.status(400).json({ message: 'A question with this text already exists' });
+      }
 
+      const assessment = await Assessment.findById(assessmentId);
       if (!assessment) {
         return res.status(404).json({ message: 'Assessment not found' });
       }
@@ -492,7 +496,6 @@ exports.createQuestion = [
     }
   }
 ];
-
 
 exports.deleteQuestion = async (req, res) => {
   try {

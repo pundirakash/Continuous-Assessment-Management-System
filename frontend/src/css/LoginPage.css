@@ -1,36 +1,11 @@
-body {
-    background: #f7f7f7;
-  }
-  
+
   .card {
     border-radius: 10px;
   }
   
-  .login-title {
-    font-family: 'Roboto', sans-serif;
-    color: #007bff;
-    font-weight: bold;
-    animation: textAnimation 3s infinite;
-  }
-  
-  @keyframes textAnimation {
-    0% { opacity: 0; transform: translateY(-20px); }
-    50% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-20px); }
-  }
   
   .form-control {
-    border-radius: 20px;
-  }
-  
-  .btn-primary {
-    border-radius: 20px;
-    background: linear-gradient(45deg, #007bff, #0056b3);
-    transition: background 0.3s ease;
-  }
-  
-  .btn-primary:hover {
-    background: linear-gradient(45deg, #0056b3, #007bff);
+    border-radius: 10px;
   }
   
   .alert-danger {

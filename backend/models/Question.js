@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const questionSchema = new mongoose.Schema({
   assessment: { type: mongoose.Schema.Types.ObjectId, ref: 'Assessment', required: true },
-  text: { type: String, required: true },
+  text: { type: String, required: true,unique: true },
   type: { type: String, enum: ['MCQ', 'Subjective'], required: true },
   options: [String],
   bloomLevel: { type: String, required: true },

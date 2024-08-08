@@ -25,4 +25,5 @@ router.delete('/course/:courseId', auth(['HOD']), hodController.deleteCourse);
 router.get('/assessments/course/:courseId', auth(['HOD']), hodController.getAssessmentsByCourse);
 router.put('/assessment/:assessmentId', auth(['HOD']), hodController.editAssessment);
 router.delete('/assessment/:assessmentId', auth(['HOD']), hodController.deleteAssessment);
+router.get('/download-questions', auth(['HOD']), hodController.downloadQuestions);
 module.exports = router;

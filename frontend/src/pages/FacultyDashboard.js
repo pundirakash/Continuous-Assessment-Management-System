@@ -10,6 +10,7 @@ import UpdateSetDetailsModal from '../components/FacultyPanel/UpdateSetDetailsMo
 import authService from '../services/authService';
 import userService from '../services/userService';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 import '../css/FacultyDashboard.css';
 import { FaBell } from 'react-icons/fa';
 
@@ -25,6 +26,7 @@ const FacultyDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -64,6 +66,7 @@ const FacultyDashboard = () => {
     }
   };
 
+
   const handleQuestionCreated = async () => {
     setShowCreateQuestion(false);
   };
@@ -79,6 +82,10 @@ const FacultyDashboard = () => {
     setLoading(false);
   };
 
+  const openChangePasswordModal = () => {
+    setShowChangePasswordModal(true);
+  };
+
   const handleSetSelect = async (name) => {
     setSelectedSetName(name);
 
@@ -91,7 +98,19 @@ const FacultyDashboard = () => {
     }
   };
 
+  const handleChangePassword = async (currentPassword, newPassword, confirmNewPassword) => {
+    try {
+      await authService.changePassword(currentPassword, newPassword, confirmNewPassword);
+      setShowChangePasswordModal(false);
+      alert('Password changed successfully');
+    } catch (error) {
+      console.error('Failed to change password:', error);
+      alert('Failed to change password');
+    }
+  };  
+
   return (
+    
     <div className="container mt-5">
       {loading && <LoadingSpinner />} {/* Conditionally render the loading spinner */}
       {!loading && (
@@ -139,12 +158,19 @@ const FacultyDashboard = () => {
   </div>
 </div>
                 <button className="btn btn-danger mt-2 mb-2" onClick={() => handleLoading(handleLogout)}>Logout</button>
+                <button className="btn btn-primary m-2" onClick={openChangePasswordModal}>Change Password</button>        
                 <div className="mt-1">
       <h3>Notifications</h3>
       <div className="notification-icon" onClick={() => setShowNotifications(!showNotifications)}>
         <FaBell size={30} />
         {notifications.length > 0 && <span className="badge">{notifications.length}</span>}
       </div>
+      {showChangePasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePasswordModal(false)}
+          onChangePassword={handleChangePassword}
+        />
+      )}
       {showNotifications && (
         <div className="notification-container">
           {notifications.length > 0 ? (
@@ -163,8 +189,10 @@ const FacultyDashboard = () => {
     </div>
               </div>
             </div>
+            
           </div>
         </div>
+        
       )}
       {selectedSetName && selectedAssessment && isSetDetailsUpdated && (
         <div className="mt-5">

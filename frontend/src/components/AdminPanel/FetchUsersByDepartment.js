@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import ErrorModal from '../ErrorModal';
-
+import authService from '../../services/authService'; // Adjust the import path if necessary
 
 const FetchUsersByDepartment = () => {
   const [department, setDepartment] = useState('');
@@ -10,6 +10,7 @@ const FetchUsersByDepartment = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const departments = [
     'System Programming',
@@ -55,6 +56,20 @@ const FetchUsersByDepartment = () => {
     }
   };
 
+  const handleResetPassword = async (userId) => {
+    const newPassword = prompt('Enter new password:');
+    if (newPassword) {
+      try {
+        await authService.adminResetPassword(userId, newPassword);
+        alert('Password reset successfully');
+      } catch (error) {
+        console.error('Error resetting password', error);
+        setError(error.message); 
+        setShowErrorModal(true); 
+      }
+    }
+  };
+
   const handleChange = (e) => {
     setCurrentUser({
       ...currentUser,
@@ -79,6 +94,11 @@ const FetchUsersByDepartment = () => {
     }
   };
 
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div>
       <h3 className="mb-4">Fetch Users by Department</h3>
@@ -96,6 +116,16 @@ const FetchUsersByDepartment = () => {
           ))}
         </select>
         <button className="btn btn-primary mt-2" onClick={handleFetchUsers}>Fetch Users</button>
+      </div>
+
+      <div className="mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Search by name or email"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       {editMode ? (
@@ -189,7 +219,7 @@ const FetchUsersByDepartment = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user._id}>
                   <td>{user.name}</td>
                   <td>{user.uid}</td>
@@ -198,7 +228,8 @@ const FetchUsersByDepartment = () => {
                   <td>{user.role}</td>
                   <td>
                     <button className="btn btn-warning btn-sm me-2" onClick={() => handleEditUser(user)}>Edit</button>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(user._id)}>Delete</button>
+                    <button className="btn btn-danger btn-sm me-2" onClick={() => handleDeleteUser(user._id)}>Delete</button>
+                    <button className="btn btn-info btn-sm" onClick={() => handleResetPassword(user._id)}>Reset Password</button>
                   </td>
                 </tr>
               ))}
@@ -207,11 +238,11 @@ const FetchUsersByDepartment = () => {
         </div>
       )}
       {showErrorModal && (
-      <ErrorModal
-        message={error}
-        onClose={() => setShowErrorModal(false)}
-      />
-    )}
+        <ErrorModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -6,14 +6,14 @@ import '../../css/CreateQuestionModal.css';
 const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose }) => {
   const [text, setText] = useState('');
   const [type, setType] = useState('MCQ');
-  const [options, setOptions] = useState(['', '', '', '']); 
-  const [bloomLevel, setBloomLevel] = useState('L1'); 
-  const [courseOutcome, setCourseOutcome] = useState('CO1'); 
+  const [options, setOptions] = useState(['', '', '', '']);
+  const [bloomLevel, setBloomLevel] = useState('L1');
+  const [courseOutcome, setCourseOutcome] = useState('CO1');
   const [marks, setMarks] = useState('');
   const [image, setImage] = useState(null);
   const [solution, setSolution] = useState('');
   const [error, setError] = useState(null);
-  const [showErrorModal, setShowErrorModal] = useState(false); 
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     if (type === 'Subjective') {
@@ -50,7 +50,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       };
 
       if (type === 'MCQ') {
-        questionData.options = options.filter(opt => opt.trim() !== ''); // Filter out empty or whitespace options for MCQ
+        questionData.options = options.filter(opt => opt.trim() !== '');
       }
 
       await userService.createQuestion(questionData);
@@ -71,7 +71,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       } else {
         setError(error.message);
       }
-      setShowErrorModal(true); 
+      setShowErrorModal(true);
     }
   };
 
@@ -83,7 +83,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
 
   return (
     <div className="modal fade show" tabIndex="-1" style={{ display: 'block' }}>
-      <div className="modal-dialog modal-lg">
+      <div className="modal-dialog modal-xl">
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title text-left">Create New Question</h5>
@@ -98,7 +98,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
                   placeholder="Enter question text"
                   value={text}
                   onChange={e => setText(e.target.value)}
-                  rows="3"
+                  rows="4"
                 />
               </div>
               <div className="form-group">
@@ -149,6 +149,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
                   />
                 </div>
               )}
+              <div className="options-container">
               <div className="form-group">
                 <label className='mb-2'>Bloom Level</label>
                 <select className="form-control" value={bloomLevel} onChange={e => setBloomLevel(e.target.value)}>
@@ -181,9 +182,11 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
                   onChange={e => setMarks(e.target.value)}
                 />
               </div>
+              
               <div className="form-group">
                 <label className='mb-2'>Image (optional)</label>
                 <input type="file" className="form-control-file" onChange={e => setImage(e.target.files[0])} />
+              </div>
               </div>
             </form>
           </div>

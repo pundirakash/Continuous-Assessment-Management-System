@@ -127,7 +127,6 @@ const downloadRandomApprovedQuestions = async (assessmentId, numberOfQuestions, 
     },
     responseType: 'blob'
   });
-  console.log(response);
   return response.data;
 };
 
@@ -347,6 +346,36 @@ const getNotifications = async () => {
   return response.data;
 };
 
+const downloadQuestions = async (params) => {
+  try {
+    const response = await axios.get(`${API_URL_HOD}/download-questions`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      params,
+      responseType: 'blob', 
+    });
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'questions_and_solution.zip'); 
+
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error('Error downloading questions and solutions:', error);
+  }
+};
+
+
+
 
 const userService = {
   register,
@@ -382,7 +411,8 @@ const userService = {
   deleteAssessment,
   updateSetDetails,
   getSetDetails,
-  getNotifications
+  getNotifications,
+  downloadQuestions
 };
 
 export default userService;

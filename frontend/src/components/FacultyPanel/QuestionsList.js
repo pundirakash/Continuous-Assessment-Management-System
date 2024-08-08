@@ -292,7 +292,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
 <div className="table-container">
         <table className="table table-striped">
           <thead>
-            <tr>
+            <tr className='text-center'>
             <th>S.No</th>
               <th>Question Text</th>
               <th>Type</th>
@@ -308,13 +308,13 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
           <tbody>
           {filteredQuestions.map((question, index) => (
                 <tr key={question._id || Math.random()}>
-                <td>{index + 1}</td>
-                <td>{question.text || 'N/A'}</td>
-                <td>{question.type || 'N/A'}</td>
-                <td>{question.bloomLevel || 'N/A'}</td>
-                <td>{question.courseOutcome || 'N/A'}</td>
-                <td>{question.marks || 'N/A'}</td>
-                <td>
+                <td className='text-center'>{index + 1}</td>
+                <td className='text-justify'>{question.text || 'N/A'}</td>
+                <td className='text-center'>{question.type || 'N/A'}</td>
+                <td className='text-center'>{question.bloomLevel || 'N/A'}</td>
+                <td className='text-center'>{question.courseOutcome || 'N/A'}</td>
+                <td className='text-center'>{question.marks || 'N/A'}</td>
+                <td className='text-center'>
                   {question.options && question.options.length > 0 ? (
                     <ol>
                       {question.options.map((option, index) => (
@@ -325,7 +325,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
                     'N/A'
                   )}
                 </td>
-                <td>
+                <td className='text-center'>
                   {question.image ? (
                     <img src={`http://localhost:3002/${question.image}`} alt="question" style={{ width: '100px' }} />
                   ) : (
@@ -335,7 +335,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
                 <td>{question.solution || 'N/A'}</td>
                 <td>
   <button
-    className="btn btn-sm btn-primary mr-2"
+    className="btn btn-sm btn-primary mb-1"
     onClick={() => handleEditQuestion(question)}
     disabled={hodStatus === 'Approved'|| hodStatus === 'Submitted'}
   >
@@ -353,11 +353,10 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
             ))}
           </tbody>
         </table>
-        </div>
-        <button className="btn btn-primary me-2" onClick={() => setShowCreateQuestion(true)} disabled={hodStatus === 'Approved'|| hodStatus === 'Submitted'}>
+        </div>    
+        <button className="btn btn-primary me-2 mb-2 mt-2" onClick={() => setShowCreateQuestion(true)} disabled={hodStatus === 'Approved'|| hodStatus === 'Submitted'}>
           Create New Question
         </button>
-
         {renderSubmitButton()}
 
         {showCreateQuestion && (

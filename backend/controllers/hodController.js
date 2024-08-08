@@ -7,6 +7,7 @@ const path = require('path');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const ImageModule = require('docxtemplater-image-module-free');
+const archiver = require('archiver');
 
 exports.getFaculties = async (req, res) => {
   try {
@@ -320,10 +321,10 @@ exports.approveAssessment = async (req, res) => {
   }
 };
 
-async function generateDocxFromTemplate(data, templateFileName) {
+async function generateDocxFromTemplate(data, templateNumber) {
   try {
-    const templateFilePath = path.resolve(__dirname, `../templates/${templateFileName}`);
-    const outputDocxFilePath = path.resolve(__dirname, 'output.docx');
+    const templateFilePath = path.resolve(__dirname, `../templates/template${templateNumber}.docx`);
+    const outputDocxFilePath = path.resolve(__dirname, `output_${templateNumber}.docx`);
 
     const content = fs.readFileSync(templateFilePath, 'binary');
     const zip = new PizZip(content);
@@ -331,7 +332,7 @@ async function generateDocxFromTemplate(data, templateFileName) {
     const imageOpts = {
       centered: false,
       getImage: (tagValue) => fs.readFileSync(tagValue),
-      getSize: (img, tagValue, tagName) => [150, 150], // Adjust size as needed
+      getSize: (img, tagValue, tagName) => [150, 150],
     };
 
     const imageModule = new ImageModule(imageOpts);
@@ -645,6 +646,181 @@ exports.deleteAssessment = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+exports.downloadQuestions = async (req, res) => {
+  try {
+    const {
+      courseId,
+      assessmentId,
+      facultyId,
+      type,
+      bloomLevel,
+      courseOutcome,
+      numberOfQuestions,
+      templateNumber,
+    } = req.query;
+
+    const filter = {};
+
+    if (courseId) {
+      const course = await Course.findById(courseId);
+      if (!course) {
+        return res.status(404).json({ message: 'Course not found' });
+      }
+      filter.course = courseId;
+    }
+
+    if (assessmentId) {
+      filter.assessment = assessmentId;
+    }
+
+    if (facultyId) {
+      const assessments = await Assessment.find({ 'facultyQuestions.faculty': facultyId });
+      const assessmentIds = assessments.map(assessment => assessment._id);
+      filter.assessment = { $in: assessmentIds };
+    }
+
+    if (type) {
+      filter.type = type;
+    }
+
+    if (bloomLevel) {
+      filter.bloomLevel = bloomLevel;
+    }
+
+    if (courseOutcome) {
+      filter.courseOutcome = courseOutcome;
+    }
+
+    let questions = await Question.find(filter);
+
+    if (numberOfQuestions) {
+      questions = questions.slice(0, parseInt(numberOfQuestions));
+    }
+
+    const data = {
+      questions: questions.map((question, index) => ({
+        number: index + 1,
+        text: question.text,
+        courseOutcome: question.courseOutcome,
+        bloomLevel: question.bloomLevel,
+        marks: question.marks,
+        image: question.image ? path.resolve(__dirname, '../', question.image) : null,
+      })),
+    };
+
+    const docxFilePath = await generateDocxFromTemplate(data, templateNumber || '3');
+
+    res.download(docxFilePath, 'questions.docx');
+  } catch (error) {
+    console.error('Error downloading questions:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+exports.downloadQuestions = async (req, res) => {
+  try {
+    const {
+      courseId,
+      assessmentId,
+      facultyId,
+      type,
+      bloomLevel,
+      courseOutcome,
+      numberOfQuestions,
+      templateNumber,
+      setName,
+    } = req.query;
+
+    const filter = {};
+
+    if (courseId) {
+      const course = await Course.findById(courseId);
+      if (!course) {
+        return res.status(404).json({ message: 'Course not found' });
+      }
+      filter.course = courseId;
+    }
+
+    if (assessmentId) {
+      filter.assessment = assessmentId;
+    }
+
+    if (facultyId) {
+      const assessments = await Assessment.find({ 'facultyQuestions.faculty': facultyId });
+      const assessmentIds = assessments.map(assessment => assessment._id);
+      filter.assessment = { $in: assessmentIds };
+    }
+
+    if (setName) {
+      filter['facultyQuestions.sets.setName'] = setName; // Add setName to the filter
+    }
+
+    if (type) {
+      filter.type = type;
+    }
+
+    if (bloomLevel) {
+      filter.bloomLevel = bloomLevel;
+    }
+
+    if (courseOutcome) {
+      filter.courseOutcome = courseOutcome;
+    }
+    console.log(filter);
+    let questions = await Question.find(filter);
+
+    if (numberOfQuestions) {
+      questions = questions.slice(0, parseInt(numberOfQuestions));
+    }
+
+    const questionData = {
+      questions: questions.map((question, index) => ({
+        number: index + 1,
+        text: question.text,
+        courseOutcome: question.courseOutcome,
+        bloomLevel: question.bloomLevel,
+        marks: question.marks,
+        image: question.image ? path.resolve(__dirname, '../', question.image) : null,
+      })),
+    };
+
+    const solutionData = {
+      questions: questions.map((question, index) => ({
+        number: index + 1,
+        text: question.text,
+        solution: question.solution,
+        marks: question.marks,
+      })),
+    };
+
+    const docxQuestionPath = await generateDocxFromTemplate(questionData, templateNumber || '3');
+    const docxSolutionPath = await generateDocxFromTemplate(solutionData, '5');
+
+    res.setHeader('Content-Disposition', 'attachment; filename=questions_and_solution.zip');
+    res.setHeader('Content-Type', 'application/zip');
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.pipe(res);
+
+    archive.file(docxQuestionPath, { name: 'questions.docx' });
+    archive.file(docxSolutionPath, { name: 'solution.docx' });
+
+    archive.finalize();
+
+    archive.on('end', () => {
+      fs.unlinkSync(docxQuestionPath);
+      fs.unlinkSync(docxSolutionPath);
+    });
+
+  } catch (error) {
+    console.error('Error downloading questions and solution:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+
 
 
 
