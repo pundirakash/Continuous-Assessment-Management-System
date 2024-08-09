@@ -84,7 +84,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
   return (
     <div className="modal fade show" tabIndex="-1" style={{ display: 'block' }}>
       <div className="modal-dialog modal-xl">
-        <div className="modal-content">
+        <div className="modal-content question-create">
           <div className="modal-header">
             <h5 className="modal-title text-left">Create New Question</h5>
             <button type="button" className="btn-close" onClick={onClose}></button>

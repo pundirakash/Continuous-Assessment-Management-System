@@ -1,5 +1,5 @@
 .modal-header {
-  background-color: #007bff;
+  background-color: #1A4870;
   color: #fff;
 }
 
@@ -36,6 +36,10 @@
 
 .modal-content {
   border-radius: 10px;
+  
+}
+.question-create{
+  max-width: 2050px;
 }
 
 .form-group {

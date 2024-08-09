@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import userService from '../../services/userService';
 import EditQuestionModal from '../FacultyPanel/EditQuestionModal';
 import ErrorModal from '../ErrorModal';
+import "../../css/QuestionListModal.css"
 
 const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, onApprove, onReject, hodStatus }) => {
   const [questions, setQuestions] = useState(initialQuestions);
@@ -71,7 +72,7 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
   return (
     <div className={`modal fade ${show ? 'show d-block' : 'd-none'}`} tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div className="modal-dialog modal-dialog-centered modal-xl" role="document">
-        <div className="modal-content">
+        <div className="modal-content hod-question-list">
           <div className="modal-header bg-primary text-white">
             <h5 className="modal-title text-left">Questions</h5>
             <button type="button" className="btn-close" onClick={handleClose}></button>
