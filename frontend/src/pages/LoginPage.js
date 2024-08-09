@@ -30,11 +30,12 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5 login">
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="card shadow-sm">
             <div className="card-body">
+            <img src="/Prashnamitra.png" alt="Prashnamitra Logo" className="logo mb-2" />
               <h2 className="card-title text-center mb-4">Login</h2>
               {error && <div className="alert alert-danger" role="alert">{error}</div>}
               <form onSubmit={handleLogin}>
