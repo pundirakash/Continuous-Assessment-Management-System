@@ -24,7 +24,7 @@ const CreateUser = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3002/api/admin/register', formData, {
+      await axios.post(`${process.env.REACT_APP_BASE_URL}/api/admin/register`, formData, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
