@@ -13,7 +13,7 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:3002/api/auth/login', { email, password });
+      const response = await axios.post( `${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
       localStorage.setItem('token', response.data.token);
       const decodedToken = jwtDecode(response.data.token);
       const role = decodedToken.role;
