@@ -127,7 +127,7 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
                         <td>{question.marks}</td>
                         <td>
                           {question.image ? (
-                            <img src={`http://localhost:3002/${question.image}`} alt="question" style={{ width: '100px' }} />
+                            <img src={`${process.env.REACT_APP_BASE_URL}/${question.image}`} alt="question" style={{ width: '100px' }} />
                           ) : (
                             'N/A'
                           )}

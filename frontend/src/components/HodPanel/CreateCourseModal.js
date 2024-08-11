@@ -12,6 +12,7 @@ const CreateCourseModal = ({ show, handleClose, addCourse }) => {
     e.preventDefault();
     try {
       await userService.createCourse({ name: courseName, code: courseCode });
+      alert(`Course Created successfully!`);
       addCourse();
       handleClose();
     } catch (error) {

@@ -79,6 +79,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
   const handleSaveEdit = async (updatedQuestion) => {
     try {
       await userService.editQuestion(updatedQuestion._id, updatedQuestion);
+      alert(`Question Edited successfully!`);
       setQuestions(questions.map(q => (q._id === updatedQuestion._id ? updatedQuestion : q)));
       setEditingQuestion(null);
     } catch (error) {
@@ -96,6 +97,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
     if (window.confirm('Are you sure you want to delete this question?')) {
       try {
         await userService.deleteQuestion(questionId);
+        alert(`Question Deleted successfully!`);
         setQuestions(questions.filter(question => question._id !== questionId));
       } catch (error) {
         console.error('Error deleting question:', error);
@@ -327,7 +329,7 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
                 </td>
                 <td className='text-center'>
                   {question.image ? (
-                    <img src={`http://localhost:3002/${question.image}`} alt="question" style={{ width: '100px' }} />
+                    <img src={`${process.env.REACT_APP_BASE_URL}/${question.image}`} alt="question" style={{ width: '100px' }} />
                   ) : (
                     'N/A'
                   )}

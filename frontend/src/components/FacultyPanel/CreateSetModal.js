@@ -8,6 +8,8 @@ const CreateSetModal = ({ onClose, onSave }) => {
     const num = parseInt(numSets.trim(), 10);
     if (num > 0) {
       onSave(num);
+      alert(`Set created successfully!`);
+      onClose();
     }
   };
 
@@ -17,8 +19,7 @@ const CreateSetModal = ({ onClose, onSave }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title text-left">Create New Sets</h5>
-            <button type="button" className="btn-close" onClick={onClose}>
-            </button>
+            <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
           <div className="modal-body">
             <form onSubmit={handleSubmit}>

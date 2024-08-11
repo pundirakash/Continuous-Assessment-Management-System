@@ -104,6 +104,7 @@ const handleCloseMasterDownloader = () => setShowMasterDownloaderModal(false);
     if (selectedFaculty) {
       try {
         await userService.removeCourseFromFaculty(selectedFaculty._id, courseId);
+        alert(`Course Deallocated successfully!`);
         const updatedCourses = facultyCourses.filter(course => course._id !== courseId);
         setFacultyCourses(updatedCourses);
       } catch (error) {
@@ -125,6 +126,7 @@ const handleCloseMasterDownloader = () => setShowMasterDownloaderModal(false);
       const isCourseAssigned = response.some(course => course._id === courseId);
       if (!isCourseAssigned) {
         await userService.assignCourseToFaculty(facultyId, courseId);
+        alert(`Course Assigned successfully!`);
       } else {
         alert('Course already assigned to this faculty.');
       }
@@ -142,6 +144,7 @@ const handleCloseMasterDownloader = () => setShowMasterDownloaderModal(false);
   const handleCreateAssignment = async (courseId, assignmentData) => {
     try {
       await userService.createAssessment(courseId, assignmentData);
+      alert(`Assessment Created successfully!`);
       handleCloseCreateAssignment();
     } catch (error) {
       console.error('Error Creating Assignment', error);
@@ -184,6 +187,7 @@ const handleCloseMasterDownloader = () => setShowMasterDownloaderModal(false);
   
   const handleEditAssignment = async (assignmentId, assignmentData) => {
     await userService.editAssessment(assignmentId, assignmentData);
+    alert(`Assessment Edited successfully!`);
     const updatedAssignments = selectedCourseAssignments.map(assignment => 
       assignment._id === assignmentId ? { ...assignment, ...assignmentData } : assignment
     );
@@ -193,6 +197,7 @@ const handleCloseMasterDownloader = () => setShowMasterDownloaderModal(false);
   const handleDeleteAssignment = async (assignmentId) => {
     if (window.confirm('Are you sure you want to delete this assignment?')) {
       await userService.deleteAssessment(assignmentId);
+      alert(`Assessment Deleted successfully!`);
       const updatedAssignments = selectedCourseAssignments.filter(assignment => assignment._id !== assignmentId);
       setSelectedCourseAssignments(updatedAssignments);
     }

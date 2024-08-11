@@ -15,6 +15,7 @@ const UpdateSetDetailsModal = ({ assessmentId, setName, onClose, onDetailsUpdate
     try {
       await userService.updateSetDetails(assessmentId, setName, { allotmentDate, submissionDate, maximumMarks, totalQuestions });
       onDetailsUpdated();
+      alert(`Updated Successfully`);
       onClose();
     } catch (error) {
       console.error('Error updating set details:', error);

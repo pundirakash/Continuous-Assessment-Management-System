@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3002/api/admin';
+const API_URL = `${process.env.REACT_APP_BASE_URL}/api/admin`;
 
-const API_URL_FACULTY = 'http://localhost:3002/api/faculty';
+const API_URL_FACULTY = `${process.env.REACT_APP_BASE_URL}/api/faculty`;
 
-const API_URL_HOD='http://localhost:3002/api/HOD';
+const API_URL_HOD=`${process.env.REACT_APP_BASE_URL}/api/HOD`;
 
 const getCourses = async () => {
   const response = await axios.get(`${API_URL_FACULTY }/courses`, {

@@ -54,6 +54,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       }
 
       await userService.createQuestion(questionData);
+      alert(`Question created successfully!`);
       onQuestionCreated();
 
       setText('');
