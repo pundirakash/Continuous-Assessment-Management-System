@@ -663,14 +663,22 @@ exports.downloadQuestions = async (req, res) => {
 
     const filter = {};
 
+    // Step 1: Filter by Course
     if (courseId) {
       const course = await Course.findById(courseId);
       if (!course) {
         return res.status(404).json({ message: 'Course not found' });
       }
-      filter.course = courseId;
+
+      // Find assessments related to the course
+      const assessments = await Assessment.find({ course: courseId });
+      const assessmentIds = assessments.map(assessment => assessment._id);
+      
+      // Find questions related to those assessments
+      filter.assessment = { $in: assessmentIds };
     }
 
+    // Step 2: Apply additional filters
     if (assessmentId) {
       filter.assessment = assessmentId;
     }
@@ -696,9 +704,13 @@ exports.downloadQuestions = async (req, res) => {
     if (courseOutcome) {
       filter.courseOutcome = courseOutcome;
     }
-    console.log(filter);
+
+    console.log('Filter:', filter);
+    
+    // Retrieve questions with applied filters
     let questions = await Question.find(filter);
 
+    // Optionally limit the number of questions
     if (numberOfQuestions) {
       questions = questions.slice(0, parseInt(numberOfQuestions));
     }
@@ -748,6 +760,7 @@ exports.downloadQuestions = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 
 

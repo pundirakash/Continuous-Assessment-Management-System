@@ -128,7 +128,7 @@ const MasterDownloaderModal = ({ show, handleClose }) => {
               </select>
             </div>
             <div className="form-group">
-              <label htmlFor="templateSelect">Template Number</label>
+              <label htmlFor="templateSelect">Template Name</label>
               <select
                 className="form-control"
                 id="templateSelect"
