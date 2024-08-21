@@ -37,8 +37,8 @@ const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment, 
                 <div>
                   <button className="btn btn-outline-danger btn-sm me-2" onClick={() => onDeleteCourse(course._id)}>Delete</button>
                   <button className="btn btn-outline-primary btn-sm me-2" onClick={() => onAssignCourse(course)}>Assign Course</button>
-                  <button className="btn btn-outline-secondary btn-sm me-2" onClick={() => onCreateAssignment(course)}>Create Task</button>
-                  <button className="btn btn-outline-info btn-sm" onClick={() => onViewAssignments(course)}>View Tasks</button>
+                  <button className="btn btn-outline-secondary btn-sm me-2" onClick={() => onCreateAssignment(course)}>Create CA</button>
+                  <button className="btn btn-outline-info btn-sm" onClick={() => onViewAssignments(course)}>View CAs</button>
                 </div>
               </li>
             ))

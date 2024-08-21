@@ -74,19 +74,26 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
                 <li
                   key={set._id}
                   className="list-group-item d-flex justify-content-between align-items-center"
-                  onClick={() => onSetSelect(set.setName)}
                 >
-                  {set.setName}
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteSet(assessmentId, facultyId, set.setName);
-                    }}
-                    disabled={set.hodStatus !== 'Pending'}
-                  >
-                    Delete
-                  </button>
+                  <span>{set.setName}</span>
+                  <div>
+                    <button
+                      className="btn btn-primary btn-sm mr-2"
+                      onClick={() => onSetSelect(set.setName)}
+                    >
+                      View Set
+                    </button>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSet(assessmentId, facultyId, set.setName);
+                      }}
+                      disabled={set.hodStatus !== 'Pending'}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
