@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 import ErrorModal from '../ErrorModal';
 
 const CreateUser = () => {
@@ -11,8 +12,9 @@ const CreateUser = () => {
     password: '',
     role: '',
   });
+  const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
-  const [showErrorModal, setShowErrorModal] = useState(false); 
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -21,7 +23,11 @@ const CreateUser = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleSingleSubmit = async (e) => {
     e.preventDefault();
     try {
       await axios.post(`${process.env.REACT_APP_BASE_URL}/api/admin/register`, formData, {
@@ -32,15 +38,47 @@ const CreateUser = () => {
       alert('User created successfully');
     } catch (error) {
       console.error('Error creating user', error);
-      setError(error.message); 
-      setShowErrorModal(true); 
+      setError(error.message);
+      setShowErrorModal(true);
     }
+  };
+
+  const handleBulkSubmit = async () => {
+    if (!file) {
+      alert('Please upload an Excel file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const users = XLSX.utils.sheet_to_json(sheet);
+
+      try {
+        await axios.post(`${process.env.REACT_APP_BASE_URL}/api/admin/bulk-register`, { users }, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        alert('Users registered successfully');
+      } catch (error) {
+        console.error('Error creating users', error);
+        setError(error.message);
+        setShowErrorModal(true);
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   return (
     <div>
       <h3 className="mb-4">Create User</h3>
-      <form onSubmit={handleSubmit}>
+      
+      {/* Single User Registration Form */}
+      <form onSubmit={handleSingleSubmit}>
         <div className="form-group mb-3">
           <label htmlFor="name">Name</label>
           <input
@@ -122,12 +160,30 @@ const CreateUser = () => {
         </div>
         <button type="submit" className="btn btn-primary">Create User</button>
       </form>
+
+      <hr />
+
+      {/* Bulk User Registration */}
+      <h3 className="mb-4">Bulk Register Users</h3>
+      <div className="form-group mb-3">
+        <label htmlFor="bulkFile">Upload Excel File</label>
+        <input
+          type="file"
+          name="bulkFile"
+          id="bulkFile"
+          className="form-control"
+          onChange={handleFileChange}
+          accept=".xlsx, .xls"
+        />
+      </div>
+      <button onClick={handleBulkSubmit} className="btn btn-primary">Upload and Register Users</button>
+
       {showErrorModal && (
-      <ErrorModal
-        message={error}
-        onClose={() => setShowErrorModal(false)}
-      />
-    )}
+        <ErrorModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };

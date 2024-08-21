@@ -1,5 +1,4 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 exports.registerUser = async (req, res) => {
@@ -21,6 +20,7 @@ exports.registerUser = async (req, res) => {
   }
 };
 
+// Get all users (excluding passwords)
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
@@ -30,6 +30,7 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+// Get users by department
 exports.getUsersByDepartment = async (req, res) => {
   try {
     const { department } = req.params;
@@ -45,6 +46,7 @@ exports.getUsersByDepartment = async (req, res) => {
   }
 };
 
+// Edit user details
 exports.editUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -62,6 +64,7 @@ exports.editUser = async (req, res) => {
   }
 };
 
+// Delete a user
 exports.deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -74,5 +77,29 @@ exports.deleteUser = async (req, res) => {
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+// Bulk register users
+exports.bulkRegister = async (req, res) => {
+  try {
+    const users = req.body.users;
+
+    const userPromises = users.map(async (user) => {
+      const existingUser = await User.findOne({ email: user.email });
+      if (existingUser) {
+        throw new Error(`User with email ${user.email} already exists`);
+      }
+
+      user.password = await bcrypt.hash(user.password, 10);
+      return User.create(user);
+    });
+
+    await Promise.all(userPromises);
+
+    res.status(201).send({ message: 'Users created successfully' });
+  } catch (error) {
+    console.error('Error creating users:', error);
+    res.status(500).send({ message: `Error creating users: ${error.message}` });
   }
 };
