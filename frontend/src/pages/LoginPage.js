@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import {jwtDecode} from 'jwt-decode';
-import '../css/LoginPage.css'
+import '../css/LoginPage.css';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -10,10 +10,14 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    localStorage.removeItem('token');
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post( `${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
+      const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
       localStorage.setItem('token', response.data.token);
       const decodedToken = jwtDecode(response.data.token);
       const role = decodedToken.role;
@@ -21,7 +25,7 @@ const LoginPage = () => {
         navigate('/admin');
       } else if (role === 'Faculty') {
         navigate('/faculty');
-      }else if (role === 'HOD') { 
+      } else if (role === 'HOD') { 
         navigate('/role-selection');
       }
     } catch (error) {
@@ -35,7 +39,7 @@ const LoginPage = () => {
         <div className="col-md-6">
           <div className="card shadow-sm">
             <div className="card-body">
-            <img src="/Prashnamitra.png" alt="Prashnamitra Logo" className="logo mb-2" />
+              <img src="/Prashnamitra.png" alt="Prashnamitra Logo" className="logo mb-2" />
               <h2 className="card-title text-center mb-4">Login</h2>
               {error && <div className="alert alert-danger" role="alert">{error}</div>}
               <form onSubmit={handleLogin}>
