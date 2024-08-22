@@ -174,20 +174,28 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
                 </select>
               </div>
               <div className="form-group">
-                <label className='mb-2'>Marks</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="Enter marks"
-                  value={marks}
-                  onChange={e => setMarks(e.target.value)}
-                />
-              </div>
+  <label className='mb-2'>Marks</label>
+  <input
+    type="number"
+    className="form-control"
+    placeholder="Enter marks"
+    value={marks}
+    min="1"
+    onChange={e => setMarks(e.target.value)}
+  />
+</div>
+
               
               <div className="form-group">
-                <label className='mb-2'>Image (optional)</label>
-                <input type="file" className="form-control-file" onChange={e => setImage(e.target.files[0])} />
-              </div>
+  <label className="mb-2">Image (optional)</label>
+  <input 
+    type="file" 
+    className="form-control-file" 
+    accept="image/*" 
+    onChange={e => setImage(e.target.files[0])} 
+  />
+</div>
+
               </div>
             </form>
           </div>

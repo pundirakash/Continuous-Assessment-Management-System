@@ -413,6 +413,19 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
   }
 };
 
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    cb(null, true);
+  } else {
+    req.fileValidationError = 'Only image files are allowed';
+    cb(null, false);
+  }
+};
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -422,10 +435,28 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  fileFilter,
+  limits: { fileSize: 500 * 1024 } 
+}).single('image');
 
 exports.createQuestion = [
-  upload.single('image'),
+  (req, res, next) => {
+    upload(req, res, function (err) {
+      if (req.fileValidationError) {
+        return res.status(400).json({ message: req.fileValidationError });
+      } else if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ message: 'File size should not exceed 500KB' });
+        }
+        return res.status(400).json({ message: err.message });
+      } else if (err) {
+        return res.status(500).json({ message: 'An unknown error occurred during file upload' });
+      }
+      next();
+    });
+  },
   async (req, res) => {
     try {
       const { assessmentId, setName, text, type, bloomLevel, courseOutcome, marks, solution } = req.body;
@@ -479,7 +510,7 @@ exports.createQuestion = [
       await question.save();
 
       questionSet.questions.push(question._id);
-      questionSet.hodStatus="Pending";
+      questionSet.hodStatus = "Pending";
       facultyQuestions.sets = facultyQuestions.sets.map(set => {
         if (set.setName === setName) {
           return questionSet;
@@ -496,6 +527,7 @@ exports.createQuestion = [
     }
   }
 ];
+
 
 exports.deleteQuestion = async (req, res) => {
   try {

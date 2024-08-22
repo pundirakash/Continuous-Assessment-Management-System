@@ -56,6 +56,7 @@ const CreateUser = () => {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const users = XLSX.utils.sheet_to_json(sheet);
+      console.log(users);
 
       try {
         await axios.post(`${process.env.REACT_APP_BASE_URL}/api/admin/bulk-register`, { users }, {

@@ -8,10 +8,26 @@ const UpdateSetDetailsModal = ({ assessmentId, setName, onClose, onDetailsUpdate
   const [maximumMarks, setMaximumMarks] = useState('');
 
   const isFormValid = () => {
-    return allotmentDate && totalQuestions && submissionDate && maximumMarks;
+    const allotmentDateObj = new Date(allotmentDate);
+    const submissionDateObj = new Date(submissionDate);
+
+    // Check that all fields are filled, maximum marks are >= 0, and submission date is not before allotment date
+    return (
+      allotmentDate &&
+      totalQuestions &&
+      submissionDate &&
+      maximumMarks &&
+      parseInt(maximumMarks) >= 0 &&
+      submissionDateObj >= allotmentDateObj
+    );
   };
 
   const handleSubmit = async () => {
+    if (!isFormValid()) {
+      alert("Please make sure that the submission date is not before the allotment date and that maximum marks are at least 0.");
+      return;
+    }
+
     try {
       await userService.updateSetDetails(assessmentId, setName, { allotmentDate, submissionDate, maximumMarks, totalQuestions });
       onDetailsUpdated();
@@ -64,6 +80,7 @@ const UpdateSetDetailsModal = ({ assessmentId, setName, onClose, onDetailsUpdate
                 type="number"
                 className="form-control"
                 value={maximumMarks}
+                min="0"
                 onChange={(e) => setMaximumMarks(e.target.value)}
               />
             </div>
