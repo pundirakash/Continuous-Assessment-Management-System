@@ -53,6 +53,7 @@ const UpdateSetDetailsModal = ({ assessmentId, setName, onClose, onDetailsUpdate
                 type="number"
                 className="form-control"
                 value={totalQuestions}
+                min="0"
                 onChange={(e) => setTotalQuestions(e.target.value)}
               />
             </div>
