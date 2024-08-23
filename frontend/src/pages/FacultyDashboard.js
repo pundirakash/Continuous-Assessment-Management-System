@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import CoursesList from '../components/FacultyPanel/CoursesList';
 import AssessmentsList from '../components/FacultyPanel/AssessmentsList';
@@ -33,28 +33,18 @@ const FacultyDashboard = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      setLoading(true); // Start loading
       const decodedToken = jwtDecode(token);
-      setUser({
-        username: decodedToken.user,
-        uid: decodedToken.uid,
-        _id: decodedToken._id,
-        department: decodedToken.department,
-      });
-      setLoading(false); // Stop loading
+      setUser({ username: decodedToken.user, uid: decodedToken.uid, _id: decodedToken._id, department: decodedToken.department });
     }
   }, []);
 
   useEffect(() => {
     const fetchNotifications = async () => {
-      setLoading(true); // Start loading
       try {
         const notificationsData = await userService.getNotifications();
         setNotifications(notificationsData);
       } catch (error) {
         console.error('Failed to fetch notifications:', error);
-      } finally {
-        setLoading(false); // Stop loading
       }
     };
 
@@ -71,12 +61,11 @@ const FacultyDashboard = () => {
 
   const handleLogout = () => {
     if (window.confirm(`Are you sure you want to logout ?`)) {
-      handleLoading(async () => {
-        authService.logout();
-        navigate('/login');
-      });
+      authService.logout();
+      navigate('/login');
     }
   };
+
 
   const handleQuestionCreated = async () => {
     setShowCreateQuestion(false);
@@ -118,22 +107,18 @@ const FacultyDashboard = () => {
       console.error('Failed to change password:', error);
       alert('Failed to change password');
     }
-  };
+  };  
 
   return (
+    
     <div className="container mt-5">
-      {loading ? (
-        <LoadingSpinner /> // Show loading spinner if loading is true
-      ) : (
-        // Main dashboard content
+      {loading && <LoadingSpinner />} {/* Conditionally render the loading spinner */}
+      {!loading && (
         <div className="row">
           <div className="col-md-4">
             <CoursesList onCourseSelect={(id) => handleLoading(() => setSelectedCourseId(id))} />
             {selectedCourseId && (
-              <AssessmentsList
-                courseId={selectedCourseId}
-                onAssessmentSelect={(assessment) => handleLoading(() => setSelectedAssessment(assessment))}
-              />
+              <AssessmentsList courseId={selectedCourseId} onAssessmentSelect={(assessment) => handleLoading(() => setSelectedAssessment(assessment))} />
             )}
             {selectedAssessment && (
               <QuestionSetsList
@@ -151,70 +136,64 @@ const FacultyDashboard = () => {
                 <p className="lead">UID: {user.uid}</p>
                 <p className="lead">{user.department}</p>
                 <div className="clock-container">
-                  <div className="clock">
-                    <p className="time">
-                      {currentTime.toLocaleString('en-IN', {
-                        timeZone: 'Asia/Kolkata',
-                        hour12: true,
-                        hour: 'numeric',
-                        minute: 'numeric',
-                        second: 'numeric',
-                      })}
-                    </p>
-                    <p className="date">
-                      {currentTime.toLocaleString('en-IN', {
-                        timeZone: 'Asia/Kolkata',
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  className="btn btn-danger mt-2 mb-2"
-                  onClick={() => handleLoading(handleLogout)}
-                >
-                  Logout
-                </button>
-                <button className="btn btn-primary m-2" onClick={openChangePasswordModal}>
-                  Change Password
-                </button>
+  <div className="clock">
+    <p className="time">
+      {currentTime.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour12: true,
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+      })}
+    </p>
+    <p className="date">
+      {currentTime.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })}
+    </p>
+  </div>
+</div>
+                <button className="btn btn-danger mt-2 mb-2" onClick={() => handleLoading(handleLogout)}>Logout</button>
+                <button className="btn btn-primary m-2" onClick={openChangePasswordModal}>Change Password</button>        
                 <div className="mt-1">
-                  <h3>Notifications</h3>
-                  <div className="notification-icon" onClick={() => setShowNotifications(!showNotifications)}>
-                    <FaBell size={30} />
-                    {notifications.length > 0 && <span className="badge">{notifications.length}</span>}
-                  </div>
-                  {showChangePasswordModal && (
-                    <ChangePasswordModal
-                      onClose={() => setShowChangePasswordModal(false)}
-                      onChangePassword={handleChangePassword}
-                    />
-                  )}
-                  {showNotifications && (
-                    <div className="notification-container">
-                      {notifications.length > 0 ? (
-                        notifications.map((notification, index) => (
-                          <div key={index} className="notification-item">
-                            <ul>
-                              <li><strong>{notification}</strong></li>
-                            </ul>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="no-notifications">No notifications</p>
-                      )}
-                    </div>
-                  )}
-                </div>
+      <h3>Notifications</h3>
+      <div className="notification-icon" onClick={() => setShowNotifications(!showNotifications)}>
+        <FaBell size={30} />
+        {notifications.length > 0 && <span className="badge">{notifications.length}</span>}
+      </div>
+      {showChangePasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePasswordModal(false)}
+          onChangePassword={handleChangePassword}
+        />
+      )}
+      {showNotifications && (
+        <div className="notification-container">
+          {notifications.length > 0 ? (
+            notifications.map((notification, index) => (
+              <div key={index} className="notification-item">
+                <ul>
+                  <li><strong>{notification}</strong></li>
+                </ul>
               </div>
-            </div>
-          </div>
+            ))
+          ) : (
+            <p className="no-notifications">No notifications</p>
+          )}
         </div>
       )}
-      {/* Additional components that depend on loaded data */}
+    </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+        
+      )}
       {selectedSetName && selectedAssessment && isSetDetailsUpdated && (
         <div className="mt-5">
           <QuestionsList
