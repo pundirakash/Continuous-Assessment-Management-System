@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
 import ErrorModal from '../ErrorModal';
+import LoadingSpinner from '../LoadingSpinner';
 
 const CoursesList = ({ onCourseSelect }) => {
   const [courses, setCourses] = useState([]);
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -20,6 +22,8 @@ const CoursesList = ({ onCourseSelect }) => {
           setError(error.message);
         }
         setShowErrorModal(true);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -30,8 +34,13 @@ const CoursesList = ({ onCourseSelect }) => {
     <div className="card">
       <div className="card-body">
         <h3 className="card-title">Courses</h3>
-        <div className="table-responsive">
-          {courses.length > 0 ? (
+        <div
+          className="table-responsive"
+          style={{ height: loading ? '40px' : 'auto' }}
+        >
+          {loading ? (
+            <LoadingSpinner /> 
+          ) : courses.length > 0 ? (
             <table className="table table-striped table-hover">
               <thead>
                 <tr>
@@ -42,7 +51,11 @@ const CoursesList = ({ onCourseSelect }) => {
               </thead>
               <tbody>
                 {courses.map((course, index) => (
-                  <tr key={course._id} onClick={() => onCourseSelect(course._id)} style={{ cursor: 'pointer' }}>
+                  <tr
+                    key={course._id}
+                    onClick={() => onCourseSelect(course._id)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <td>{index + 1}</td>
                     <td>{course.code}</td>
                     <td>{course.name}</td>
@@ -51,15 +64,12 @@ const CoursesList = ({ onCourseSelect }) => {
               </tbody>
             </table>
           ) : (
-            <p>No Course Alloted</p>
+            <p>No Course Allotted</p>
           )}
         </div>
       </div>
       {showErrorModal && (
-        <ErrorModal
-          message={error}
-          onClose={() => setShowErrorModal(false)}
-        />
+        <ErrorModal message={error} onClose={() => setShowErrorModal(false)} />
       )}
     </div>
   );
