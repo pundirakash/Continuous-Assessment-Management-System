@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
 import CreateSetModal from './CreateSetModal';
 import ErrorModal from '../ErrorModal';
+import LoadingSpinner from '../LoadingSpinner'; 
 import '../../css/QuestionSetsList.css';
 
 const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
@@ -9,6 +10,7 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
     const fetchSets = async () => {
@@ -22,7 +24,9 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
         } else {
           setError(error.message);
         }
-        setShowErrorModal(true); 
+        setShowErrorModal(true);
+      } finally {
+        setLoading(false); 
       }
     };
 
@@ -67,8 +71,16 @@ const QuestionSetsList = ({ assessmentId, facultyId, onSetSelect }) => {
     <div className="card">
       <div className="card-body">
         <h3 className="card-title">Question Sets</h3>
-        <div className="question-sets-list">
-          {sets.length > 0 ? (
+        <div
+          className={loading ? '' : 'question-sets-list'}
+          style={{
+            height: loading ? '50px' : 'auto',
+            overflow: loading ? 'hidden' : 'auto'
+          }}
+        >
+          {loading ? (
+            <LoadingSpinner />
+          ) : sets.length > 0 ? (
             <ul className="list-group">
               {sets.map(set => (
                 <li

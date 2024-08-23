@@ -35,10 +35,10 @@ const CoursesList = ({ onCourseSelect }) => {
       <div className="card-body">
         <h3 className="card-title">Courses</h3>
         <div
-          className={loading ? '' : 'table-responsive'} // Apply table-responsive only when not loading
+          className={loading ? '' : 'table-responsive'} 
           style={{
-            height: loading ? '50px' : 'auto', // Adjust this height as needed
-            overflow: loading ? 'hidden' : 'auto' // Prevent scrolling during loading
+            height: loading ? '30px' : 'auto', 
+            overflow: loading ? 'hidden' : 'auto' 
           }}
         >
           {loading ? (

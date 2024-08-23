@@ -37,7 +37,7 @@ const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
         <div
           className={loading ? '' : 'assessment-list'}
           style={{
-            height: loading ? '50px' : 'auto',
+            height: loading ? '30px' : 'auto',
             overflow: loading ? 'hidden' : 'auto'
           }}
         >
