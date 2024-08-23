@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import userService from '../../services/userService';
 import QuestionListModal from './QuestionListModal';
 import ErrorModal from '../ErrorModal';
+import '../../css/ViewCoursesModal.css'
 
 const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocateCourse,pendingAssessmentSets }) => {
   const [assessments, setAssessments] = useState([]);
@@ -119,7 +120,7 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
     <>
       <div className={`modal fade ${show ? 'show d-block' : 'd-none'}`} tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
         <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
-          <div className="modal-content">
+          <div className="modal-content custom-modal">
             <div className="modal-header bg-primary text-white">
               <h5 className="modal-title text-left">Courses Assigned to {faculty.name}</h5>
             </div>

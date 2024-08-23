@@ -14,7 +14,7 @@ const facultyRoutes = require('./routes/facultyRoutes');
 dotenv.config();
 const app = express();
 const corsOptions = {
-  origin: 'https://continuous-assessment-management-system.vercel.app', 
+  origin: `${process.env.ORIGIN}`, 
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true, 
   optionsSuccessStatus: 204 

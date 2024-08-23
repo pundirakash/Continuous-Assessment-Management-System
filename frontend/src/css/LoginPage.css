@@ -12,8 +12,8 @@
 
 .logo {
   display: block;
-  margin: 0 auto; /* Center the logo */
-  width: 130px; /* Adjust width as needed */
-  height: auto; /* Maintain aspect ratio */
-  border-radius: 10px; /* Rounded corners */
+  margin: 0 auto;
+  width: 130px; 
+  height: auto; 
+  border-radius: 10px; 
 }
