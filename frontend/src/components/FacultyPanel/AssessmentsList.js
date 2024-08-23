@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
 import ErrorModal from '../ErrorModal';
+import LoadingSpinner from '../LoadingSpinner';
 
 const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
   const [assessments, setAssessments] = useState([]);
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAssessments = async () => {
@@ -13,13 +15,15 @@ const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
         const data = await userService.getAssessments(courseId);
         setAssessments(data);
       } catch (error) {
-        console.error('Error fetching assessment:', error);
+        console.error('Error fetching assessments:', error);
         if (error.response && error.response.data && error.response.data.message) {
           setError(error.response.data.message);
         } else {
           setError(error.message);
         }
         setShowErrorModal(true);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -30,8 +34,16 @@ const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
     <div className="card">
       <div className="card-body">
         <h3 className="card-title">Assessments</h3>
-        <div className="assessment-list">
-          {assessments.length > 0 ? (
+        <div
+          className={loading ? '' : 'assessment-list'}
+          style={{
+            height: loading ? '50px' : 'auto',
+            overflow: loading ? 'hidden' : 'auto'
+          }}
+        >
+          {loading ? (
+            <LoadingSpinner />
+          ) : assessments.length > 0 ? (
             <ul className="list-group">
               {assessments.map(assessment => (
                 <li
