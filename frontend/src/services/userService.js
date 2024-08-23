@@ -274,7 +274,7 @@ const approveAssessment = async (assessmentId, facultyId, setName, status, remar
 };
 
 const getPendingAssessmentSets = async () => {
-  const response = await axios.get(`${API_URL_HOD }//pending-assessment-sets`, {
+  const response = await axios.get(`${API_URL_HOD }/pending-assessment-sets`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
     },
