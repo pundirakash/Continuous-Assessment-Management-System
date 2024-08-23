@@ -36,7 +36,7 @@ const CoursesList = ({ onCourseSelect }) => {
         <h3 className="card-title">Courses</h3>
         <div
           className="table-responsive"
-          style={{ height: loading ? '50px' : 'auto' }}
+          style={{ height: loading ? '30px' : 'auto' }}
         >
           {loading ? (
             <LoadingSpinner /> 
