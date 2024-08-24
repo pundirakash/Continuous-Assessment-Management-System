@@ -328,12 +328,13 @@ const [numberOfQuestions, setNumberOfQuestions] = useState(0);
                   )}
                 </td>
                 <td className='text-center'>
-                  {question.image ? (
-                    <img src={`${process.env.REACT_APP_BASE_URL}/${question.image}`} alt="question" style={{ width: '100px' }} />
-                  ) : (
-                    'N/A'
-                  )}
-                </td>
+  {question.image ? (
+    <img src={question.image} alt="question" style={{ width: '100px' }} />
+  ) : (
+    'N/A'
+  )}
+</td>
+
                 <td>{question.solution || 'N/A'}</td>
                 <td>
   <button
