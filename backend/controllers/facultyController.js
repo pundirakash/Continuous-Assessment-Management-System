@@ -143,7 +143,6 @@ exports.submitAssessment = async (req, res) => {
 async function generateDocxFromTemplate(data, templateNumber) {
   try {
     const templateFilePath = path.resolve(__dirname, `../templates/template${templateNumber}.docx`);
-    const outputDocxFilePath = path.resolve(__dirname, `output_${templateNumber}.docx`);
 
     const content = fs.readFileSync(templateFilePath, 'binary');
     const zip = new PizZip(content);
@@ -165,10 +164,10 @@ async function generateDocxFromTemplate(data, templateNumber) {
     doc.setData(data);
     doc.render();
 
+    // Generate the file buffer instead of writing it to disk
     const buffer = doc.getZip().generate({ type: 'nodebuffer' });
-    fs.writeFileSync(outputDocxFilePath, buffer);
 
-    return outputDocxFilePath;
+    return buffer;
   } catch (error) {
     console.error('Error generating DOCX file:', error);
     throw new Error(`Error generating DOCX file: ${error.message}`);
@@ -177,7 +176,7 @@ async function generateDocxFromTemplate(data, templateNumber) {
 
 exports.downloadAssessment = async (req, res) => {
   try {
-    const { assessmentId, setName, templateNumber } = req.params; 
+    const { assessmentId, setName, templateNumber } = req.params;
     const assessment = await Assessment.findById(assessmentId)
       .populate('facultyQuestions.sets.questions')
       .populate('course');
@@ -230,9 +229,14 @@ exports.downloadAssessment = async (req, res) => {
       })),
     };
 
-    const docxFilePath = await generateDocxFromTemplate(data, templateNumber);
+    const docxBuffer = await generateDocxFromTemplate(data, templateNumber);
 
-    res.download(docxFilePath, `assessment_${assessmentId}_${setName}.docx`);
+    // Set headers to indicate a file download
+    res.setHeader('Content-Disposition', `attachment; filename="assessment_${assessmentId}_${setName}.docx"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+    // Send the file buffer directly to the client
+    res.send(docxBuffer);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Server error', error });
@@ -241,7 +245,7 @@ exports.downloadAssessment = async (req, res) => {
 
 exports.downloadSolution = async (req, res) => {
   try {
-    const { assessmentId, setName, templateNumber } = req.params; 
+    const { assessmentId, setName, templateNumber } = req.params;
     const assessment = await Assessment.findById(assessmentId)
       .populate('facultyQuestions.sets.questions')
       .populate('course');
@@ -268,8 +272,6 @@ exports.downloadSolution = async (req, res) => {
       return res.status(403).json({ message: 'Question set is not approved yet' });
     }
 
-    const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-
     const data = {
       termId: assessment.termId,
       assessmentName: assessment.name,
@@ -291,9 +293,14 @@ exports.downloadSolution = async (req, res) => {
       })),
     };
 
-    const docxFilePath = await generateDocxFromTemplate(data, templateNumber);
+    const docxBuffer = await generateDocxFromTemplate(data, templateNumber);
 
-    res.download(docxFilePath, `solution_${assessmentId}_${setName}.docx`);
+    // Set headers to indicate a file download
+    res.setHeader('Content-Disposition', `attachment; filename="solution_${assessmentId}_${setName}.docx"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+    // Send the file buffer directly to the client
+    res.send(docxBuffer);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Server error', error });
@@ -382,16 +389,16 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       }))
     };
 
-    const docxFilePath1 = await generateDocxFromTemplate(data, 1);
+    const docxBuffer1 = await generateDocxFromTemplate(data, 1);
 
-    let docxFilePath2;
+    let docxBuffer2;
     if (assessment.type === 'MCQ') {
-      docxFilePath2 = await generateDocxFromTemplate(data, 3);
+      docxBuffer2 = await generateDocxFromTemplate(data, 3);
     } else if (assessment.type === 'Subjective') {
-      docxFilePath2 = await generateDocxFromTemplate(data, 4);
+      docxBuffer2 = await generateDocxFromTemplate(data, 4);
     }
 
-    const docxFilePath3 = await generateDocxFromTemplate(solutionData, 5);
+    const docxBuffer3 = await generateDocxFromTemplate(solutionData, 5);
 
     const archive = archiver('zip');
     res.attachment(`assessment_${data.assessmentName}_random_${numberOfQuestions}.zip`);
@@ -402,9 +409,10 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
 
     archive.pipe(res);
 
-    archive.file(docxFilePath1, { name: `CourseFileFormat_${data.assessmentName}_random_${numberOfQuestions}_1.docx` });
-    archive.file(docxFilePath2, { name: `assessment_${data.assessmentName}_random_${numberOfQuestions}_${assessment.type === 'MCQ' ? 3 : 4}.docx` });
-    archive.file(docxFilePath3, { name: `solution_${data.assessmentName}_random_${numberOfQuestions}_5.docx` });
+    // Append file buffers to the archive instead of file paths
+    archive.append(docxBuffer1, { name: `CourseFileFormat_${data.assessmentName}_random_${numberOfQuestions}_1.docx` });
+    archive.append(docxBuffer2, { name: `assessment_${data.assessmentName}_random_${numberOfQuestions}_${assessment.type === 'MCQ' ? 3 : 4}.docx` });
+    archive.append(docxBuffer3, { name: `solution_${data.assessmentName}_random_${numberOfQuestions}_5.docx` });
 
     await archive.finalize();
   } catch (error) {
