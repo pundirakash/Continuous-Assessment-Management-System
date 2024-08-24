@@ -13,6 +13,7 @@
   "dependencies": {
     "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.4.0",
     "cors": "^2.8.5",
     "docxtemplater": "^3.47.4",
     "docxtemplater-image-module": "^3.1.0",

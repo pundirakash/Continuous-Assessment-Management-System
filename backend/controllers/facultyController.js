@@ -6,10 +6,18 @@ const path = require('path');
 const fs = require('fs');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
-const moment=require('moment');
 const multer = require('multer');
+const storage = multer.memoryStorage();
 const ImageModule = require('docxtemplater-image-module-free');
 const archiver = require('archiver');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: 'dlbssp6re',
+  api_key: '396552621778668',
+  api_secret: 'gBT7wJjccikmopa4C7cdXlVh5hs',
+});
+
 
 exports.getCourses = async (req, res) => {
   try {
@@ -434,20 +442,31 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const upload = multer({ 
+const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 500 * 1024 } 
+  limits: { fileSize: 500 * 1024 }, // 500KB limit
 }).single('image');
+
+const uploadToCloudinary = (file) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'question_images',
+        public_id: `${Date.now()}-${file.originalname}`,
+        resource_type: 'image',
+      },
+      (error, result) => {
+        if (error) {
+          reject(new Error('Failed to upload image to Cloudinary'));
+        } else {
+          resolve(result.secure_url);
+        }
+      }
+    );
+    uploadStream.end(file.buffer);
+  });
+};
 
 exports.createQuestion = [
   (req, res, next) => {
@@ -502,6 +521,11 @@ exports.createQuestion = [
         facultyQuestions.sets[0].hodStatus = 'Pending';
       }
 
+      let imageUrl = null;
+      if (req.file) {
+        imageUrl = await uploadToCloudinary(req.file);  // Wait for the image URL
+      }
+
       const question = new Question({
         assessment: assessmentId,
         text,
@@ -510,7 +534,7 @@ exports.createQuestion = [
         bloomLevel,
         courseOutcome,
         marks,
-        image: req.file ? req.file.path : null,
+        image: imageUrl,  // Now it has the correct value
         solution,
         status: 'Pending'
       });
@@ -535,7 +559,6 @@ exports.createQuestion = [
     }
   }
 ];
-
 
 exports.deleteQuestion = async (req, res) => {
   try {
