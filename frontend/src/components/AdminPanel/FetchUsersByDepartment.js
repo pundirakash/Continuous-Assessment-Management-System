@@ -42,7 +42,7 @@ const FetchUsersByDepartment = () => {
 
   const handleDeleteUser = async (userId) => {
     try {
-      await axios.delete(`http://localhost:3002/api/admin/users/${userId}`, {
+      await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/admin/users/${userId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -79,7 +79,7 @@ const FetchUsersByDepartment = () => {
 
   const handleSaveChanges = async () => {
     try {
-      await axios.put(`http://localhost:3002/api/admin/users/${currentUser._id}`, currentUser, {
+      await axios.put(`${process.env.REACT_APP_BASE_URL}/api/admin/users/${currentUser._id}`, currentUser, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
