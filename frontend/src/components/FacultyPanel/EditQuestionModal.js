@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import '../../css/ViewCoursesModal.css'
 
 const EditQuestionModal = ({ question, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     ...question,
     options: question.options ? question.options : ['', '', '', ''],
-    solution: question.solution || '', // Initialize solution
+    solution: question.solution || '',
   });
 
   useEffect(() => {
     setFormData({
       ...question,
       options: question.options ? question.options : ['', '', '', ''],
-      solution: question.solution || '', // Initialize solution
+      solution: question.solution || '', 
     });
   }, [question]);
 
@@ -30,7 +31,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
         ...prevState,
         type: value,
         options: ['', '', '', ''],
-        solution: '', // Reset solution
+        solution: '', 
       }));
     } else if (value === 'Subjective') {
       setFormData((prevState) => ({
@@ -67,8 +68,8 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
 
   return (
     <div className="modal fade show" tabIndex="-1" style={{ display: 'block' }}>
-      <div className="modal-dialog modal-lg">
-        <div className="modal-content">
+      <div className="modal-dialog modal-xl">
+        <div className="modal-content custom-modal">
           <div className="modal-header">
             <h5 className="modal-title text-left">Edit Question</h5>
             <button type="button" className="btn-close" onClick={onClose}></button>

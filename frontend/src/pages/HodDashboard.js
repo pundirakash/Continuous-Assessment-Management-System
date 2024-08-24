@@ -33,6 +33,7 @@ const HodDashboard = () => {
 const [selectedCourseAssignments, setSelectedCourseAssignments] = useState([]);
 const [showMasterDownloaderModal, setShowMasterDownloaderModal] = useState(false);
 const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+const [isLoading, setIsLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -44,15 +45,22 @@ const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
     }
 
     const fetchInitialData = async () => {
-      const [facultiesResponse, coursesResponse, pendingSetsResponse] = await Promise.all([
-        userService.getFacultiesByDepartment(),
-        userService.getCoursesByDepartment(),
-        userService.getPendingAssessmentSets()
-      ]);
-      
-      setFaculties(facultiesResponse);
-      setCourses(coursesResponse);
-      setPendingAssessmentSets(pendingSetsResponse);
+      try {
+        const [facultiesResponse, coursesResponse, pendingSetsResponse] = await Promise.all([
+          userService.getFacultiesByDepartment(),
+          userService.getCoursesByDepartment(),
+          userService.getPendingAssessmentSets()
+        ]);
+
+        setFaculties(facultiesResponse);
+        setCourses(coursesResponse);
+        setPendingAssessmentSets(pendingSetsResponse);
+      } catch (error) {
+        setError('Failed to load data');
+        setShowErrorModal(true);
+      } finally {
+        setIsLoading(false); 
+      }
     };
 
     fetchInitialData();
@@ -220,7 +228,12 @@ const handleCloseMasterDownloader = () => setShowMasterDownloaderModal(false);
     <div className="container mt-5">
       <Header user={user} onLogout={handleLogout} handleShowMasterDownloader={handleShowMasterDownloader} openChangePasswordModal={openChangePasswordModal}/>
       <div className="row">
-        <FacultyList faculties={faculties} onFacultyClick={handleFacultyClick} pendingAssessmentSets={pendingAssessmentSets}/>
+        <FacultyList 
+          faculties={faculties} 
+          onFacultyClick={handleFacultyClick} 
+          pendingAssessmentSets={pendingAssessmentSets}
+          isLoading={isLoading} 
+        />
         <CourseList 
           courses={courses} 
           onAddCourse={handleShowAddCourse} 
@@ -228,6 +241,7 @@ const handleCloseMasterDownloader = () => setShowMasterDownloaderModal(false);
           onCreateAssignment={handleShowCreateAssignment} 
           onViewAssignments={handleShowViewAssignments} 
           onDeleteCourse={handleDeleteCourse} 
+          isLoading={isLoading} 
         />
       </div>
       <Modals

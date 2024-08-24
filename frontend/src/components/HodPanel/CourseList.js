@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import LoadingSpinner from '../LoadingSpinner'; 
 
-const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment, onViewAssignments, onDeleteCourse }) => {
+const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment, onViewAssignments, onDeleteCourse, isLoading }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearchChange = (event) => {
@@ -24,28 +25,61 @@ const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment, 
               placeholder="Search courses..."
               value={searchTerm}
               onChange={handleSearchChange}
+              disabled={isLoading}
             />
           </div>
-          <button className="btn btn-outline-primary btn-sm" onClick={onAddCourse}>Add Courses</button>
+          <button 
+            className="btn btn-outline-primary btn-sm" 
+            onClick={onAddCourse}
+            disabled={isLoading}
+          >
+            Add Courses
+          </button>
         </div>
-        
-        <ul className="list-group list-group-flush">
-          {filteredCourses.length > 0 ? (
-            filteredCourses.map((course) => (
-              <li key={course._id} className="list-group-item d-flex justify-content-between align-items-center">
-                {course.name} ({course.code})
-                <div>
-                  <button className="btn btn-outline-danger btn-sm me-2" onClick={() => onDeleteCourse(course._id)}>Delete</button>
-                  <button className="btn btn-outline-primary btn-sm me-2" onClick={() => onAssignCourse(course)}>Assign Course</button>
-                  <button className="btn btn-outline-secondary btn-sm me-2" onClick={() => onCreateAssignment(course)}>Create CA</button>
-                  <button className="btn btn-outline-info btn-sm" onClick={() => onViewAssignments(course)}>View CAs</button>
-                </div>
-              </li>
-            ))
-          ) : (
-            <li className="list-group-item text-center">No Course Available</li>
-          )}
-        </ul>
+
+        {isLoading ? (
+          <div className="text-center my-3">
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <ul className="list-group list-group-flush">
+            {filteredCourses.length > 0 ? (
+              filteredCourses.map((course) => (
+                <li key={course._id} className="list-group-item d-flex justify-content-between align-items-center">
+                  {course.name} ({course.code})
+                  <div>
+                    <button 
+                      className="btn btn-outline-danger btn-sm me-2" 
+                      onClick={() => onDeleteCourse(course._id)}
+                    >
+                      Delete
+                    </button>
+                    <button 
+                      className="btn btn-outline-primary btn-sm me-2" 
+                      onClick={() => onAssignCourse(course)}
+                    >
+                      Assign Course
+                    </button>
+                    <button 
+                      className="btn btn-outline-secondary btn-sm me-2" 
+                      onClick={() => onCreateAssignment(course)}
+                    >
+                      Create CA
+                    </button>
+                    <button 
+                      className="btn btn-outline-info btn-sm" 
+                      onClick={() => onViewAssignments(course)}
+                    >
+                      View CAs
+                    </button>
+                  </div>
+                </li>
+              ))
+            ) : (
+              <li className="list-group-item text-center">No Course Available</li>
+            )}
+          </ul>
+        )}
       </div>
     </div>
   );

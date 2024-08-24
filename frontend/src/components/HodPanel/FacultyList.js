@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import LoadingSpinner from '../LoadingSpinner'; 
 
-const FacultyList = ({ faculties, onFacultyClick, pendingAssessmentSets }) => {
+const FacultyList = ({ faculties, onFacultyClick, pendingAssessmentSets, isLoading }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearchChange = (event) => {
@@ -29,27 +30,33 @@ const FacultyList = ({ faculties, onFacultyClick, pendingAssessmentSets }) => {
             onChange={handleSearchChange}
           />
         </div>
-        <ul className="list-group list-group-flush">
-          {filteredFaculties.length > 0 ? (
-            filteredFaculties.map((faculty) => (
-              <li key={faculty._id} className="list-group-item d-flex justify-content-between align-items-center">
-                <span>{faculty.name} ({faculty.role})</span>
-                <div className="position-relative">
-                  <button className="btn btn-outline-primary btn-sm" onClick={() => onFacultyClick(faculty)}>
-                    View Courses
-                  </button>
-                  {hasPendingAssessments(faculty._id) && (
-                    <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
-                      <span className="visually-hidden">New alerts</span>
-                    </span>
-                  )}
-                </div>
-              </li>
-            ))
+        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+          {isLoading ? (
+            <LoadingSpinner />
           ) : (
-            <li className="list-group-item text-center">No Faculty Available</li>
+            <ul className="list-group list-group-flush">
+              {filteredFaculties.length > 0 ? (
+                filteredFaculties.map((faculty) => (
+                  <li key={faculty._id} className="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{faculty.name} ({faculty.role})</span>
+                    <div className="position-relative">
+                      <button className="btn btn-outline-primary btn-sm" onClick={() => onFacultyClick(faculty)}>
+                        View Courses
+                      </button>
+                      {hasPendingAssessments(faculty._id) && (
+                        <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                          <span className="visually-hidden">New alerts</span>
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))
+              ) : (
+                <li className="list-group-item text-center">No Faculty Available</li>
+              )}
+            </ul>
           )}
-        </ul>
+        </div>
       </div>
     </div>
   );
