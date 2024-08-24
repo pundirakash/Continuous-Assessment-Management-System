@@ -152,7 +152,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
                   />
                 </div>
               )}
-
+<div className="options-container">
               <div className="form-group">
                 <label htmlFor="bloomLevel">Bloom Level:</label>
                 <select
@@ -163,15 +163,15 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
                   onChange={handleChange}
                   required
                 >
-                  <option value="L1">L1</option>
-                  <option value="L2">L2</option>
-                  <option value="L3">L3</option>
-                  <option value="L4">L4</option>
-                  <option value="L5">L5</option>
-                  <option value="L6">L6</option>
+                  <option value="L1: Remember">L1: Remember</option>
+                  <option value="L2: Understand">L2: Understand</option>
+                  <option value="L3: Apply">L3: Apply</option>
+                  <option value="L4: Analyze">L4: Analyze</option>
+                  <option value="L5: Evaluate">L5: Evaluate</option>
+                  <option value="L6: Create">L6: Create</option>
                 </select>
               </div>
-
+              </div>
               <div className="form-group">
                 <label htmlFor="courseOutcome">Course Outcome:</label>
                 <select
