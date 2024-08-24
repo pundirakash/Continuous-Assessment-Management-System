@@ -14,6 +14,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
   const [solution, setSolution] = useState('');
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [loading, setLoading] = useState(false); // Add loading state
 
   useEffect(() => {
     if (type === 'Subjective') {
@@ -36,6 +37,8 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       return;
     }
 
+    setLoading(true); // Start loading animation
+
     try {
       const questionData = {
         assessmentId,
@@ -57,6 +60,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       alert(`Question created successfully!`);
       onQuestionCreated();
 
+      // Reset form
       setText('');
       setType('MCQ');
       setOptions(['', '', '', '']);
@@ -73,6 +77,8 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
         setError(error.message);
       }
       setShowErrorModal(true);
+    } finally {
+      setLoading(false); // Stop loading animation
     }
   };
 
@@ -198,13 +204,20 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
 
               </div>
             </form>
-          </div>
+            </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Close
             </button>
-            <button type="button" className="btn btn-primary" onClick={handleCreate}>
-              Create Question
+            <button type="button" className="btn btn-primary" onClick={handleCreate} disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  {' '}Creating...
+                </>
+              ) : (
+                'Create Question'
+              )}
             </button>
           </div>
         </div>
