@@ -324,8 +324,6 @@ exports.approveAssessment = async (req, res) => {
 async function generateDocxFromTemplate(data, templateNumber) {
   try {
     const templateFilePath = path.resolve(__dirname, `../templates/template${templateNumber}.docx`);
-    const outputDocxFilePath = path.resolve(__dirname, `output_${templateNumber}.docx`);
-
     const content = fs.readFileSync(templateFilePath, 'binary');
     const zip = new PizZip(content);
 
@@ -347,9 +345,7 @@ async function generateDocxFromTemplate(data, templateNumber) {
     doc.render();
 
     const buffer = doc.getZip().generate({ type: 'nodebuffer' });
-    fs.writeFileSync(outputDocxFilePath, buffer);
-
-    return outputDocxFilePath;
+    return buffer;
   } catch (error) {
     console.error('Error generating DOCX file:', error);
     throw new Error(`Error generating DOCX file: ${error.message}`);
@@ -663,22 +659,16 @@ exports.downloadQuestions = async (req, res) => {
 
     const filter = {};
 
-    // Step 1: Filter by Course
     if (courseId) {
       const course = await Course.findById(courseId);
       if (!course) {
         return res.status(404).json({ message: 'Course not found' });
       }
-
-      // Find assessments related to the course
       const assessments = await Assessment.find({ course: courseId });
       const assessmentIds = assessments.map(assessment => assessment._id);
-      
-      // Find questions related to those assessments
       filter.assessment = { $in: assessmentIds };
     }
 
-    // Step 2: Apply additional filters
     if (assessmentId) {
       filter.assessment = assessmentId;
     }
@@ -705,12 +695,8 @@ exports.downloadQuestions = async (req, res) => {
       filter.courseOutcome = courseOutcome;
     }
 
-    console.log('Filter:', filter);
-    
-    // Retrieve questions with applied filters
     let questions = await Question.find(filter);
 
-    // Optionally limit the number of questions
     if (numberOfQuestions) {
       questions = questions.slice(0, parseInt(numberOfQuestions));
     }
@@ -735,8 +721,8 @@ exports.downloadQuestions = async (req, res) => {
       })),
     };
 
-    const docxQuestionPath = await generateDocxFromTemplate(questionData, templateNumber || '3');
-    const docxSolutionPath = await generateDocxFromTemplate(solutionData, '5');
+    const questionDocBuffer = await generateDocxFromTemplate(questionData, templateNumber || '3');
+    const solutionDocBuffer = await generateDocxFromTemplate(solutionData, '5');
 
     res.setHeader('Content-Disposition', 'attachment; filename=questions_and_solution.zip');
     res.setHeader('Content-Type', 'application/zip');
@@ -745,15 +731,10 @@ exports.downloadQuestions = async (req, res) => {
 
     archive.pipe(res);
 
-    archive.file(docxQuestionPath, { name: 'questions.docx' });
-    archive.file(docxSolutionPath, { name: 'solution.docx' });
+    archive.append(questionDocBuffer, { name: 'questions.docx' });
+    archive.append(solutionDocBuffer, { name: 'solution.docx' });
 
-    archive.finalize();
-
-    archive.on('end', () => {
-      fs.unlinkSync(docxQuestionPath);
-      fs.unlinkSync(docxSolutionPath);
-    });
+    await archive.finalize();
 
   } catch (error) {
     console.error('Error downloading questions and solution:', error);
