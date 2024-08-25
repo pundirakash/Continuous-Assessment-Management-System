@@ -125,13 +125,13 @@ const QuestionListModal = ({ show, handleClose, initialQuestions = [], setName, 
                         <td>{question.bloomLevel}</td>
                         <td>{question.courseOutcome}</td>
                         <td>{question.marks}</td>
-                        <td>
-                          {question.image ? (
-                            <img src={`${process.env.REACT_APP_BASE_URL}/${question.image}`} alt="question" style={{ width: '100px' }} />
-                          ) : (
-                            'N/A'
-                          )}
-                        </td>
+                        <td className='text-center'>
+  {question.image ? (
+    <img src={question.image} alt="question" style={{ width: '100px' }} />
+  ) : (
+    'N/A'
+  )}
+</td>
                         <td>{question.solution}</td>
                         <td>{question.status}</td>
                         <td>

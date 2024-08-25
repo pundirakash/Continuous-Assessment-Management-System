@@ -8,9 +8,13 @@ const FacultyList = ({ faculties, onFacultyClick, pendingAssessmentSets, isLoadi
     setSearchTerm(event.target.value);
   };
 
-  const filteredFaculties = faculties.filter((faculty) =>
+  // Sorting faculties by uid in ascending order (numeric comparison)
+  const sortedFaculties = faculties.sort((a, b) => a.uid - b.uid);
+
+  const filteredFaculties = sortedFaculties.filter((faculty) =>
     faculty.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    faculty.role.toLowerCase().includes(searchTerm.toLowerCase())
+    faculty.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    faculty.uid.toString().includes(searchTerm.toLowerCase())
   );
 
   const hasPendingAssessments = (facultyId) => {
@@ -38,7 +42,7 @@ const FacultyList = ({ faculties, onFacultyClick, pendingAssessmentSets, isLoadi
               {filteredFaculties.length > 0 ? (
                 filteredFaculties.map((faculty) => (
                   <li key={faculty._id} className="list-group-item d-flex justify-content-between align-items-center">
-                    <span>{faculty.name} ({faculty.role})</span>
+                    <span>{faculty.name} ({faculty.role}) -UID: {faculty.uid}</span>
                     <div className="position-relative">
                       <button className="btn btn-outline-primary btn-sm" onClick={() => onFacultyClick(faculty)}>
                         View Courses

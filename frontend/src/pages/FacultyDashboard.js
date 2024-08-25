@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import CoursesList from '../components/FacultyPanel/CoursesList';
@@ -27,6 +27,8 @@ const FacultyDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const questionsListRef = useRef(null);
+
 
   const navigate = useNavigate();
 
@@ -74,7 +76,7 @@ const FacultyDashboard = () => {
   const handleSetDetailsUpdated = () => {
     setShowUpdateSetDetails(false);
     setIsSetDetailsUpdated(true);
-  };
+  };  
 
   const handleLoading = async (operation) => {
     setLoading(true);
@@ -95,6 +97,9 @@ const FacultyDashboard = () => {
       setIsSetDetailsUpdated(false);
     } else {
       setIsSetDetailsUpdated(true);
+      if (questionsListRef.current) {
+        questionsListRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -107,7 +112,13 @@ const FacultyDashboard = () => {
       console.error('Failed to change password:', error);
       alert('Failed to change password');
     }
-  };  
+  };
+  useEffect(() => {
+    if (isSetDetailsUpdated && questionsListRef.current) {
+      questionsListRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [isSetDetailsUpdated]);
+    
 
   return (
     
@@ -195,7 +206,7 @@ const FacultyDashboard = () => {
         
       )}
       {selectedSetName && selectedAssessment && isSetDetailsUpdated && (
-        <div className="mt-5">
+        <div className="mt-5"  ref={questionsListRef}>
           <QuestionsList
             assessment={selectedAssessment}
             setName={selectedSetName}

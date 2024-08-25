@@ -9,6 +9,8 @@ const MasterDownloaderModal = ({ show, handleClose }) => {
   const [selectedBloomLevel, setSelectedBloomLevel] = useState('');
   const [selectedCourseOutcome, setSelectedCourseOutcome] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(1);
+  const [numberOfQuestions, setNumberOfQuestions] = useState(''); // New state for Number of Questions
+  const [loading, setLoading] = useState(false); // New state for loading
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -39,6 +41,7 @@ const MasterDownloaderModal = ({ show, handleClose }) => {
   }, [selectedCourse]);
 
   const handleDownload = async () => {
+    setLoading(true);
     try {
       const params = {
         courseId: selectedCourse,
@@ -46,10 +49,13 @@ const MasterDownloaderModal = ({ show, handleClose }) => {
         bloomLevel: selectedBloomLevel,
         courseOutcome: selectedCourseOutcome,
         templateNumber: selectedTemplate,
+        ...(numberOfQuestions && { numberOfQuestions }) // Conditionally include the numberOfQuestions parameter
       };
       await userService.downloadQuestions(params);
     } catch (error) {
       console.error('Error downloading questions:', error);
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -140,10 +146,27 @@ const MasterDownloaderModal = ({ show, handleClose }) => {
                 <option value={4}>Subjective Format</option>
               </select>
             </div>
+            <div className="form-group">
+              <label htmlFor="numberOfQuestionsInput">Number of Questions</label>
+              <input
+                type="number"
+                className="form-control"
+                id="numberOfQuestionsInput"
+                placeholder="Enter number of questions"
+                value={numberOfQuestions}
+                onChange={(e) => setNumberOfQuestions(e.target.value)}
+              />
+            </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={handleClose}>Close</button>
-            <button type="button" className="btn btn-primary" onClick={handleDownload}>Download</button>
+            <button type="button" className="btn btn-secondary" onClick={handleClose} disabled={loading}>Close</button>
+            <button type="button" className="btn btn-primary" onClick={handleDownload} disabled={loading}>
+              {loading ? (
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              ) : (
+                'Download'
+              )}
+            </button>
           </div>
         </div>
       </div>

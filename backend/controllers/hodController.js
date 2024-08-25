@@ -708,7 +708,7 @@ exports.downloadQuestions = async (req, res) => {
         courseOutcome: question.courseOutcome,
         bloomLevel: question.bloomLevel,
         marks: question.marks,
-        image: question.image ? path.resolve(__dirname, '../', question.image) : null,
+        image: question.image ? question.image : null,
       })),
     };
 
