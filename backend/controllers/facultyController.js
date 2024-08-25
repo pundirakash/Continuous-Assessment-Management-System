@@ -7,6 +7,7 @@ const fs = require('fs');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const multer = require('multer');
+const multer = require('multer');
 const storage = multer.memoryStorage();
 const ImageModule = require('docxtemplater-image-module-free');
 const archiver = require('archiver');
