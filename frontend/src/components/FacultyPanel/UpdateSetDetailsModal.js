@@ -6,12 +6,12 @@ const UpdateSetDetailsModal = ({ assessmentId, setName, onClose, onDetailsUpdate
   const [totalQuestions, setTotalQuestions] = useState('');
   const [submissionDate, setSubmissionDate] = useState('');
   const [maximumMarks, setMaximumMarks] = useState('');
+  const [isLoading, setIsLoading] = useState(false);  // Track loading status
 
   const isFormValid = () => {
     const allotmentDateObj = new Date(allotmentDate);
     const submissionDateObj = new Date(submissionDate);
 
-    // Check that all fields are filled, maximum marks are >= 0, and submission date is not before allotment date
     return (
       allotmentDate &&
       totalQuestions &&
@@ -24,9 +24,11 @@ const UpdateSetDetailsModal = ({ assessmentId, setName, onClose, onDetailsUpdate
 
   const handleSubmit = async () => {
     if (!isFormValid()) {
-      alert("Please make sure that the submission date is not before the allotment date and that maximum marks are at least 0.");
+      alert("Please make sure that the submission date is not before the allotment date and that maximum marks are at least 1.");
       return;
     }
+
+    setIsLoading(true);  // Start loading animation
 
     try {
       await userService.updateSetDetails(assessmentId, setName, { allotmentDate, submissionDate, maximumMarks, totalQuestions });
@@ -35,6 +37,8 @@ const UpdateSetDetailsModal = ({ assessmentId, setName, onClose, onDetailsUpdate
       onClose();
     } catch (error) {
       console.error('Error updating set details:', error);
+    } finally {
+      setIsLoading(false);  // Stop loading animation
     }
   };
 
@@ -87,14 +91,20 @@ const UpdateSetDetailsModal = ({ assessmentId, setName, onClose, onDetailsUpdate
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isLoading}>
+              Close
+            </button>
             <button
               type="button"
               className="btn btn-primary"
               onClick={handleSubmit}
-              disabled={!isFormValid()}
+              disabled={!isFormValid() || isLoading}
             >
-              Save changes
+              {isLoading ? (
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              ) : (
+                'Save changes'
+              )}
             </button>
           </div>
         </div>
