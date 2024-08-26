@@ -12,11 +12,13 @@ const storage = multer.memoryStorage();
 const ImageModule = require('docxtemplater-image-module-free');
 const archiver = require('archiver');
 const cloudinary = require('cloudinary').v2;
+const dotenv = require('dotenv');
+dotenv.config();
 
 cloudinary.config({
-  cloud_name: 'dlbssp6re',
-  api_key: '396552621778668',
-  api_secret: 'gBT7wJjccikmopa4C7cdXlVh5hs',
+  cloud_name: `${process.env.CLOUD_NAME}`,
+  api_key: `${process.env.API_KEY_CLOUD}`,
+  api_secret:  `${process.env.API_SECRET_CLOUD}`,
 });
 
 
@@ -459,6 +461,7 @@ const uploadToCloudinary = (file) => {
       },
       (error, result) => {
         if (error) {
+          console.log(error);
           reject(new Error('Failed to upload image to Cloudinary'));
         } else {
           resolve(result.secure_url);
@@ -593,11 +596,18 @@ exports.deleteQuestion = async (req, res) => {
 
     const question = await Question.findById(questionId);
 
+    // Delete the image from Cloudinary if it exists
     if (question.image) {
-      const imagePath = path.resolve(__dirname, '../', question.image);
-      fs.unlink(imagePath, (err) => {
-        if (err) {
-          console.error('Error deleting image file:', err);
+      const urlParts = question.image.split('/');
+      const fileName = urlParts.pop();  // Extract the file name with extension
+      const folderPath = urlParts.slice(7).join('/');  // Extract the folder path from URL
+      const publicId = `${folderPath}/${fileName.split('.').slice(0, -1).join('.')}`;  // Remove the file extension
+
+      await cloudinary.uploader.destroy(publicId, function(error, result) {
+        if (error) {
+          console.error('Error deleting image from Cloudinary:', error);
+        } else {
+          console.log('Image deleted from Cloudinary:', result);
         }
       });
     }
