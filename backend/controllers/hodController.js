@@ -700,7 +700,7 @@ exports.downloadQuestions = async (req, res) => {
     if (numberOfQuestions) {
       questions = questions.slice(0, parseInt(numberOfQuestions));
     }
-
+    const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const questionData = {
       questions: questions.map((question, index) => ({
         number: index + 1,
