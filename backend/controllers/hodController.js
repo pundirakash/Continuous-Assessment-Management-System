@@ -708,6 +708,7 @@ exports.downloadQuestions = async (req, res) => {
         courseOutcome: question.courseOutcome,
         bloomLevel: question.bloomLevel,
         marks: question.marks,
+        options: question.type === 'MCQ' ? question.options.map((option, i) => ({ option: `${optionLetters[i]}. ${option}` })) : [],
         image: question.image ? question.image : null,
       })),
     };
