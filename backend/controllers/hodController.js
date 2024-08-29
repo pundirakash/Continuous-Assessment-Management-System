@@ -648,17 +648,16 @@ exports.downloadQuestions = async (req, res) => {
     const {
       courseId,
       assessmentId,
-      facultyId,
       type,
       bloomLevel,
       courseOutcome,
       numberOfQuestions,
       templateNumber,
-      setName,
     } = req.query;
 
     const filter = {};
 
+    // Filter by courseId and its associated assessments
     if (courseId) {
       const course = await Course.findById(courseId);
       if (!course) {
@@ -669,37 +668,31 @@ exports.downloadQuestions = async (req, res) => {
       filter.assessment = { $in: assessmentIds };
     }
 
+    // Filter by assessmentId
     if (assessmentId) {
       filter.assessment = assessmentId;
     }
 
-    if (facultyId) {
-      const assessments = await Assessment.find({ 'facultyQuestions.faculty': facultyId });
-      const assessmentIds = assessments.map(assessment => assessment._id);
-      filter.assessment = { $in: assessmentIds };
-    }
-
-    if (setName) {
-      filter['facultyQuestions.sets.setName'] = setName;
-    }
-
+    // Filter by type, bloomLevel, and courseOutcome
     if (type) {
       filter.type = type;
     }
-
     if (bloomLevel) {
       filter.bloomLevel = bloomLevel;
     }
-
     if (courseOutcome) {
       filter.courseOutcome = courseOutcome;
     }
 
+    // Fetch questions based on the filter
     let questions = await Question.find(filter);
 
+    // Shuffle questions before slicing
     if (numberOfQuestions) {
-      questions = questions.slice(0, parseInt(numberOfQuestions));
+      questions = questions.sort(() => Math.random() - 0.5).slice(0, parseInt(numberOfQuestions));
     }
+
+    // Prepare question and solution data
     const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const questionData = {
       questions: questions.map((question, index) => ({
@@ -722,9 +715,11 @@ exports.downloadQuestions = async (req, res) => {
       })),
     };
 
+    // Generate documents from templates
     const questionDocBuffer = await generateDocxFromTemplate(questionData, templateNumber || '3');
     const solutionDocBuffer = await generateDocxFromTemplate(solutionData, '5');
 
+    // Set headers and send zip file containing question and solution documents
     res.setHeader('Content-Disposition', 'attachment; filename=questions_and_solution.zip');
     res.setHeader('Content-Type', 'application/zip');
 
@@ -732,6 +727,7 @@ exports.downloadQuestions = async (req, res) => {
 
     archive.pipe(res);
 
+    // Append the generated documents to the zip archive
     archive.append(questionDocBuffer, { name: 'questions.docx' });
     archive.append(solutionDocBuffer, { name: 'solution.docx' });
 
@@ -742,6 +738,7 @@ exports.downloadQuestions = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 
 
