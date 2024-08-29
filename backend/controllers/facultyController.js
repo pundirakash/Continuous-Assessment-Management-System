@@ -215,7 +215,9 @@ exports.downloadAssessment = async (req, res) => {
     }
 
     const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-
+    const sanitizeText = (text) => {
+      return text.replace(/[\r\n]+/g, ' ').trim();
+    };
     const data = {
       termId: assessment.termId,
       assessmentName: assessment.name,
@@ -230,7 +232,7 @@ exports.downloadAssessment = async (req, res) => {
         const question = await Question.findById(questionId);
         return {
           number: index + 1,
-          text: question.text,
+          text: sanitizeText(question.text),
           courseOutcome: question.courseOutcome,
           bloomLevel: question.bloomLevel,
           marks: question.marks,
@@ -282,7 +284,9 @@ exports.downloadSolution = async (req, res) => {
     ) {
       return res.status(403).json({ message: 'Question set is not approved yet' });
     }
-
+    const sanitizeText = (text) => {
+      return text.replace(/[\r\n]+/g, ' ').trim();
+    };
     const data = {
       termId: assessment.termId,
       assessmentName: assessment.name,
@@ -297,8 +301,8 @@ exports.downloadSolution = async (req, res) => {
         const question = await Question.findById(questionId);
         return {
           number: index + 1,
-          text: question.text,
-          solution: question.solution,
+          text: sanitizeText(question.text),
+          solution: sanitizeText(question.solution),
           marks: question.marks,
         };
       })),
@@ -368,6 +372,9 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       selectedQuestions.push(shuffledQuestions[i]);
     }
 
+    const sanitizeText = (text) => {
+      return text.replace(/[\r\n]+/g, ' ').trim();
+    };
     const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const data = {
       termId: assessment.termId,
@@ -381,7 +388,7 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       maximumMarks: questionSet.maximumMarks,
       questions: selectedQuestions.map((question, index) => ({
         number: index + 1,
-        text: question.text,
+        text: sanitizeText(question.text),
         courseOutcome: question.courseOutcome,
         bloomLevel: question.bloomLevel,
         marks: question.marks,
@@ -394,8 +401,8 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       ...data,
       questions: selectedQuestions.map((question, index) => ({
         number: index + 1,
-        text: question.text,
-        solution: question.solution,
+        text: sanitizeText(question.text),
+        solution: sanitizeText(question.solution),
         marks: question.marks,
       }))
     };
@@ -538,7 +545,7 @@ exports.createQuestion = [
         bloomLevel,
         courseOutcome,
         marks,
-        image: imageUrl,  // Now it has the correct value
+        image: imageUrl,
         solution,
         status: 'Pending'
       });

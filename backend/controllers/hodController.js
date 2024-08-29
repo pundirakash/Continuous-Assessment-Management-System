@@ -686,18 +686,23 @@ exports.downloadQuestions = async (req, res) => {
 
     // Fetch questions based on the filter
     let questions = await Question.find(filter);
-    console.log(questions);
+
     // Shuffle questions before slicing
     if (numberOfQuestions) {
       questions = questions.sort(() => Math.random() - 0.5).slice(0, parseInt(numberOfQuestions));
     }
+
+    // Function to clean up text by removing unwanted characters
+    const sanitizeText = (text) => {
+      return text.replace(/[\r\n]+/g, ' ').trim();
+    };
 
     // Prepare question and solution data
     const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const questionData = {
       questions: questions.map((question, index) => ({
         number: index + 1,
-        text: question.text,
+        text: sanitizeText(question.text),
         courseOutcome: question.courseOutcome,
         bloomLevel: question.bloomLevel,
         marks: question.marks,
@@ -709,8 +714,8 @@ exports.downloadQuestions = async (req, res) => {
     const solutionData = {
       questions: questions.map((question, index) => ({
         number: index + 1,
-        text: question.text,
-        solution: question.solution,
+        text: sanitizeText(question.text),
+        solution: sanitizeText(question.solution),
         marks: question.marks,
       })),
     };
