@@ -686,7 +686,7 @@ exports.downloadQuestions = async (req, res) => {
 
     // Fetch questions based on the filter
     let questions = await Question.find(filter);
-
+    console.log(questions);
     // Shuffle questions before slicing
     if (numberOfQuestions) {
       questions = questions.sort(() => Math.random() - 0.5).slice(0, parseInt(numberOfQuestions));
