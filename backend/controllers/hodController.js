@@ -687,9 +687,21 @@ exports.downloadQuestions = async (req, res) => {
     // Fetch questions based on the filter
     let questions = await Question.find(filter);
 
-    // Shuffle questions before slicing
+    // Shuffle questions using Fisher-Yates algorithm
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+
+    // Apply shuffling
+    questions = shuffleArray(questions);
+
+    // Apply slicing if numberOfQuestions is specified
     if (numberOfQuestions) {
-      questions = questions.sort(() => Math.random() - 0.5).slice(0, parseInt(numberOfQuestions));
+      questions = questions.slice(0, parseInt(numberOfQuestions));
     }
 
     // Function to clean up text by removing unwanted characters
@@ -743,6 +755,7 @@ exports.downloadQuestions = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 
 

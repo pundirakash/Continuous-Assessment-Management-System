@@ -366,11 +366,20 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       return res.status(400).json({ message: 'Not enough approved questions available' });
     }
 
-    const selectedQuestions = [];
-    const shuffledQuestions = approvedQuestions.sort(() => 0.5 - Math.random());
-    for (let i = 0; i < numberOfQuestions; i++) {
-      selectedQuestions.push(shuffledQuestions[i]);
-    }
+    // Shuffle array function
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+
+    // Shuffle approved questions
+    const shuffledQuestions = shuffleArray(approvedQuestions);
+
+    // Select required number of shuffled questions
+    const selectedQuestions = shuffledQuestions.slice(0, numberOfQuestions);
 
     const sanitizeText = (text) => {
       return text.replace(/[\r\n]+/g, ' ').trim();
