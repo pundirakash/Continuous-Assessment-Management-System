@@ -4,14 +4,14 @@ import '../../css/ViewCoursesModal.css'
 const EditQuestionModal = ({ question, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     ...question,
-    options: question.options ? question.options : ['', '', '', ''],
+    options: question.options ? [...question.options] : ['', '', '', ''],
     solution: question.solution || '',
   });
 
   useEffect(() => {
     setFormData({
       ...question,
-      options: question.options ? question.options : ['', '', '', ''],
+      options: question.options ? [...question.options] : ['', '', '', ''],
       solution: question.solution || '', 
     });
   }, [question]);
@@ -30,7 +30,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
       setFormData((prevState) => ({
         ...prevState,
         type: value,
-        options: ['', '', '', ''],
+        options: prevState.options.length > 0 ? prevState.options : ['', '', '', ''],
         solution: '', 
       }));
     } else if (value === 'Subjective') {
@@ -152,25 +152,26 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
                   />
                 </div>
               )}
-<div className="options-container">
-              <div className="form-group">
-                <label htmlFor="bloomLevel">Bloom Level:</label>
-                <select
-                  className="form-control"
-                  id="bloomLevel"
-                  name="bloomLevel"
-                  value={formData.bloomLevel}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="L1: Remember">L1: Remember</option>
-                  <option value="L2: Understand">L2: Understand</option>
-                  <option value="L3: Apply">L3: Apply</option>
-                  <option value="L4: Analyze">L4: Analyze</option>
-                  <option value="L5: Evaluate">L5: Evaluate</option>
-                  <option value="L6: Create">L6: Create</option>
-                </select>
-              </div>
+              
+              <div className="options-container">
+                <div className="form-group">
+                  <label htmlFor="bloomLevel">Bloom Level:</label>
+                  <select
+                    className="form-control"
+                    id="bloomLevel"
+                    name="bloomLevel"
+                    value={formData.bloomLevel}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="L1: Remember">L1: Remember</option>
+                    <option value="L2: Understand">L2: Understand</option>
+                    <option value="L3: Apply">L3: Apply</option>
+                    <option value="L4: Analyze">L4: Analyze</option>
+                    <option value="L5: Evaluate">L5: Evaluate</option>
+                    <option value="L6: Create">L6: Create</option>
+                  </select>
+                </div>
               </div>
               <div className="form-group">
                 <label htmlFor="courseOutcome">Course Outcome:</label>
