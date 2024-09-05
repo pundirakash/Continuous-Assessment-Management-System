@@ -12,7 +12,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
     setFormData({
       ...question,
       options: question.options ? [...question.options] : ['', '', '', ''],
-      solution: question.solution || '', 
+      solution: question.solution || '',
     });
   }, [question]);
 
@@ -31,14 +31,14 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
         ...prevState,
         type: value,
         options: prevState.options.length > 0 ? prevState.options : ['', '', '', ''],
-        solution: '', 
+        solution: prevState.options.includes(prevState.solution) ? prevState.solution : '',
       }));
     } else if (value === 'Subjective') {
       setFormData((prevState) => ({
         ...prevState,
         type: value,
         options: [],
-        solution: '', // Reset solution
+        solution: '', // Reset solution for subjective type
       }));
     } else {
       setFormData((prevState) => ({
@@ -54,6 +54,7 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
     setFormData((prevState) => ({
       ...prevState,
       options: newOptions,
+      solution: newOptions.includes(prevState.solution) ? prevState.solution : '',
     }));
   };
 
