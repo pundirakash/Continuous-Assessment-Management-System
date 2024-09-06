@@ -506,12 +506,7 @@ exports.createQuestion = [
   },
   async (req, res) => {
     try {
-      const { assessmentId, setName, text, type, bloomLevel, courseOutcome, marks, solution } = req.body;
-      let { options } = req.body;
-
-      if (typeof options === 'string') {
-        options = options.split(',').map(option => option.trim());
-      }
+      const { assessmentId, setName, text, type, bloomLevel, courseOutcome, marks, solution, options } = req.body;
 
       const existingQuestion = await Question.findOne({ text });
       if (existingQuestion) {

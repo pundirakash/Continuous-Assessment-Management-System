@@ -48,16 +48,26 @@ const getQuestionsForSet = async (assessmentId, setName) => {
 
 const createQuestion = async (questionData) => {
   const formData = new FormData();
-  Object.keys(questionData).forEach(key => formData.append(key, questionData[key]));
-  const response = await axios.post(`${API_URL_FACULTY }/create-question`, formData, {
+  
+  // Handle normal fields
+  Object.keys(questionData).forEach(key => {
+    if (Array.isArray(questionData[key])) {
+      // Append each option separately
+      questionData[key].forEach(value => formData.append(key, value));
+    } else {
+      formData.append(key, questionData[key]);
+    }
+  });
+
+  const response = await axios.post(`${API_URL_FACULTY}/create-question`, formData, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
       'Content-Type': 'multipart/form-data',
     },
   });
+
   return response.data;
 };
-
 
 const register = async (userData) => {
   const response = await axios.post(`${API_URL}/register`, userData, {

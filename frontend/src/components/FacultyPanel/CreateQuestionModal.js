@@ -53,7 +53,7 @@ const CreateQuestionModal = ({ assessmentId, setName, onQuestionCreated, onClose
       };
 
       if (type === 'MCQ') {
-        questionData.options = options.filter(opt => opt.trim() !== '');
+        questionData.options =options.filter(opt => opt.trim() !== '');
       }
 
       await userService.createQuestion(questionData);
