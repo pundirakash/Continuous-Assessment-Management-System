@@ -10,7 +10,6 @@ const hodRoutes = require('./routes/hodRoutes');
 const coordinatorRoutes = require('./routes/coordinatorRoutes');
 const facultyRoutes = require('./routes/facultyRoutes');
 
-
 dotenv.config();
 const app = express();
 const corsOptions = {
@@ -32,8 +31,14 @@ app.use('/api/faculty', facultyRoutes);
 
 app.options('*', cors(corsOptions));
 
+// Connect to MongoDB and start the server
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => app.listen(process.env.PORT, () => console.log(`Server running on port ${process.env.PORT}`)))
+  .then(() => {
+    const server = app.listen(process.env.PORT, () => console.log(`Server running on port ${process.env.PORT}`));
+    
+    // Set server timeout to 5 minutes (300,000 milliseconds)
+    server.setTimeout(300000);
+  })
   .catch((error) => console.log(error));
 
 module.exports = app;
