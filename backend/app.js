@@ -13,7 +13,7 @@ const facultyRoutes = require('./routes/facultyRoutes');
 dotenv.config();
 const app = express();
 const corsOptions = {
-  origin: 'https://continuous-assessment-management-system.vercel.app', 
+  origin: `${process.env.ORIGIN}`||'https://continuous-assessment-management-system.vercel.app', 
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true, 
   optionsSuccessStatus: 204 
@@ -35,8 +35,6 @@ app.options('*', cors(corsOptions));
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     const server = app.listen(process.env.PORT, () => console.log(`Server running on port ${process.env.PORT}`));
-    
-    // Set server timeout to 5 minutes (300,000 milliseconds)
     server.setTimeout(300000);
   })
   .catch((error) => console.log(error));

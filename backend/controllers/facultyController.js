@@ -327,6 +327,7 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
     const { assessmentId, numberOfQuestions, setName } = req.body;
     const userId = req.user.id;
 
+    // Fetch the assessment and populate necessary fields in a single query
     const assessment = await Assessment.findById(assessmentId)
       .populate('facultyQuestions.sets.questions')
       .populate('course');
@@ -335,6 +336,7 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       return res.status(404).json({ message: 'Assessment not found' });
     }
 
+    // Find the faculty questions for the current user
     const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(userId));
     if (!facultyQuestions) {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
@@ -345,46 +347,33 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
+    // Check if enough questions have been uploaded
     const uploadedQuestionsCount = facultyQuestions.sets.reduce((count, set) => count + set.questions.length, 0);
     if (uploadedQuestionsCount < numberOfQuestions) {
       return res.status(403).json({ message: 'You have not uploaded enough questions to download this many questions' });
     }
 
-    const approvedQuestions = [];
-    for (const fq of assessment.facultyQuestions) {
-      for (const set of fq.sets) {
-        for (const questionId of set.questions) {
-          const question = await Question.findById(questionId);
-          if (question.status === 'Approved') {
-            approvedQuestions.push(question);
-          }
-        }
-      }
-    }
+    // Fetch all question IDs in a single batch operation
+    const questionIds = assessment.facultyQuestions.flatMap(fq => fq.sets.flatMap(set => set.questions));
+
+    // Fetch approved questions in one query
+    const approvedQuestions = await Question.find({
+      _id: { $in: questionIds },
+      status: 'Approved'
+    });
 
     if (approvedQuestions.length < numberOfQuestions) {
       return res.status(400).json({ message: 'Not enough approved questions available' });
     }
 
-    // Shuffle array function
-    const shuffleArray = (array) => {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    };
+    // Shuffle and select the required number of questions
+    const shuffleArray = (array) => array.sort(() => Math.random() - 0.5);
+    const selectedQuestions = shuffleArray(approvedQuestions).slice(0, numberOfQuestions);
 
-    // Shuffle approved questions
-    const shuffledQuestions = shuffleArray(approvedQuestions);
-
-    // Select required number of shuffled questions
-    const selectedQuestions = shuffledQuestions.slice(0, numberOfQuestions);
-
-    const sanitizeText = (text) => {
-      return text.replace(/[\r\n]+/g, ' ').trim();
-    };
+    // Prepare data for DOCX generation
     const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    const sanitizeText = (text) => text.replace(/[\r\n]+/g, ' ').trim();
+
     const data = {
       termId: assessment.termId,
       assessmentName: assessment.name,
@@ -416,27 +405,26 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
       }))
     };
 
-    const docxBuffer1 = await generateDocxFromTemplate(data, 1);
+    // Generate DOCX files concurrently
+    const [docxBuffer1, docxBuffer2, docxBuffer3] = await Promise.all([
+      generateDocxFromTemplate(data, 1),
+      generateDocxFromTemplate(data, assessment.type === 'MCQ' ? 3 : 4),
+      generateDocxFromTemplate(solutionData, 5)
+    ]);
 
-    let docxBuffer2;
-    if (assessment.type === 'MCQ') {
-      docxBuffer2 = await generateDocxFromTemplate(data, 3);
-    } else if (assessment.type === 'Subjective') {
-      docxBuffer2 = await generateDocxFromTemplate(data, 4);
-    }
-
-    const docxBuffer3 = await generateDocxFromTemplate(solutionData, 5);
-
-    const archive = archiver('zip');
+    // Stream the ZIP file directly to the client
+    const archive = archiver('zip', { zlib: { level: 9 } });
     res.attachment(`assessment_${data.assessmentName}_random_${numberOfQuestions}.zip`);
-
+    
     archive.on('error', (err) => {
-      throw err;
+      console.error('Error creating archive', err);
+      res.status(500).json({ message: 'Error creating ZIP archive', error: err });
     });
 
+    // Pipe archive stream to response
     archive.pipe(res);
 
-    // Append file buffers to the archive instead of file paths
+    // Append buffers to archive
     archive.append(docxBuffer1, { name: `CourseFileFormat_${data.assessmentName}_random_${numberOfQuestions}_1.docx` });
     archive.append(docxBuffer2, { name: `assessment_${data.assessmentName}_random_${numberOfQuestions}_${assessment.type === 'MCQ' ? 3 : 4}.docx` });
     archive.append(docxBuffer3, { name: `solution_${data.assessmentName}_random_${numberOfQuestions}_5.docx` });
