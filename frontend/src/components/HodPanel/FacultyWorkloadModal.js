@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import {
     FaTrash, FaFolderOpen, FaArrowLeft, FaEdit, FaCheck, FaChevronRight,
-    FaUserGraduate, FaClipboardList, FaCloudDownloadAlt
+    FaUserGraduate, FaClipboardList, FaCloudDownloadAlt, FaCheckCircle,
+    FaTimesCircle, FaCheckDouble, FaImage
 } from 'react-icons/fa';
 import userService from '../../services/userService';
 

@@ -19,6 +19,7 @@ const CreateUser = () => {
   const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [organization, setOrganization] = useState({ university: '', schools: [] });
   const [selectedSchool, setSelectedSchool] = useState(null);
