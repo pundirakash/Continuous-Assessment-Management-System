@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import userService from '../../services/userService';
 import LoadingSpinner from '../LoadingSpinner';
 import ErrorModal from '../ErrorModal';
@@ -19,16 +19,7 @@ const CourseWorkspace = ({ course, onBack }) => {
     const [unreadCount, setUnreadCount] = useState(0);
     const { selectedTerm } = useTerm();
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            const decoded = jwtDecode(token);
-            setCurrentUser(decoded);
-        }
-        fetchAssessments();
-    }, [course, selectedTerm]);
-
-    const fetchAssessments = async () => {
+    const fetchAssessments = useCallback(async () => {
         try {
             const data = await userService.getAssessments(course._id, selectedTerm);
             setAssessments(data);
@@ -40,7 +31,16 @@ const CourseWorkspace = ({ course, onBack }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [course?._id, selectedTerm]);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            const decoded = jwtDecode(token);
+            setCurrentUser(decoded);
+        }
+        fetchAssessments();
+    }, [fetchAssessments]);
 
     // Poll for unread counts
     useEffect(() => {

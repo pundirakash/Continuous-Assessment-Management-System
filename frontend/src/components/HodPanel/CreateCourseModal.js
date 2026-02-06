@@ -18,18 +18,6 @@ const CreateCourseModal = ({ show, handleClose, addCourse }) => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (show) {
-      document.body.style.overflow = 'hidden';
-      if (activeTab === 'catalog') {
-        fetchCatalogCourses();
-      }
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [show, activeTab, selectedTerm, fetchCatalogCourses]);
-
   const fetchCatalogCourses = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -41,6 +29,18 @@ const CreateCourseModal = ({ show, handleClose, addCourse }) => {
       setIsLoading(false);
     }
   }, [selectedTerm]);
+
+  useEffect(() => {
+    if (show) {
+      document.body.style.overflow = 'hidden';
+      if (activeTab === 'catalog') {
+        fetchCatalogCourses();
+      }
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [show, activeTab, fetchCatalogCourses]);
 
   const handleSubmitNew = async (e) => {
     e.preventDefault();

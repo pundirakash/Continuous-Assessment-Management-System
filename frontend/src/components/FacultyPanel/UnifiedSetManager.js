@@ -12,10 +12,6 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
     const [loading, setLoading] = useState(false);
     const [showCreateSetModal, setShowCreateSetModal] = useState(false);
 
-    useEffect(() => {
-        fetchSets();
-    }, [assessment, fetchSets]);
-
     const fetchSets = useCallback(async () => {
         setLoading(true);
         try {
@@ -36,6 +32,10 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
             setLoading(false);
         }
     }, [assessment]);
+
+    useEffect(() => {
+        fetchSets();
+    }, [fetchSets]);
 
     const handleCreateSet = async (numSets) => {
         // ... Logic from QuestionSetsList ...

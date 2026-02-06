@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import CoursesList from '../components/FacultyPanel/CoursesList';
@@ -8,7 +8,7 @@ import userService from '../services/userService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import '../css/FacultyDashboard.css';
-import { FaBell, FaUserCircle, FaSignOutAlt, FaKey, FaChevronDown, FaTrophy, FaStar, FaCheckCircle, FaFileAlt, FaRocket, FaGraduationCap, FaClock } from 'react-icons/fa';
+import { FaBell, FaUserCircle, FaSignOutAlt, FaKey, FaChevronDown, FaTrophy, FaCheckCircle, FaFileAlt, FaGraduationCap, FaClock } from 'react-icons/fa';
 import TermSelector from '../components/TermSelector';
 import { useTerm } from '../context/TermContext';
 import ReviewSetModal from '../components/HodPanel/ReviewSetModal';

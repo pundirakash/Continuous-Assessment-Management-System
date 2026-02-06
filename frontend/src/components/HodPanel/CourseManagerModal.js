@@ -24,16 +24,6 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
     const [isCreatingAssessment, setIsCreatingAssessment] = useState(false);
     const [editAssessmentId, setEditAssessmentId] = useState(null);
 
-    useEffect(() => {
-        if (show && course) {
-            document.body.style.overflow = 'hidden';
-            fetchData();
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => { document.body.style.overflow = 'unset'; };
-    }, [show, course, activeTab, fetchData]);
-
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -51,6 +41,16 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
             setLoading(false);
         }
     }, [activeTab, course, currentTerm]);
+
+    useEffect(() => {
+        if (show && course) {
+            document.body.style.overflow = 'hidden';
+            fetchData();
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [show, course, fetchData]);
 
     const unassignedFaculty = availableFaculty.filter(
         f => !assignedFaculty.some(af => af._id === f._id)
