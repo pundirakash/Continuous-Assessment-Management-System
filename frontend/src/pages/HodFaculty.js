@@ -49,12 +49,6 @@ const HodFaculty = () => {
             const courses = await userService.getCoursesByFaculty(faculty._id, selectedTerm);
             setFacultyCourses(courses);
 
-            // Need pending sets for this faculty?
-            // We can fetch ALL pending sets and filter, or just rely on the modal to show what we have.
-            // Let's fetch all pending sets for department and filter here to pass down.
-            const allPending = await userService.getPendingAssessmentSets(selectedTerm);
-            const relevantPending = allPending.filter(set => set.facultyId === faculty._id);
-            setPendingSets(relevantPending);
 
             setShowCoursesModal(true);
         } catch (err) {
