@@ -4,8 +4,7 @@ import userService from '../../services/userService';
 import EditQuestionModal from './EditQuestionModal';
 import CreateQuestionModal from './CreateQuestionModal';
 import BulkImportModal from './BulkImportModal';
-import ErrorModal from '../ErrorModal';
-import { FaEdit, FaTrash, FaPlus, FaCloudDownloadAlt, FaCheck, FaSearch, FaRandom, FaExclamationCircle, FaFileImport, FaHistory } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaCloudDownloadAlt, FaCheck, FaSearch, FaExclamationCircle, FaFileImport, FaHistory } from 'react-icons/fa';
 import RandomAssessmentDownloadModal from './RandomAssessmentDownloadModal';
 
 const QuestionsList = ({ assessment, setName }) => {
@@ -21,11 +20,8 @@ const QuestionsList = ({ assessment, setName }) => {
   const [activityLog, setActivityLog] = useState([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
-  const [error, setError] = useState(null);
-  const [showErrorModal, setShowErrorModal] = useState(false);
   const [showRandomDownloadModal, setShowRandomDownloadModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
-  const [numberOfQuestions, setNumberOfQuestions] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

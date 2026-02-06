@@ -99,6 +99,7 @@ const CreateUser = () => {
       const sheet = workbook.Sheets[sheetName];
       const users = XLSX.utils.sheet_to_json(sheet);
 
+      setLoading(true);
       try {
         await userService.bulkRegister(users);
         alert('Users registered successfully');
@@ -106,6 +107,8 @@ const CreateUser = () => {
         console.error('Error creating users', error);
         setError(error.message);
         setShowErrorModal(true);
+      } finally {
+        setLoading(false);
       }
     };
     reader.readAsArrayBuffer(file);

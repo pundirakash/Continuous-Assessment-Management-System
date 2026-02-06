@@ -42,28 +42,6 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
     }));
   };
 
-  const handleTypeChange = (e) => {
-    const { value } = e.target;
-    setFormData((prevState) => {
-      let newOptions = prevState.options;
-      let newSolution = prevState.solution;
-
-      if (value === 'Subjective') {
-        newOptions = [];
-        newSolution = '';
-      } else if (value === 'MCQ' && (!prevState.options || prevState.options.length === 0)) {
-        newOptions = ['', '', '', ''];
-      }
-
-      return {
-        ...prevState,
-        type: value,
-        options: newOptions,
-        solution: newSolution
-      };
-    });
-  };
-
   const handleOptionChange = (index, value) => {
     const newOptions = [...formData.options];
     newOptions[index] = value;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import userService from '../services/userService';
 import { useTerm } from '../context/TermContext';
@@ -21,9 +21,9 @@ const HodApprovals = () => {
     useEffect(() => {
         setActiveTab('approvals');
         fetchPending();
-    }, [setActiveTab, selectedTerm]);
+    }, [setActiveTab, fetchPending]);
 
-    const fetchPending = async () => {
+    const fetchPending = useCallback(async () => {
         setLoading(true);
         try {
             const data = await userService.getPendingAssessmentSets(selectedTerm);
@@ -33,7 +33,7 @@ const HodApprovals = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedTerm]);
 
     const handleReview = async (item) => {
         setLoadingSet(true);

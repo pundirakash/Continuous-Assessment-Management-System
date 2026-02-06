@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import userService from '../services/userService';
 import { useTerm } from '../context/TermContext';
-import { FaUserTie, FaBookOpen, FaMinusCircle, FaSearch } from 'react-icons/fa';
+import { FaUserTie, FaBookOpen, FaSearch } from 'react-icons/fa';
 import FacultyWorkloadModal from '../components/HodPanel/FacultyWorkloadModal';
 
 const HodFaculty = () => {

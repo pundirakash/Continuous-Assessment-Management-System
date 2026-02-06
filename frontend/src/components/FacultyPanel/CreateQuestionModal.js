@@ -6,7 +6,7 @@ import ErrorModal from '../ErrorModal';
 
 const CreateQuestionModal = ({ assessmentId, setName, assessmentType, onQuestionCreated, onClose }) => {
   const [text, setText] = useState('');
-  const [type, setType] = useState(assessmentType || 'MCQ');
+  const [type] = useState(assessmentType || 'MCQ');
   const [options, setOptions] = useState(['', '', '', '']);
   const [bloomLevel, setBloomLevel] = useState('L1: Remember');
   const [courseOutcome, setCourseOutcome] = useState('CO1');

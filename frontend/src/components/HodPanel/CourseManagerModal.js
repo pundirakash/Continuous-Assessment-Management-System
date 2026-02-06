@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import {
     FaUserPlus, FaTrash, FaPlus, FaEdit, FaSearch,
@@ -32,9 +32,9 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
             document.body.style.overflow = 'unset';
         }
         return () => { document.body.style.overflow = 'unset'; };
-    }, [show, course, activeTab]);
+    }, [show, course, activeTab, fetchData]);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             if (activeTab === 'faculty') {
@@ -50,7 +50,7 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeTab, course, currentTerm]);
 
     const unassignedFaculty = availableFaculty.filter(
         f => !assignedFaculty.some(af => af._id === f._id)

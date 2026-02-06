@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import chatService from '../../services/chatService';
 import LoadingSpinner from '../LoadingSpinner';
-import { FaPaperPlane, FaTimes, FaRobot, FaUserTie, FaUserGraduate, FaInfoCircle, FaUsers, FaArrowRight } from 'react-icons/fa';
+import { FaPaperPlane, FaTimes, FaRobot, FaUserTie, FaUserGraduate, FaUsers, FaArrowRight } from 'react-icons/fa';
 
 const CourseChat = ({ course, currentUser, onClose, termId }) => {
     const [messages, setMessages] = useState([]);

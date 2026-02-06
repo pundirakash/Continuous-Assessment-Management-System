@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { FaExclamationTriangle, FaTimes } from 'react-icons/fa';
+import { FaExclamationTriangle } from 'react-icons/fa';
 
 const ErrorModal = ({ message, onClose }) => {
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaUserGraduate, FaBuilding, FaCalendarAlt, FaSignOutAlt, FaShieldAlt } from 'react-icons/fa';
+import { FaUserGraduate, FaBuilding, FaCalendarAlt, FaSignOutAlt } from 'react-icons/fa';
 
 import BrandLogo from '../BrandLogo';
 

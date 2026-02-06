@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import {
-    FaTrash, FaEdit, FaCheck, FaChevronRight,
+    FaTrash, FaEdit, FaCheck,
     FaClipboardList, FaCloudDownloadAlt, FaCheckDouble, FaImage,
     FaCheckCircle, FaTimesCircle
 } from 'react-icons/fa';
@@ -356,6 +356,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                                                 <div className="mb-4 p-3 bg-light rounded-4 border text-center">
                                                                     <img
                                                                         src={`${process.env.REACT_APP_API_URL.replace('/api', '')}/${q.image}`}
+                                                                        alt="Review context"
                                                                         className="img-fluid rounded-3"
                                                                         style={{ maxHeight: '200px' }}
                                                                     />

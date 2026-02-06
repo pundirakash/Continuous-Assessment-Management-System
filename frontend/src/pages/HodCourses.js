@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import userService from '../services/userService';
@@ -14,7 +14,7 @@ import chatService from '../services/chatService';
 
 const HodCourses = () => {
     const { setActiveTab } = useOutletContext();
-    const { selectedTerm, isCurrentTerm, currentTerm } = useTerm();
+    const { selectedTerm, isCurrentTerm } = useTerm();
     const [user, setUser] = useState(null);
 
     const [courses, setCourses] = useState([]);
@@ -52,9 +52,9 @@ const HodCourses = () => {
         }
         setActiveTab('courses');
         fetchCourses();
-    }, [setActiveTab, selectedTerm]);
+    }, [setActiveTab, fetchCourses]);
 
-    const fetchCourses = async () => {
+    const fetchCourses = useCallback(async () => {
         setLoading(true);
         try {
             const [coursesData, facultiesData] = await Promise.all([
@@ -71,16 +71,16 @@ const HodCourses = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedTerm, fetchUnreadCounts]);
 
-    const fetchUnreadCounts = async (courseIds) => {
+    const fetchUnreadCounts = useCallback(async (courseIds) => {
         try {
             const counts = await chatService.getUnreadCounts(courseIds);
             setUnreadCounts(counts);
         } catch (error) {
             console.error("Failed to fetch unread counts", error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (courses.length > 0) {
@@ -89,7 +89,7 @@ const HodCourses = () => {
             }, 10000); // Check every 10 seconds
             return () => clearInterval(interval);
         }
-    }, [courses]);
+    }, [courses, fetchUnreadCounts]);
 
     const filteredCourses = courses.filter(course =>
         course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

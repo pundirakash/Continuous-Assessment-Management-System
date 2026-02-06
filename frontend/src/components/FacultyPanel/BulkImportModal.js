@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import userService from '../../services/userService';
-import { FaCloudUploadAlt, FaDownload, FaUndo, FaTimes, FaFileExcel, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaDownload, FaUndo, FaFileExcel, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 
 const BulkImportModal = ({ assessmentId, setName, onClose, onImportSuccess }) => {
     const [file, setFile] = useState(null);

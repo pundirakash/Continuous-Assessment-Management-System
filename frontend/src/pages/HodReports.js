@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { FaFileDownload, FaChartPie, FaFilter, FaTable, FaUserTie, FaCheckCircle, FaExclamationCircle, FaEdit } from 'react-icons/fa';
 import userService from '../services/userService';
@@ -15,7 +15,6 @@ const HodReports = () => {
 
     // --- Analytics State ---
     const [stats, setStats] = useState([]);
-    const [totalCourses, setTotalCourses] = useState(0);
     const [totalQuestions, setTotalQuestions] = useState(0);
     const [totalPending, setTotalPending] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
@@ -90,9 +89,9 @@ const HodReports = () => {
         setActiveTab('reports');
         fetchInitialData();
         fetchStats();
-    }, [setActiveTab, selectedTerm]);
+    }, [setActiveTab, fetchInitialData, fetchStats]);
 
-    const fetchInitialData = async () => {
+    const fetchInitialData = useCallback(async () => {
         try {
             const [terms, courses, faculties] = await Promise.all([
                 userService.getArchivedTerms(),
@@ -110,9 +109,9 @@ const HodReports = () => {
         } catch (error) {
             console.error("Error fetching report data", error);
         }
-    };
+    }, [selectedTerm]);
 
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             const data = await userService.getDashboardStats(selectedTerm);
             setStats(data);
@@ -122,13 +121,12 @@ const HodReports = () => {
             const questions = data.reduce((acc, curr) => acc + curr.totalQuestionsCreated, 0);
             const pending = data.reduce((acc, curr) => acc + curr.pendingReviews, 0);
 
-            setTotalCourses(courses);
             setTotalQuestions(questions);
             setTotalPending(pending);
         } catch (error) {
             console.error("Stats Fetch Error", error);
         }
-    };
+    }, [selectedTerm]);
 
     const handleFilterUpdate = (key, value) => {
         setFilters(prev => ({ ...prev, [key]: value }));

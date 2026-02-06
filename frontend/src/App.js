@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import FacultyDashboard from './pages/FacultyDashboard';
-import HodDashboard from './pages/HodDashboard'; // Keeping for reference/fallback if needed
 import HodLayout from './components/HodPanel/HodLayout';
 import HodHome from './pages/HodHome';
 import HodCourses from './pages/HodCourses';

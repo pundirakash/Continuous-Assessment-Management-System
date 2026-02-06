@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaUserTie, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaUserTie, FaCheck } from 'react-icons/fa';
 
 const ManageCoordinatorModal = ({ show, handleClose, course, faculties, appointCoordinator, currentCoordinatorId }) => {
     const [selectedFaculty, setSelectedFaculty] = useState('');

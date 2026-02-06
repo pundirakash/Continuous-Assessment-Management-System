@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import userService from '../../services/userService';
 import QuestionsList from './QuestionsList';
@@ -14,9 +14,9 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
 
     useEffect(() => {
         fetchSets();
-    }, [assessment]);
+    }, [assessment, fetchSets]);
 
-    const fetchSets = async () => {
+    const fetchSets = useCallback(async () => {
         setLoading(true);
         try {
             const data = await userService.getSetsForAssessment(assessment._id);
@@ -35,7 +35,7 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [assessment]);
 
     const handleCreateSet = async (numSets) => {
         // ... Logic from QuestionSetsList ...

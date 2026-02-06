@@ -607,6 +607,7 @@ const FacultyWorkloadModal = ({ show, handleClose, faculty, courses, handleDeall
                                                                     <div className="mb-4 p-3 bg-light rounded-4 border text-center">
                                                                         <img
                                                                             src={`${process.env.REACT_APP_API_URL.replace('/api', '')}/${q.image}`}
+                                                                            alt="Question context"
                                                                             className="img-fluid rounded-3"
                                                                             style={{ maxHeight: '200px' }}
                                                                         />

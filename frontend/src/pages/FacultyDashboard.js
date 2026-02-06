@@ -42,7 +42,7 @@ const FacultyDashboard = () => {
     }
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const [notificationsData, statsData] = await Promise.all([
         userService.getNotifications(),
@@ -59,11 +59,11 @@ const FacultyDashboard = () => {
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     }
-  };
+  }, [selectedTerm]);
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedTerm]);
+  }, [fetchDashboardData]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);

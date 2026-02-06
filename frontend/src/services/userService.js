@@ -366,7 +366,6 @@ const userService = {
   appointCoordinator,
   removeCourseFromFaculty,
   getCoursesByFaculty,
-  getCoursesByFaculty,
   createAssessment,
   getSetsForAssessmentByHOD,
   deleteSetForAssessment,

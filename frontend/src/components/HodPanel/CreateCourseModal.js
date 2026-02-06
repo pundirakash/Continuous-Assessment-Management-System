@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import userService from '../../services/userService';
 import ErrorModal from '../ErrorModal';
 import { useTerm } from '../../context/TermContext';
-import { FaPlus, FaBook, FaHistory, FaTimes, FaGlobe, FaLayerGroup } from 'react-icons/fa';
+import { FaPlus, FaBook, FaHistory, FaGlobe, FaLayerGroup } from 'react-icons/fa';
 
 const CreateCourseModal = ({ show, handleClose, addCourse }) => {
   const { selectedTerm } = useTerm();
@@ -28,9 +28,9 @@ const CreateCourseModal = ({ show, handleClose, addCourse }) => {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [show, activeTab, selectedTerm]);
+  }, [show, activeTab, selectedTerm, fetchCatalogCourses]);
 
-  const fetchCatalogCourses = async () => {
+  const fetchCatalogCourses = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await userService.getCatalogCourses(selectedTerm);
@@ -40,7 +40,7 @@ const CreateCourseModal = ({ show, handleClose, addCourse }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedTerm]);
 
   const handleSubmitNew = async (e) => {
     e.preventDefault();
