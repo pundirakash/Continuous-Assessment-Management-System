@@ -44,15 +44,14 @@ const HodCourses = () => {
         setShowTeamModal(true);
     };
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            const decoded = jwtDecode(token);
-            setUser({ ...decoded, role: 'HOD' });
+    const fetchUnreadCounts = useCallback(async (courseIds) => {
+        try {
+            const counts = await chatService.getUnreadCounts(courseIds);
+            setUnreadCounts(counts);
+        } catch (error) {
+            console.error("Failed to fetch unread counts", error);
         }
-        setActiveTab('courses');
-        fetchCourses();
-    }, [setActiveTab, fetchCourses]);
+    }, []);
 
     const fetchCourses = useCallback(async () => {
         setLoading(true);
@@ -73,14 +72,15 @@ const HodCourses = () => {
         }
     }, [selectedTerm, fetchUnreadCounts]);
 
-    const fetchUnreadCounts = useCallback(async (courseIds) => {
-        try {
-            const counts = await chatService.getUnreadCounts(courseIds);
-            setUnreadCounts(counts);
-        } catch (error) {
-            console.error("Failed to fetch unread counts", error);
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            const decoded = jwtDecode(token);
+            setUser({ ...decoded, role: 'HOD' });
         }
-    }, []);
+        setActiveTab('courses');
+        fetchCourses();
+    }, [setActiveTab, fetchCourses]);
 
     useEffect(() => {
         if (courses.length > 0) {
@@ -104,17 +104,6 @@ const HodCourses = () => {
     const handleManageCoordinator = (course) => {
         setSelectedCourse(course);
         setShowCoordinatorModal(true);
-    };
-
-    const handleAppointCoordinator = async (courseId, facultyId) => {
-        try {
-            await userService.appointCoordinator(facultyId, courseId, selectedTerm);
-            alert("Coordinator appointed successfully!");
-            fetchCourses(); // Refresh list
-        } catch (err) {
-            console.error("Failed to appoint coordinator", err);
-            alert("Failed to appoint coordinator");
-        }
     };
 
     const handleDeleteCourse = async (courseId) => {

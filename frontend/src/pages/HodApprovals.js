@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import userService from '../services/userService';
 import { useTerm } from '../context/TermContext';
-import { FaCheckCircle, FaTimesCircle, FaClock, FaExclamationTriangle } from 'react-icons/fa';
+import { FaCheckCircle, FaClock } from 'react-icons/fa';
 import ReviewSetModal from '../components/HodPanel/ReviewSetModal';
 
 const HodApprovals = () => {
@@ -18,11 +18,6 @@ const HodApprovals = () => {
     const [showQuestionModal, setShowQuestionModal] = useState(false);
     const [loadingSet, setLoadingSet] = useState(false);
 
-    useEffect(() => {
-        setActiveTab('approvals');
-        fetchPending();
-    }, [setActiveTab, fetchPending]);
-
     const fetchPending = useCallback(async () => {
         setLoading(true);
         try {
@@ -34,6 +29,11 @@ const HodApprovals = () => {
             setLoading(false);
         }
     }, [selectedTerm]);
+
+    useEffect(() => {
+        setActiveTab('approvals');
+        fetchPending();
+    }, [setActiveTab, fetchPending]);
 
     const handleReview = async (item) => {
         setLoadingSet(true);

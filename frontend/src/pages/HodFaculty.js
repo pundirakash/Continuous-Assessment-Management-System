@@ -18,7 +18,6 @@ const HodFaculty = () => {
     const [selectedFaculty, setSelectedFaculty] = useState(null);
     const [facultyCourses, setFacultyCourses] = useState([]);
     const [showCoursesModal, setShowCoursesModal] = useState(false);
-    const [pendingSets, setPendingSets] = useState([]);
 
     useEffect(() => {
         setActiveTab('faculty');

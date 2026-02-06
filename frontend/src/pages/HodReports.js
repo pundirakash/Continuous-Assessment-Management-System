@@ -85,12 +85,6 @@ const HodReports = () => {
 
 
 
-    useEffect(() => {
-        setActiveTab('reports');
-        fetchInitialData();
-        fetchStats();
-    }, [setActiveTab, fetchInitialData, fetchStats]);
-
     const fetchInitialData = useCallback(async () => {
         try {
             const [terms, courses, faculties] = await Promise.all([
@@ -117,7 +111,6 @@ const HodReports = () => {
             setStats(data);
 
             // Calculate totals
-            const courses = data.reduce((acc, curr) => acc + curr.coursesCount, 0);
             const questions = data.reduce((acc, curr) => acc + curr.totalQuestionsCreated, 0);
             const pending = data.reduce((acc, curr) => acc + curr.pendingReviews, 0);
 
@@ -127,6 +120,12 @@ const HodReports = () => {
             console.error("Stats Fetch Error", error);
         }
     }, [selectedTerm]);
+
+    useEffect(() => {
+        setActiveTab('reports');
+        fetchInitialData();
+        fetchStats();
+    }, [setActiveTab, fetchInitialData, fetchStats]);
 
     const handleFilterUpdate = (key, value) => {
         setFilters(prev => ({ ...prev, [key]: value }));
