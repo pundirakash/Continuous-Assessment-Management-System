@@ -1,0 +1,334 @@
+:root {
+  /* Premium Modern Palette (Indigo/Slate) */
+  --bg-app: #f1f5f9;
+  /* Slate 100 */
+  --bg-surface: #ffffff;
+  --text-main: #0f172a;
+  /* Slate 900 */
+  --text-muted: #64748b;
+  /* Slate 500 */
+
+  --primary: #4f46e5;
+  /* Indigo 600 */
+  --primary-glow: rgba(79, 70, 229, 0.15);
+
+  --border-light: #e2e8f0;
+  --radius-xl: 24px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Super Soft Shadows (The "Premium" Feel) */
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  --shadow-float: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.01);
+}
+
+body {
+  background-color: var(--bg-app);
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  /* Recommend Outfit if available, else Inter */
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+/* --- Layout --- */
+.dashboard-container-light {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Premium Header --- */
+.dashboard-header-light {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  /* Modern Glass */
+  height: 72px;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand-logo {
+  font-weight: 800;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+/* --- Hero Cards (Modern) --- */
+.hero-courses-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 2rem;
+  padding: 1rem 0;
+}
+
+.course-hero-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  height: 220px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid white;
+  cursor: pointer;
+
+  /* Layout Formatting */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.course-hero-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-float);
+  border-color: var(--primary-glow);
+}
+
+/* Gradients for Hero Cards (Subtle & Rich) */
+.gradient-0 {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  color: white;
+}
+
+.gradient-1 {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+}
+
+.gradient-2 {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white;
+}
+
+.hero-course-name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-top: 1rem;
+  /* Added spacing from code */
+  line-height: 1.2;
+}
+
+.hero-course-code {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* --- Workspace & Content --- */
+.dashboard-main-light {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 2rem;
+}
+
+.course-workspace-header {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.workspace-title {
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+/* --- Buttons (Pills) --- */
+.btn {
+  border-radius: var(--radius-pill);
+  padding: 10px 24px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px var(--primary-glow);
+}
+
+.btn-white {
+  background: white;
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-white:hover {
+  background: var(--bg-app);
+  border-color: var(--text-muted);
+}
+
+/* --- Tabs (Unified Set Manager) --- */
+.unified-set-manager .btn-tab {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 10px 24px;
+  font-weight: 600;
+}
+
+.unified-set-manager .btn-tab.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Questions (Clean Cards) --- */
+.question-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s;
+}
+
+.question-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+.q-badge {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--bg-app);
+  color: var(--text-muted);
+}
+
+/* --- Alerts --- */
+.alert-warning {
+  background: #fffbeb;
+  border: none;
+  color: #b45309;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+/* --- Dropdowns (Notifications & User) --- */
+/* --- Dropdowns (Notifications & User) --- */
+/* --- Dropdowns (Notifications & User) --- */
+.dropdown-menu-custom {
+  background: white;
+  border-radius: 8px;
+  /* Slightly tighter radius */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  /* Subtle shadow */
+  border: 1px solid #e2e8f0;
+  /* Crisp border */
+  overflow: hidden;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.15s ease-out;
+  min-width: 320px;
+
+  /* Absolute Positioning handled here */
+  position: absolute;
+  top: 130%;
+  right: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+
+.dropdown-body {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* Minimal Scrollbar */
+.dropdown-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.dropdown-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dropdown-body::-webkit-scrollbar-thumb {
+  background-color: #e2e8f0;
+  border-radius: 10px;
+}
+
+.dropdown-body::-webkit-scrollbar-thumb:hover {
+  background-color: #cbd5e1;
+}
+
+.dropdown-item-text {
+  padding: 1rem 1.5rem !important;
+  /* Force padding */
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  background: white;
+}
+
+.dropdown-item-text:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item-text:hover {
+  background: #f8fafc;
+  /* Slide effect removed */
+}
+
+.dropdown-item-action {
+  padding: 0.875rem 1.25rem;
+  transition: all 0.15s;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.dropdown-item-action:hover {
+  background: #f8fafc;
+  color: var(--primary);
+}

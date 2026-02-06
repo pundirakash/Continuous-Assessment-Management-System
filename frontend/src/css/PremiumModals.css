@@ -1,0 +1,120 @@
+/* PremiumModals.css - Global Overrides for a clean, modern UI */
+
+/* --- 1. Modal Container Polish --- */
+.modal-content {
+    border: none !important;
+    border-radius: 16px !important;
+    /* Soft rounded corners */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    /* Deep, premium shadow */
+    overflow: hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 1.5rem 2rem !important;
+    display: flex;
+    align-items: center;
+}
+
+.modal-title {
+    font-weight: 700;
+    color: #0f172a;
+    /* Slate 900 */
+    letter-spacing: -0.025em;
+    font-size: 1.25rem;
+}
+
+.modal-body {
+    padding: 0 !important;
+    /* Let children control padding usually, or reset */
+    background: #f8fafc;
+    /* Very light slate background for contrast */
+}
+
+/* --- 2. Tab Navigation Polish (The Fix) --- */
+/* We target .nav-tabs and .nav-pills to ensure consistent behavior */
+
+.nav-tabs,
+.nav-pills {
+    border-bottom: none !important;
+    padding: 0 1.5rem !important;
+    background: #ffffff;
+    gap: 0.5rem;
+}
+
+.nav-tabs .nav-link,
+.nav-pills .nav-link {
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
+    /* Muted Slate Text */
+    font-weight: 500;
+    padding: 0.75rem 1.25rem !important;
+    border-radius: 8px !important;
+    /* Pill shape tabs */
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 0 !important;
+    position: relative;
+}
+
+/* Hover State - High Contrast */
+.nav-tabs .nav-link:hover,
+.nav-pills .nav-link:hover {
+    color: #4f46e5 !important;
+    /* Indigo Primary */
+    background-color: #eef2ff !important;
+    /* Very light Indigo bg */
+}
+
+/* Active State - distinct and clear */
+.nav-tabs .nav-link.active,
+.nav-pills .nav-link.active {
+    color: #ffffff !important;
+    background-color: #4f46e5 !important;
+    /* Solid Primary Color */
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+}
+
+/* --- 3. Button Polish --- */
+.btn {
+    border-radius: 8px;
+    /* Consistent standard radius */
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: all 0.2s;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* --- 4. Scrollbar Polish --- */
+/* For the modal body list areas */
+div[style*="overflow-y: auto"]::-webkit-scrollbar {
+    width: 6px;
+}
+
+div[style*="overflow-y: auto"]::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 20px;
+}

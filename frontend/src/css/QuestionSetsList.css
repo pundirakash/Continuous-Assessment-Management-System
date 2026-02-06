@@ -1,0 +1,15 @@
+/* Add this to your CSS file */
+.question-sets-list {
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  
+  .list-group-item {
+    cursor: pointer;
+    margin-bottom: 5px;
+  }
+  
+  .btn-danger {
+    margin-left: 10px;
+  }
+  

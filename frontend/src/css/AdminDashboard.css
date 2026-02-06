@@ -1,0 +1,11 @@
+
+.btn-container {
+    display: flex;
+    align-items: center;
+    margin-left: auto; /* Pushes the buttons to the right */
+  }
+  
+  .btn-container .btn {
+    margin-right: 10px; /* Adjust margin as needed */
+  }
+  

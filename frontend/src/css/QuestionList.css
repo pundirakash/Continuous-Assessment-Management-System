@@ -1,0 +1,52 @@
+
+.card {
+    margin: 5px;
+  }
+  
+  .card-title {
+    margin-bottom: 20px;
+  }
+  
+  .table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f9f9f9;
+  }
+  
+  .table-striped tbody tr:nth-of-type(even) {
+    background-color: #ffffff;
+  }
+  
+  .table td img {
+    max-width: 100px;
+    height: auto;
+  }
+  
+  .table td ol {
+    padding-left: 20px;
+  }
+  
+  .table td ol li {
+    margin-bottom: 5px;
+  }
+  
+  .table-container {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .modal-content {
+    border-radius: 8px;
+  }
+  
+  .btn-primary, .btn-secondary, .btn-warning {
+    margin-right: 10px;
+  }
+  
+  .alert-info {
+    margin-top: 20px;
+  }
+  
