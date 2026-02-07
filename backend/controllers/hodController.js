@@ -487,24 +487,43 @@ exports.reviewAssessment = async (req, res) => {
 exports.createCourse = async (req, res) => {
   try {
     const { name, code, termId } = req.body;
-    const department = req.user.department;
+    const { department, departmentId, schoolId, universityId } = req.user;
 
-    const existingCourse = await Course.findOne({ code, department });
+    // Check for existing course with same code in the same school/university
+    // We check BOTH active and deleted courses to handle index collisions
+    const existingCourse = await Course.findOne({
+      code,
+      schoolId: schoolId || req.user.schoolId, // Use from user if available
+      universityId: universityId || req.user.universityId // Use from user if available
+    });
 
     if (existingCourse) {
-      return res.status(400).json({ message: 'Course with this code already exists in your department' });
+      if (!existingCourse.isDeleted) {
+        return res.status(400).json({ message: 'Course with this code already exists in your school' });
+      } else {
+        // ID COLLISION WITH DELETED COURSE
+        // Rename the deleted course code to free up the namespace for the new course
+        existingCourse.code = `${existingCourse.code}_DELETED_${Date.now()}`;
+        await existingCourse.save();
+      }
     }
 
     const course = new Course({
       name,
       code,
       department,
+      departmentId,
+      schoolId,
+      universityId,
       activeTerms: termId ? [termId] : [] // Initialize with current term
     });
     await course.save();
 
     res.status(201).json({ message: 'Course created successfully', course });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Course code must be unique within the school.' });
+    }
     res.status(500).json({ message: 'Server error', error });
   }
 };
