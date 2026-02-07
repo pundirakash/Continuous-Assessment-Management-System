@@ -446,9 +446,11 @@ const QuestionsList = ({ assessment, setName }) => {
                     <button className="btn btn-sm btn-white border text-primary hover-shadow transition-all rounded-pill px-4 fw-medium" onClick={() => handleEditQuestion(q)}>
                       <FaEdit className="me-2" /> Edit
                     </button>
-                    <button className="btn btn-sm btn-white border text-danger hover-shadow transition-all rounded-pill px-4 fw-medium" onClick={() => handleDeleteQuestion(q._id)}>
-                      <FaTrash className="me-2" /> Delete
-                    </button>
+                    {(hodStatus === 'Pending' || hodStatus === 'Rejected') && (
+                      <button className="btn btn-sm btn-white border text-danger hover-shadow transition-all rounded-pill px-4 fw-medium" onClick={() => handleDeleteQuestion(q._id)}>
+                        <FaTrash className="me-2" /> Delete
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
