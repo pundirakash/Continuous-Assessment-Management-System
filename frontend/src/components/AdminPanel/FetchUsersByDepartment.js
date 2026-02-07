@@ -112,6 +112,13 @@ const FetchUsersByDepartment = () => {
         departmentId: e.target.value,
         department: selectedDept ? selectedDept.name : ''
       });
+    } else if (e.target.name === 'schoolId') {
+      setCurrentUser({
+        ...currentUser,
+        schoolId: e.target.value,
+        departmentId: '', // Reset department when school changes
+        department: ''
+      });
     } else {
       setCurrentUser({
         ...currentUser,
@@ -294,7 +301,7 @@ const FetchUsersByDepartment = () => {
                   onChange={handleChange}
                 >
                   <option value="">Select Department</option>
-                  {departments.map((dept) => (
+                  {(schools.find(s => s._id === currentUser.schoolId)?.departments || []).map((dept) => (
                     <option key={dept._id} value={dept._id}>
                       {dept.name}
                     </option>
