@@ -52,11 +52,24 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
         return () => { document.body.style.overflow = 'unset'; };
     }, [show, course, fetchData]);
 
+    // Filter States
+    const [filterSchool, setFilterSchool] = useState('');
+    const [filterDepartment, setFilterDepartment] = useState('');
+
+    // Computed Lists for Dropdowns
+    const uniqueSchools = [...new Set(availableFaculty.map(f => f.schoolId?.name).filter(Boolean))].sort();
+    const uniqueDepartments = [...new Set(availableFaculty.map(f => f.department).filter(Boolean))].sort();
+
     const unassignedFaculty = availableFaculty.filter(
         f => !assignedFaculty.some(af => af._id === f._id)
     ).filter(
-        f => f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            f.email.toLowerCase().includes(searchTerm.toLowerCase())
+        f => {
+            const matchesSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                f.email.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSchool = !filterSchool || f.schoolId?.name === filterSchool;
+            const matchesDept = !filterDepartment || f.department === filterDepartment;
+            return matchesSearch && matchesSchool && matchesDept;
+        }
     );
 
     const handleCheckboxChange = (facultyId) => {
@@ -216,6 +229,36 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                                             <FaUserPlus size={14} /> Assign {selectedFacultyIds.length} Selected
                                         </button>
                                     )}
+                                </div>
+
+                                {/* Filters */}
+                                <div className="row g-2 mb-3">
+                                    <div className="col-md-6">
+                                        <select
+                                            className="form-select border-0 bg-white shadow-sm rounded-3 custom-input text-secondary small fw-bold"
+                                            value={filterSchool}
+                                            onChange={(e) => { setFilterSchool(e.target.value); setFilterDepartment(''); }}
+                                        >
+                                            <option value="">All Schools</option>
+                                            {uniqueSchools.map(school => (
+                                                <option key={school} value={school}>{school}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <select
+                                            className="form-select border-0 bg-white shadow-sm rounded-3 custom-input text-secondary small fw-bold"
+                                            value={filterDepartment}
+                                            onChange={(e) => setFilterDepartment(e.target.value)}
+                                        >
+                                            <option value="">All Departments</option>
+                                            {uniqueDepartments
+                                                .filter(dept => !filterSchool || availableFaculty.some(f => f.department === dept && f.schoolId?.name === filterSchool))
+                                                .map(dept => (
+                                                    <option key={dept} value={dept}>{dept}</option>
+                                                ))}
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div className="position-relative mb-3">
