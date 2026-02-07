@@ -299,7 +299,7 @@ const getDepartments = async (schoolId) => {
 };
 
 const createDepartment = async (name, schoolId) => {
-  const response = await api.post(`${API_URL_ADMIN}/create-department`, { name, schoolId });
+  const response = await api.post(`${API_URL_ADMIN}/departments`, { name, schoolId });
   return response.data;
 };
 
