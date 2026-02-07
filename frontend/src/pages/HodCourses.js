@@ -117,6 +117,18 @@ const HodCourses = () => {
         }
     };
 
+    const handleAppointCoordinator = async (courseId, facultyId) => {
+        try {
+            await userService.appointCoordinator(facultyId, courseId, selectedTerm);
+            alert("Coordinator appointed successfully!");
+            setShowCoordinatorModal(false);
+            fetchCourses(); // Refresh list
+        } catch (error) {
+            console.error("Failed to appoint coordinator", error);
+            alert("Failed to appoint coordinator");
+        }
+    };
+
     // Callback for when modal updates data (e.g. assigned faculty), we might want to refresh list
     const handleRefresh = () => {
         fetchCourses();
@@ -345,6 +357,7 @@ const HodCourses = () => {
                     handleClose={() => setShowCoordinatorModal(false)}
                     course={selectedCourse}
                     faculties={faculties}
+                    appointCoordinator={handleAppointCoordinator}
                 />
             )}
 
