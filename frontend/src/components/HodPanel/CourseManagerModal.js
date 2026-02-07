@@ -28,7 +28,7 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
         setLoading(true);
         try {
             if (activeTab === 'faculty') {
-                const allFaculty = await userService.getFacultiesByDepartment();
+                const allFaculty = await userService.getFaculties();
                 setAvailableFaculty(allFaculty);
                 setAssignedFaculty(course.faculties || []);
             } else if (activeTab === 'assessments') {
@@ -243,7 +243,9 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                                                 {f.name.charAt(0)}
                                             </div>
                                             <div className="flex-grow-1 overflow-hidden">
-                                                <div className="fw-bold text-dark text-truncate small">{f.name}</div>
+                                                <div className="fw-bold text-dark text-truncate small">
+                                                    {f.name} <span className="text-muted fw-normal" style={{ fontSize: '10px' }}>({f.department} - {f.schoolId?.name || 'No School'})</span>
+                                                </div>
                                                 <div className="text-muted text-truncate" style={{ fontSize: '11px' }}>{f.uid} • {f.role}</div>
                                             </div>
                                             <FaChevronRight size={12} className="text-muted opacity-25" />
