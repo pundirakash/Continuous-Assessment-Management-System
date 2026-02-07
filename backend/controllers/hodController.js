@@ -25,7 +25,8 @@ exports.getFaculties = async (req, res) => {
 
     const faculties = await User.find(filter)
       .select('-password')
-      .populate('schoolId', 'name'); // Populate School Name for UI distinction
+      .populate('schoolId', 'name') // Populate School Name for UI distinction
+      .populate('departmentId', 'name'); // Populate Department Name
 
     res.status(200).json(faculties);
   } catch (error) {
