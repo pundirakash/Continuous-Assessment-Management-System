@@ -229,6 +229,22 @@ const FetchUsersByDepartment = () => {
           <div className="p-4">
             <div className="row g-3">
               <div className="col-md-6 mb-3">
+                <label className="form-label x-small fw-bold text-uppercase text-muted ls-1">School</label>
+                <select
+                  name="schoolId"
+                  className="form-select border-light bg-light rounded-3 py-2 px-3 fw-bold"
+                  value={currentUser.schoolId || ''}
+                  onChange={handleChange}
+                >
+                  <option value="">Select School</option>
+                  {schools.map((school) => (
+                    <option key={school._id} value={school._id}>
+                      {school.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-6 mb-3">
                 <label className="form-label x-small fw-bold text-uppercase text-muted ls-1">Full Name</label>
                 <input
                   type="text"
@@ -337,8 +353,8 @@ const FetchUsersByDepartment = () => {
                     </td>
                     <td className="py-3">
                       <span className={`badge border-0 px-3 py-2 rounded-pill fw-bold x-small ${user.role === 'HOD' ? 'bg-danger bg-opacity-10 text-danger' :
-                          user.role === 'CourseCoordinator' ? 'bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25' :
-                            'bg-info bg-opacity-10 text-info'
+                        user.role === 'CourseCoordinator' ? 'bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25' :
+                          'bg-info bg-opacity-10 text-info'
                         }`}>
                         {user.role}
                       </span>

@@ -19,7 +19,7 @@ exports.getOrganization = async (req, res) => {
 
     // Enhance schools with their departments
     for (let school of schools) {
-      school.departments = await Department.find({ schoolId: school._id }).distinct('name');
+      school.departments = await Department.find({ schoolId: school._id }).select('name _id').lean();
     }
 
     res.status(200).json({

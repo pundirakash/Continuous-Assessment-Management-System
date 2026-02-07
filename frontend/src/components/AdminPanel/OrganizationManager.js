@@ -146,7 +146,7 @@ const OrganizationManager = () => {
                                                 {school.departments.length > 0 ? (
                                                     school.departments.map((dept, dIdx) => (
                                                         <span key={dIdx} className="badge bg-white text-dark shadow-sm border-0 py-2 px-3 rounded-pill fw-medium">
-                                                            {dept}
+                                                            {dept.name}
                                                         </span>
                                                     ))
                                                 ) : (

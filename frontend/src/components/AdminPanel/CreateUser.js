@@ -45,7 +45,7 @@ const CreateUser = () => {
     setDepartments(school ? school.departments : []);
     setFormData({
       ...formData,
-      schoolId: school?.id || '',
+      schoolId: school?._id || '',
       department: '',
       departmentId: ''
     });
@@ -160,7 +160,7 @@ const CreateUser = () => {
                 >
                   <option value="">Select Department</option>
                   {departments.map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept._id} value={dept._id}>{dept.name}</option>
                   ))}
                 </select>
               </div>
