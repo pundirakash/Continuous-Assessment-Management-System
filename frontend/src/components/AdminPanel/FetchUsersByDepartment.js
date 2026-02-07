@@ -105,10 +105,19 @@ const FetchUsersByDepartment = () => {
   };
 
   const handleChange = (e) => {
-    setCurrentUser({
-      ...currentUser,
-      [e.target.name]: e.target.value,
-    });
+    if (e.target.name === 'departmentId') {
+      const selectedDept = departments.find(d => d._id === e.target.value);
+      setCurrentUser({
+        ...currentUser,
+        departmentId: e.target.value,
+        department: selectedDept ? selectedDept.name : ''
+      });
+    } else {
+      setCurrentUser({
+        ...currentUser,
+        [e.target.name]: e.target.value,
+      });
+    }
   };
 
   const handleSaveChanges = async () => {
