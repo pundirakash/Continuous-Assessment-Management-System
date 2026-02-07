@@ -351,8 +351,17 @@ exports.appointCoordinator = async (req, res) => {
       return res.status(404).json({ message: 'Faculty or Course not found' });
     }
 
-    if (faculty.department !== req.user.department || course.department !== req.user.department) {
-      return res.status(403).json({ message: 'Not authorized to appoint this coordinator' });
+    // AUTH CHECK: HOD must own the COURSE, but Faculty can be from anywhere in University
+    const isCourseOwner = (req.user.departmentId && course.departmentId?.toString() === req.user.departmentId.toString()) ||
+      (course.department === req.user.department);
+
+    if (!isCourseOwner) {
+      return res.status(403).json({ message: 'Not authorized to manage this course' });
+    }
+
+    // Ensure Faculty belongs to same University
+    if (req.user.universityId && faculty.universityId && faculty.universityId.toString() !== req.user.universityId.toString()) {
+      return res.status(403).json({ message: 'Cannot appoint faculty from another university' });
     }
 
     // 1. Update Course Model (for live current view)
