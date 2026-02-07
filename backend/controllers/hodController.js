@@ -12,18 +12,21 @@ const TermArchive = require('../models/TermArchive');
 const SystemConfig = require('../models/SystemConfig');
 exports.getFaculties = async (req, res) => {
   try {
-    const { schoolId, universityId } = req.user;
+    const { universityId } = req.user;
 
-    // To support cross-department teaching, we allow HODs to see all faculties in their school/university
+    // To support cross-department teaching, we allow HODs to see all faculties in their UNIVERSITY
+    // We removed strict schoolId filtering to allow cross-school assignments
     const filter = {
       role: { $in: ['Faculty', 'CourseCoordinator', 'HOD'] },
       isDeleted: { $ne: true }
     };
 
-    if (schoolId) filter.schoolId = schoolId;
     if (universityId) filter.universityId = universityId;
 
-    const faculties = await User.find(filter).select('-password');
+    const faculties = await User.find(filter)
+      .select('-password')
+      .populate('schoolId', 'name'); // Populate School Name for UI distinction
+
     res.status(200).json(faculties);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });

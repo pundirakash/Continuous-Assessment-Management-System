@@ -76,7 +76,7 @@ const AssignCourseModal = ({ show, handleClose, course, assignCourse }) => {
                 <option value="">Choose...</option>
                 {filteredFaculties.map((faculty) => (
                   <option key={faculty._id} value={faculty._id}>
-                    {faculty.name} ({faculty.department || 'No Dept'})
+                    {faculty.name} ({faculty.department || 'No Dept'} - {faculty.schoolId?.name || 'No School'})
                   </option>
                 ))}
               </select>
