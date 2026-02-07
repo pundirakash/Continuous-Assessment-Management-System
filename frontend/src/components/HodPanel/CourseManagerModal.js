@@ -58,7 +58,9 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
 
     // Computed Lists for Dropdowns
     const uniqueSchools = [...new Set(availableFaculty.map(f => f.schoolId?.name).filter(Boolean))].sort();
-    const uniqueDepartments = [...new Set(availableFaculty.map(f => f.department).filter(Boolean))].sort();
+
+    // Prefer departmentId.name, fallback to department string
+    const uniqueDepartments = [...new Set(availableFaculty.map(f => f.departmentId?.name || f.department).filter(Boolean))].sort();
 
     const unassignedFaculty = availableFaculty.filter(
         f => !assignedFaculty.some(af => af._id === f._id)
@@ -66,8 +68,13 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
         f => {
             const matchesSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 f.email.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesSchool = !filterSchool || f.schoolId?.name === filterSchool;
-            const matchesDept = !filterDepartment || f.department === filterDepartment;
+
+            const facultySchoolName = f.schoolId?.name;
+            const facultyDeptName = f.departmentId?.name || f.department;
+
+            const matchesSchool = !filterSchool || facultySchoolName === filterSchool;
+            const matchesDept = !filterDepartment || facultyDeptName === filterDepartment;
+
             return matchesSearch && matchesSchool && matchesDept;
         }
     );
@@ -253,7 +260,7 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                                         >
                                             <option value="">All Departments</option>
                                             {uniqueDepartments
-                                                .filter(dept => !filterSchool || availableFaculty.some(f => f.department === dept && f.schoolId?.name === filterSchool))
+                                                .filter(dept => !filterSchool || availableFaculty.some(f => (f.departmentId?.name || f.department) === dept && f.schoolId?.name === filterSchool))
                                                 .map(dept => (
                                                     <option key={dept} value={dept}>{dept}</option>
                                                 ))}
