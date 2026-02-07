@@ -220,7 +220,19 @@ exports.activateCourse = async (req, res) => {
     }
 
     if (!course.activeTerms.includes(termId)) {
+      // CLEANUP: Remove course from old faculties' profiles
+      if (course.faculties && course.faculties.length > 0) {
+        await User.updateMany(
+          { _id: { $in: course.faculties } },
+          { $pull: { courses: course._id } }
+        );
+      }
+
+      // Reset Course State for new term
       course.activeTerms.push(termId);
+      course.faculties = [];
+      course.coordinator = null;
+
       await course.save();
     }
 
