@@ -32,11 +32,12 @@ const BrandLogo = ({ textSize = "fs-3", lightMode = false }) => {
                         navigate('/faculty');
                         break;
 
-                    // CASE: Course Coordinator (Handles space and underscore)
+                    // CASE: Course Coordinator
                     case 'course coordinator':
                     case 'course_coordinator':
-                        // Course Coordinators in this system share the HOD layout/permissions
-                        navigate('/hod');
+                    case 'coursecoordinator': // Token likely has "CourseCoordinator"
+                        // Course Coordinators are allowed in /faculty route relative to PrivateRoute logic
+                        navigate('/faculty');
                         break;
 
                     default:
