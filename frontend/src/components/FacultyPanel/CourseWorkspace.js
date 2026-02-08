@@ -63,13 +63,18 @@ const CourseWorkspace = ({ course, onBack }) => {
 
     if (loading) return (
         <div className="course-workspace h-100 d-flex flex-column p-4">
-            <div>Loading Header...</div>
+            {/* Header Skeleton */}
+            <SkeletonLoader height={80} className="mb-4 rounded-4" />
+
             <div className="row g-4">
+                {/* Sidebar Skeleton */}
                 <div className="col-md-3">
-                    <div>Loading Sidebar...</div>
+                    <SkeletonLoader type="list" count={5} />
                 </div>
+
+                {/* Main Content Skeleton */}
                 <div className="col-md-9">
-                    <div>Loading Content...</div>
+                    <SkeletonLoader type="dashboard" />
                 </div>
             </div>
         </div>
