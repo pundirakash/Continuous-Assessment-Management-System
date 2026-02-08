@@ -157,7 +157,7 @@ const QuestionsList = ({ assessment, setName }) => {
             </div>
           </div>
 
-          <div className="d-flex gap-2 align-items-center">
+          <div className="d-flex gap-2 align-items-center flex-wrap justify-content-end">
             {/* Search Bar */}
             <div className="position-relative">
               <FaSearch className="position-absolute text-muted small" style={{ top: '50%', left: '15px', transform: 'translateY(-50%)' }} />
@@ -165,7 +165,7 @@ const QuestionsList = ({ assessment, setName }) => {
                 type="text"
                 placeholder="Search questions..."
                 className="form-control rounded-pill border-0 bg-light ps-5 py-2"
-                style={{ minWidth: '220px', fontSize: '0.9rem' }}
+                style={{ minWidth: '180px', fontSize: '0.9rem' }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
