@@ -128,28 +128,34 @@ const CreateCourseModal = ({ show, handleClose, addCourse }) => {
           {activeTab === 'new' ? (
             <form onSubmit={handleSubmitNew}>
               <div className="mb-4 text-left">
-                <label className="form-label fw-bold text-secondary small text-uppercase ls-1">Course Details</label>
-                <div className="mb-3 position-relative">
-                  <div className="position-absolute ps-3 top-50 translate-middle-y text-secondary opacity-50"><FaGlobe size={14} /></div>
-                  <input
-                    type="text"
-                    className="form-control ps-5 py-3 border-0 bg-light rounded-3 shadow-none custom-input"
-                    placeholder="Enter Course Full Name"
-                    value={courseName}
-                    onChange={(e) => setCourseName(e.target.value)}
-                    required
-                  />
+                <div className="mb-3">
+                  <label className="form-label fw-bold text-secondary small text-uppercase ls-1 mb-2">Course Name</label>
+                  <div className="position-relative">
+                    <div className="position-absolute ps-3 top-50 translate-middle-y text-secondary opacity-50"><FaGlobe size={14} /></div>
+                    <input
+                      type="text"
+                      className="form-control ps-5 py-3 border-0 bg-light rounded-3 shadow-none custom-input"
+                      placeholder="e.g. Advanced Operating Systems"
+                      value={courseName}
+                      onChange={(e) => setCourseName(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="mb-3 position-relative">
-                  <div className="position-absolute ps-3 top-50 translate-middle-y text-secondary opacity-50"><FaLayerGroup size={14} /></div>
-                  <input
-                    type="text"
-                    className="form-control ps-5 py-3 border-0 bg-light rounded-3 shadow-none custom-input"
-                    placeholder="Enter Course Code (e.g. CS101)"
-                    value={courseCode}
-                    onChange={(e) => setCourseCode(e.target.value)}
-                    required
-                  />
+
+                <div className="mb-3">
+                  <label className="form-label fw-bold text-secondary small text-uppercase ls-1 mb-2">Course Code</label>
+                  <div className="position-relative">
+                    <div className="position-absolute ps-3 top-50 translate-middle-y text-secondary opacity-50"><FaLayerGroup size={14} /></div>
+                    <input
+                      type="text"
+                      className="form-control ps-5 py-3 border-0 bg-light rounded-3 shadow-none custom-input"
+                      placeholder="e.g. CSE316"
+                      value={courseCode}
+                      onChange={(e) => setCourseCode(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
