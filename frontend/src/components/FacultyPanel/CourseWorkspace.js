@@ -63,13 +63,13 @@ const CourseWorkspace = ({ course, onBack }) => {
 
     if (loading) return (
         <div className="course-workspace h-100 d-flex flex-column p-4">
-            <SkeletonLoader height={80} style={{ borderRadius: '16px', marginBottom: '2rem' }} />
+            <div>Loading Header...</div>
             <div className="row g-4">
                 <div className="col-md-3">
-                    <SkeletonLoader height={400} style={{ borderRadius: '16px' }} />
+                    <div>Loading Sidebar...</div>
                 </div>
                 <div className="col-md-9">
-                    <SkeletonLoader height={600} style={{ borderRadius: '16px' }} />
+                    <div>Loading Content...</div>
                 </div>
             </div>
         </div>
