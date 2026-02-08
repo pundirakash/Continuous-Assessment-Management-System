@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../css/ChangePasswordModal.css';
+import { FaLock, FaTimes } from 'react-icons/fa';
 
 const ChangePasswordModal = ({ onClose, onChangePassword }) => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -16,43 +16,61 @@ const ChangePasswordModal = ({ onClose, onChangePassword }) => {
   };
 
   return (
-    <div className="modal fade show" tabIndex="-1" style={{ display: 'block' }}>
-      <div className="modal-content pass">
-        <span className="close" onClick={onClose}>&times;</span>
-        <h2>Change Password</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="currentPassword">Current Password</label>
-            <input
-              type="password"
-              id="currentPassword"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
+    <div className="modal fade show" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content rounded-4 border-0 shadow-lg">
+          <div className="modal-header border-bottom-0 p-4 pb-0">
+            <div className="d-flex align-items-center gap-3">
+              <div className="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                <FaLock size={24} />
+              </div>
+              <h4 className="modal-title fw-bold">Change Password</h4>
+            </div>
+            <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
-          <div className="form-group">
-            <label htmlFor="newPassword">New Password</label>
-            <input
-              type="password"
-              id="newPassword"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
+          <div className="modal-body p-4">
+            <form onSubmit={handleSubmit}>
+              <div className="mb-3">
+                <label className="form-label text-muted fw-bold small text-uppercase">Current Password</label>
+                <input
+                  type="password"
+                  className="form-control form-control-lg rounded-3 bg-light border-0"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label text-muted fw-bold small text-uppercase">New Password</label>
+                <input
+                  type="password"
+                  className="form-control form-control-lg rounded-3 bg-light border-0"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="form-label text-muted fw-bold small text-uppercase">Confirm New Password</label>
+                <input
+                  type="password"
+                  className="form-control form-control-lg rounded-3 bg-light border-0"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  required
+                  placeholder="Confirm new password"
+                />
+              </div>
+              <div className="d-grid">
+                <button type="submit" className="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm">
+                  Update Password
+                </button>
+              </div>
+            </form>
           </div>
-          <div className="form-group">
-            <label htmlFor="confirmNewPassword">Confirm New Password</label>
-            <input
-              type="password"
-              id="confirmNewPassword"
-              value={confirmNewPassword}
-              onChange={(e) => setConfirmNewPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit" className='btn btn-primary'>Change Password</button>
-        </form>
+        </div>
       </div>
     </div>
   );
