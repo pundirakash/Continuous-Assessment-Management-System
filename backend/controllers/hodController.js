@@ -685,7 +685,7 @@ exports.approveAssessment = async (req, res) => {
     questionSet.activityLog.push({
       action: status,
       userId: req.user.id,
-      details: `${reviewerRole} Review: ${status}${trimmedRemarks ? ` - ${trimmedRemarks}` : ''}`
+      details: `${reviewerRole} Review: ${status}${cleanRemarks ? ` - ${cleanRemarks}` : ''}`
     });
 
     if (status === 'Approved' || status === 'Approved with Remarks') {
