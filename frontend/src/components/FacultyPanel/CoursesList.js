@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
 import ErrorModal from '../ErrorModal';
-import ErrorModal from '../ErrorModal';
+// Duplicate removed
 // import LoadingSpinner from '../LoadingSpinner';
 import SkeletonLoader from '../SkeletonLoader';
 import { FaArrowRight } from 'react-icons/fa';

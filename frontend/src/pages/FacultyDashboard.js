@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { useNavigate } from 'react-router-dom';
 import CoursesList from '../components/FacultyPanel/CoursesList';
 import CourseWorkspace from '../components/FacultyPanel/CourseWorkspace';
 import auhtService from '../services/authService';

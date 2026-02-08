@@ -3,7 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 import userService from '../../services/userService';
 import QuestionsList from './QuestionsList';
 import CreateSetModal from './CreateSetModal';
-import CreateSetModal from './CreateSetModal';
+// Duplicate removed
 // import LoadingSpinner from '../LoadingSpinner';
 import SkeletonLoader from '../SkeletonLoader';
 import { FaPlus, FaTrash } from 'react-icons/fa';
