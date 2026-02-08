@@ -37,12 +37,19 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
     };
 
     const submitDecision = async (status) => {
-        if (status === 'Rejected' && !remarks.trim()) {
+        // Explicitly sanitize remarks
+        const sanitizedRemarks = remarks ? remarks.trim() : '';
+
+        // Final fallback: If deciding to 'Approve' (locked), force remarks to empty
+        // This prevents 'Approved' status carrying ghost remarks
+        const finalRemarks = status === 'Approved' ? '' : sanitizedRemarks;
+
+        if (status === 'Rejected' && !finalRemarks) {
             alert("Please provide remarks for rejection.");
             return;
         }
 
-
+        console.log("Submitting Decision:", { status, finalRemarks, originalRemarks: remarks });
 
         try {
             await userService.approveAssessment(
@@ -50,7 +57,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                 facultyId,
                 localSetData.setName,
                 status,
-                remarks
+                finalRemarks
             );
             handleClose();
             if (onRefresh) onRefresh();
