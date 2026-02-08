@@ -1,8 +1,50 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 
 const BrandLogo = ({ textSize = "fs-3", lightMode = false }) => {
+    const navigate = useNavigate();
+
+    const handleLogoClick = () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                const role = decoded.role;
+
+                switch (role) {
+                    case 'admin':
+                    case 'manager': // Assuming manager also goes to admin dashboard or has their own
+                        navigate('/admin-dashboard');
+                        break;
+                    case 'hod':
+                    case 'course_coordinator': // Course coordinators often share HOD views or have specific ones, usually HOD dashboard in this app context if they are HODs, or faculty dashboard if just coordinators. 
+                        // But in this system, 'course_coordinator' often acts like a faculty with extra perms, or HOD. 
+                        // Let's stick to the main 3 for now, standard fallback to login if unknown.
+                        navigate('/hod-dashboard');
+                        break;
+                    case 'faculty':
+                        navigate('/faculty-dashboard');
+                        break;
+                    default:
+                        navigate('/');
+                }
+            } catch (error) {
+                console.error("Invalid token", error);
+                navigate('/');
+            }
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
-        <div className="d-flex align-items-center">
+        <div
+            className="d-flex align-items-center cursor-pointer user-select-none"
+            onClick={handleLogoClick}
+            style={{ cursor: 'pointer' }}
+            title="Go to Dashboard"
+        >
             {/* Import fonts specifically for the logo availability */}
             <style>
                 {`
