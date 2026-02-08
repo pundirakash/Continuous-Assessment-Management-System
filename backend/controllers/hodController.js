@@ -636,7 +636,7 @@ exports.approveAssessment = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
-    const trimmedRemarks = remarks ? remarks.trim() : '';
+    const trimmedRemarks = (remarks && status !== 'Approved') ? remarks.trim() : '';
 
     if ((status === 'Approved with Remarks' || status === 'Rejected') && !trimmedRemarks) {
       return res.status(400).json({ message: 'Remarks are required for Approved with Remarks and Rejected statuses' });

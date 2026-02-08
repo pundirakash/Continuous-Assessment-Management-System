@@ -173,7 +173,8 @@ const QuestionsList = ({ assessment, setName }) => {
 
             <div style={{ width: 1, height: 24, background: '#e5e7eb' }} className="mx-1"></div>
 
-            {(hodStatus === 'Pending' || hodStatus === 'Rejected' || hodStatus === 'Approved with Remarks') && (
+            {/* Allow edits only if Pending, Rejected, or Approved with Remarks */}
+            {(!['Approved', 'Submitted'].includes(hodStatus)) && (
               <>
                 <button
                   className="btn btn-primary d-flex align-items-center gap-2 shadow-sm px-4 fw-bold rounded-pill"
@@ -191,7 +192,8 @@ const QuestionsList = ({ assessment, setName }) => {
               </>
             )}
 
-            {hodStatus === 'Pending' && questions.length > 0 && (
+            {/* Show Submit if Pending, OR if user needs to fix remarks (Rejected/Approved with Remarks) */}
+            {['Pending', 'Rejected', 'Approved with Remarks'].includes(hodStatus) && questions.length > 0 && (
               <button
                 className={`btn d-flex align-items-center gap-2 shadow-sm px-4 fw-bold rounded-pill ${assessmentType === 'MCQ' && questions.length < 30 ? 'btn-outline-secondary' : 'btn-success text-white'}`}
                 onClick={() => {
