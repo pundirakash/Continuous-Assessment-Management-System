@@ -694,36 +694,35 @@ exports.approveAssessment = async (req, res) => {
     // FORCE Mongoose to detect the change in the nested array
     assessment.markModified('facultyQuestions');
 
+    if (status === 'Approved' || status === 'Approved with Remarks') {
+      const reviewerUser = await User.findById(req.user.id);
+      questionSet.approvedBy = req.user.id;
+      questionSet.approvedByName = reviewerUser ? reviewerUser.name : `Unknown ${reviewerRole}`;
+      questionSet.approvalDate = new Date();
+    } else if (status === 'Rejected') {
+      questionSet.approvedBy = undefined;
+      questionSet.approvedByName = undefined;
+      questionSet.approvalDate = undefined;
+    }
+
     await assessment.save();
-    console.log(`[POST-SAVE] Assessment saved successfully.`);
-    const reviewerUser = await User.findById(req.user.id);
-    questionSet.approvedBy = req.user.id;
-    questionSet.approvedByName = reviewerUser ? reviewerUser.name : `Unknown ${reviewerRole}`;
-    questionSet.approvalDate = new Date();
-  } else if (status === 'Rejected') {
-    questionSet.approvedBy = undefined;
-    questionSet.approvedByName = undefined;
-    questionSet.approvalDate = undefined;
+
+    // Create and add notification
+    const faculty = await User.findById(facultyId);
+    if (faculty) {
+      const notification = `Dear ${faculty.name}, Your Set ${setName} for ${assessment.name} of ${course.name} has been ${status} by the ${reviewerRole}.`;
+      faculty.notifications.unshift({ message: notification });
+      await faculty.save();
+    }
+
+    res.status(200).json({
+      message: `Assessment set reviewed successfully by ${reviewerRole}`,
+      reviewerRole: reviewerRole
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error });
   }
-
-  await assessment.save();
-
-  // Create and add notification
-  const faculty = await User.findById(facultyId);
-  if (faculty) {
-    const notification = `Dear ${faculty.name}, Your Set ${setName} for ${assessment.name} of ${course.name} has been ${status} by the ${reviewerRole}.`;
-    faculty.notifications.unshift({ message: notification });
-    await faculty.save();
-  }
-
-  res.status(200).json({
-    message: `Assessment set reviewed successfully by ${reviewerRole}`,
-    reviewerRole: reviewerRole
-  });
-} catch (error) {
-  console.error(error);
-  res.status(500).json({ message: 'Server error', error });
-}
 };
 
 async function generateDocxFromTemplate(data, templateNumber) {
