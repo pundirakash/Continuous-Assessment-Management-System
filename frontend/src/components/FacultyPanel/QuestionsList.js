@@ -146,7 +146,7 @@ const QuestionsList = ({ assessment, setName }) => {
     <div>
       <div className='p-4'>
         {/* Header Section (Modernized) */}
-        <div className="bg-white p-3 ps-4 pe-3 rounded-pill shadow-sm mb-4 border d-flex justify-content-between align-items-center sticky-top" style={{ top: 10, zIndex: 100 }}>
+        <div className="bg-white p-3 ps-4 pe-3 rounded-4 shadow-sm mb-4 border d-flex flex-wrap justify-content-between align-items-center sticky-top" style={{ top: 10, zIndex: 100 }}>
           <div className="d-flex align-items-center gap-3">
             <div className="bg-primary bg-opacity-10 text-primary p-2 rounded-circle d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }}>
               <span className="fw-bold">{setName}</span>
