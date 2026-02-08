@@ -17,52 +17,58 @@ const ChangePasswordModal = ({ onClose, onChangePassword }) => {
 
   return (
     <div className="modal fade show" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content rounded-4 border-0 shadow-lg">
-          <div className="modal-header border-bottom-0 p-4 pb-0">
-            <div className="d-flex align-items-center gap-3">
-              <div className="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+      <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '400px' }}>
+        <div className="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+          <div className="modal-header border-bottom-0 p-4 pb-0 justify-content-center position-relative">
+            <button type="button" className="btn-close position-absolute top-0 end-0 m-3" onClick={onClose}></button>
+            <div className="text-center">
+              <div className="bg-primary bg-opacity-10 p-3 rounded-circle text-primary d-inline-flex mb-3">
                 <FaLock size={24} />
               </div>
-              <h4 className="modal-title fw-bold">Change Password</h4>
+              <h5 className="modal-title fw-bold">Change Password</h5>
             </div>
-            <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
-          <div className="modal-body p-4">
+          <div className="modal-body p-4 pt-3">
             <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label className="form-label text-muted fw-bold small text-uppercase">Current Password</label>
+              <div className="form-floating mb-3">
                 <input
                   type="password"
-                  className="form-control form-control-lg rounded-3 bg-light border-0"
+                  className="form-control rounded-3 border-light bg-light"
+                  id="currentPassword"
+                  placeholder="Current Password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
-                  placeholder="Enter current password"
                 />
+                <label htmlFor="currentPassword">Current Password</label>
               </div>
-              <div className="mb-3">
-                <label className="form-label text-muted fw-bold small text-uppercase">New Password</label>
+
+              <div className="form-floating mb-3">
                 <input
                   type="password"
-                  className="form-control form-control-lg rounded-3 bg-light border-0"
+                  className="form-control rounded-3 border-light bg-light"
+                  id="newPassword"
+                  placeholder="New Password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  placeholder="Enter new password"
                 />
+                <label htmlFor="newPassword">New Password</label>
               </div>
-              <div className="mb-4">
-                <label className="form-label text-muted fw-bold small text-uppercase">Confirm New Password</label>
+
+              <div className="form-floating mb-4">
                 <input
                   type="password"
-                  className="form-control form-control-lg rounded-3 bg-light border-0"
+                  className="form-control rounded-3 border-light bg-light"
+                  id="confirmNewPassword"
+                  placeholder="Confirm New Password"
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
                   required
-                  placeholder="Confirm new password"
                 />
+                <label htmlFor="confirmNewPassword">Confirm New Password</label>
               </div>
+
               <div className="d-grid">
                 <button type="submit" className="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm">
                   Update Password
