@@ -251,62 +251,62 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                                 ) : (
                                                     <div className={`bg-white p-4 rounded-4 border shadow-lg mt-1 animation-fade-in position-relative overflow-hidden ${actionType === 'approve' ? 'border-success' : 'border-danger'}`}>
                                                         <div className={`position-absolute top-0 start-0 w-100 h-1 px-4 ${actionType === 'approve' ? 'bg-success' : 'bg-danger'}`} style={{ height: '4px' }}></div>
-                                                        <div className="d-flex align-items-center justify-content-between mb-3">
-                                                            <label className={`small fw-bold d-block m-0 d-flex align-items-center gap-2 ${actionType === 'approve' ? 'text-success' : 'text-danger'}`}>
-                                                                {actionType === 'approve' ? <FaCheckCircle /> : <FaTimesCircle />}
+                                                        <div className="d-flex align-items-center justify-content-between mb-2">
+                                                            <label className={`x-small fw-bold text-uppercase ls-1 ${actionType === 'approve' ? 'text-success' : 'text-danger'}`}>
                                                                 {actionType === 'approve' ? 'Approval Remarks' : 'Rejection Reason'}
                                                             </label>
-                                                            {actionType === 'approve' && <span className="badge bg-light text-secondary border rounded-pill x-small">Optional</span>}
+                                                            {actionType === 'approve' && <span className="badge bg-light text-secondary border rounded-pill" style={{ fontSize: '9px' }}>Optional</span>}
                                                         </div>
 
                                                         {actionType === 'approve' && (
-                                                            <div className="mb-3 px-1">
-                                                                <div className="d-flex gap-2 align-items-start text-muted" style={{ fontSize: '12px', lineHeight: '1.5' }}>
-                                                                    <FaCheckDouble className="mt-1 text-primary flex-shrink-0" size={12} />
-                                                                    <span>
-                                                                        Adding remarks sets status to <strong className="text-dark">Approved with Remarks</strong> (Editable).
-                                                                        Leave empty for <strong className="text-success">Approved</strong> (Locked).
-                                                                    </span>
+                                                            <div className="bg-light rounded-3 p-2 mb-2 border border-light-subtle">
+                                                                <div className="d-flex gap-2 align-items-center mb-1 text-secondary" style={{ fontSize: '11px' }}>
+                                                                    <FaCheckDouble className="text-success" size={10} />
+                                                                    <span>Empty = <strong className="text-success">Lock Set</strong></span>
+                                                                </div>
+                                                                <div className="d-flex gap-2 align-items-center text-secondary" style={{ fontSize: '11px' }}>
+                                                                    <FaEdit className="text-warning" size={10} />
+                                                                    <span>With Remarks = <strong className="text-dark">Allow Edit</strong></span>
                                                                 </div>
                                                             </div>
                                                         )}
 
                                                         <textarea
-                                                            className="form-control bg-light border-0 rounded-3 mb-2 small p-3 custom-input"
-                                                            rows="4"
-                                                            style={{ fontSize: '14px', resize: 'none' }}
-                                                            placeholder={actionType === 'approve' ? "Write remarks here to unlock editing for faculty..." : "Please specify exactly what needs to be corrected..."}
+                                                            className="form-control bg-light border-0 rounded-3 mb-3 small p-3 custom-input"
+                                                            rows="3"
+                                                            style={{ fontSize: '13px', resize: 'none' }}
+                                                            placeholder={actionType === 'approve' ? "Add remarks to request changes..." : "Reason for rejection..."}
                                                             value={remarks}
                                                             onChange={(e) => setRemarks(e.target.value)}
                                                             autoFocus
                                                         ></textarea>
 
                                                         {actionType === 'approve' && remarks.trim() && (
-                                                            <div className="d-flex justify-content-between align-items-center mb-3 px-1 animation-fade-in">
-                                                                <span className="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 rounded-pill x-small">
+                                                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                                                <span className="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 rounded-pill" style={{ fontSize: '10px' }}>
                                                                     Status: Approved with Remarks
                                                                 </span>
                                                                 <button
-                                                                    className="btn btn-link text-decoration-none p-0 x-small text-muted fw-bold d-flex align-items-center gap-1 hover-text-danger transition-all"
+                                                                    className="btn btn-link text-decoration-none p-0 x-small text-danger fw-bold d-flex align-items-center gap-1"
                                                                     onClick={() => setRemarks('')}
                                                                 >
-                                                                    <FaTrash size={10} /> Clear & Lock
+                                                                    <FaTrash size={10} /> Clear
                                                                 </button>
                                                             </div>
                                                         )}
 
                                                         <div className="d-flex gap-2">
                                                             <button
-                                                                className="btn btn-light btn-sm flex-grow-1 rounded-pill fw-bold py-2"
+                                                                className="btn btn-light btn-sm flex-grow-1 rounded-pill fw-bold"
                                                                 onClick={() => { setActionType(null); setRemarks(''); }}
                                                             >
-                                                                Cancel
+                                                                Back
                                                             </button>
                                                             <button
-                                                                className={`btn btn-sm flex-grow-1 rounded-pill text-white fw-bold py-2 shadow-sm ${actionType === 'approve' ? 'btn-success bg-gradient' : 'btn-danger bg-gradient'}`}
+                                                                className={`btn btn-sm flex-grow-1 rounded-pill text-white fw-bold shadow-sm ${actionType === 'approve' ? 'btn-success bg-gradient' : 'btn-danger bg-gradient'}`}
                                                                 onClick={() => submitDecision(actionType === 'approve' ? (remarks.trim() ? 'Approved with Remarks' : 'Approved') : 'Rejected')}
                                                             >
-                                                                Confirm: {actionType === 'approve' ? (remarks.trim() ? 'Approve with Remarks' : 'Approve (Lock)') : 'Reject Set'}
+                                                                {actionType === 'approve' ? (remarks.trim() ? 'Approve & Edit' : 'Approve & Lock') : 'Reject'}
                                                             </button>
                                                         </div>
                                                     </div>
