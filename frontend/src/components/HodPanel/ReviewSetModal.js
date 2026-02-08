@@ -260,16 +260,13 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                                         </div>
 
                                                         {actionType === 'approve' && (
-                                                            <div className="alert alert-warning py-2 px-3 mb-3 border-0 bg-warning bg-opacity-10 rounded-3">
-                                                                <div className="d-flex gap-2">
-                                                                    <div className="mt-1 text-warning flex-shrink-0"><FaCheckDouble size={14} /></div>
-                                                                    <div className="small text-dark opacity-75" style={{ fontSize: '13px', lineHeight: '1.4' }}>
-                                                                        <strong>Action Hint:</strong>
-                                                                        <ul className="mb-0 ps-3 mt-1">
-                                                                            <li><strong>With Comments:</strong> Status &#8594; <span className="fw-bold text-dark">Approved with Remarks</span>. Faculty <strong className="text-danger">CAN EDIT</strong> questions.</li>
-                                                                            <li><strong>Empty:</strong> Status &#8594; <span className="fw-bold text-success">Approved</span>. Set is <strong className="text-success">LOCKED</strong>.</li>
-                                                                        </ul>
-                                                                    </div>
+                                                            <div className="mb-3 px-1">
+                                                                <div className="d-flex gap-2 align-items-start text-muted" style={{ fontSize: '12px', lineHeight: '1.5' }}>
+                                                                    <FaCheckDouble className="mt-1 text-primary flex-shrink-0" size={12} />
+                                                                    <span>
+                                                                        Adding remarks sets status to <strong className="text-dark">Approved with Remarks</strong> (Editable).
+                                                                        Leave empty for <strong className="text-success">Approved</strong> (Locked).
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         )}
@@ -278,19 +275,22 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                                             className="form-control bg-light border-0 rounded-3 mb-2 small p-3 custom-input"
                                                             rows="4"
                                                             style={{ fontSize: '14px', resize: 'none' }}
-                                                            placeholder={actionType === 'approve' ? "Add remarks ONLY if you want the faculty to make further edits..." : "Please specify exactly what needs to be corrected..."}
+                                                            placeholder={actionType === 'approve' ? "Write remarks here to unlock editing for faculty..." : "Please specify exactly what needs to be corrected..."}
                                                             value={remarks}
                                                             onChange={(e) => setRemarks(e.target.value)}
                                                             autoFocus
                                                         ></textarea>
 
                                                         {actionType === 'approve' && remarks.trim() && (
-                                                            <div className="d-flex justify-content-end mb-3">
+                                                            <div className="d-flex justify-content-between align-items-center mb-3 px-1 animation-fade-in">
+                                                                <span className="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 rounded-pill x-small">
+                                                                    Status: Approved with Remarks
+                                                                </span>
                                                                 <button
-                                                                    className="btn btn-link text-decoration-none p-0 x-small text-muted fw-bold d-flex align-items-center gap-1"
+                                                                    className="btn btn-link text-decoration-none p-0 x-small text-muted fw-bold d-flex align-items-center gap-1 hover-text-danger transition-all"
                                                                     onClick={() => setRemarks('')}
                                                                 >
-                                                                    <FaTrash size={10} /> Clear Remarks (Lock Set)
+                                                                    <FaTrash size={10} /> Clear & Lock
                                                                 </button>
                                                             </div>
                                                         )}
