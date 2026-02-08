@@ -965,8 +965,6 @@ exports.getSetDetails = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
-    console.log(`[GET_SET_DETAILS] Set: ${setName} | HOD Status: ${questionSet.hodStatus} | HOD Remarks: ${questionSet.hodRemarks}`);
-
     res.status(200).json(questionSet);
   } catch (error) {
     console.error('Error fetching assessment set details', error);
