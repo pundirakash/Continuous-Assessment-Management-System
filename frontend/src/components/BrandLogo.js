@@ -19,27 +19,24 @@ const BrandLogo = ({ textSize = "fs-3", lightMode = false }) => {
                 switch (role) {
                     case 'admin':
                     case 'manager':
-                        navigate('/admin-dashboard');
+                        navigate('/admin');
                         break;
 
                     case 'hod':
                     case 'head of department':
-                        navigate('/hod-dashboard');
+                        navigate('/hod');
                         break;
 
                     // CASE: Faculty (Standard)
                     case 'faculty':
-                        navigate('/faculty-dashboard');
+                        navigate('/faculty');
                         break;
 
                     // CASE: Course Coordinator (Handles space and underscore)
                     case 'course coordinator':
                     case 'course_coordinator':
-                        // In this system, Course Coordinators are often senior faculty. 
-                        // If they have their own dashboard, go there. If they share HOD's view, go to HOD.
-                        // Based on previous context, they often share HOD privileges.
-                        // If this is wrong, it can be swapped to faculty-dashboard.
-                        navigate('/hod-dashboard');
+                        // Course Coordinators in this system share the HOD layout/permissions
+                        navigate('/hod');
                         break;
 
                     default:
