@@ -636,14 +636,30 @@ exports.approveAssessment = async (req, res) => {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
-    const trimmedRemarks = (remarks && status !== 'Approved') ? remarks.trim() : '';
+    console.log(`[APPROVE_ASSESSMENT] User: ${req.user.name} (${req.user.role}) | Status: ${status} | Remarks: "${remarks}"`);
 
-    if ((status === 'Approved with Remarks' || status === 'Rejected') && !trimmedRemarks) {
-      return res.status(400).json({ message: 'Remarks are required for Approved with Remarks and Rejected statuses' });
+    // Strictly trim remarks
+    let cleanRemarks = remarks ? String(remarks).trim() : '';
+
+    // DEFENSIVE FIX: Auto-correct status if remarks are empty
+    // If frontend sends 'Approved with Remarks' but remarks are empty, downgrade to 'Approved'
+    if (status === 'Approved with Remarks' && !cleanRemarks) {
+      console.log(`[AUTO-CORRECT] Downgrading status to 'Approved' due to empty remarks.`);
+      status = 'Approved';
     }
 
+    // Force clear remarks if status is Approved (just in case)
+    if (status === 'Approved') {
+      cleanRemarks = '';
+    }
+
+    if (status === 'Rejected' && !cleanRemarks) {
+      return res.status(400).json({ message: 'Remarks are required for Rejected status' });
+    }
+
+    // Update with consolidated status and remarks
     questionSet.hodStatus = status;
-    questionSet.hodRemarks = trimmedRemarks;
+    questionSet.hodRemarks = cleanRemarks;
 
     let questionStatus;
     if (status === 'Approved') {
