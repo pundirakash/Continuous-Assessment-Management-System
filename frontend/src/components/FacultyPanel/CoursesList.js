@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
 import ErrorModal from '../ErrorModal';
-import LoadingSpinner from '../LoadingSpinner';
+import ErrorModal from '../ErrorModal';
+// import LoadingSpinner from '../LoadingSpinner';
+import SkeletonLoader from '../SkeletonLoader';
 import { FaArrowRight } from 'react-icons/fa';
 import { useTerm } from '../../context/TermContext';
 
@@ -36,7 +38,13 @@ const CoursesList = ({ onCourseSelect }) => {
     }
   }, [selectedTerm]);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) return (
+    <div className="hero-courses-container">
+      {[...Array(4)].map((_, i) => (
+        <SkeletonLoader key={i} height={200} style={{ borderRadius: '24px' }} />
+      ))}
+    </div>
+  );
 
   return (
     <div>

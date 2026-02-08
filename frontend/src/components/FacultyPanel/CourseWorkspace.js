@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import userService from '../../services/userService';
-import LoadingSpinner from '../LoadingSpinner';
+// import LoadingSpinner from '../LoadingSpinner';
+import SkeletonLoader from '../SkeletonLoader';
 import ErrorModal from '../ErrorModal';
 import UnifiedSetManager from './UnifiedSetManager';
 import CourseChat from '../CourseChat/CourseChat';
@@ -60,7 +61,19 @@ const CourseWorkspace = ({ course, onBack }) => {
         return () => clearInterval(interval);
     }, [course?._id]);
 
-    if (loading) return <LoadingSpinner />;
+    if (loading) return (
+        <div className="course-workspace h-100 d-flex flex-column p-4">
+            <SkeletonLoader height={80} style={{ borderRadius: '16px', marginBottom: '2rem' }} />
+            <div className="row g-4">
+                <div className="col-md-3">
+                    <SkeletonLoader height={400} style={{ borderRadius: '16px' }} />
+                </div>
+                <div className="col-md-9">
+                    <SkeletonLoader height={600} style={{ borderRadius: '16px' }} />
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="course-workspace h-100 d-flex flex-column">

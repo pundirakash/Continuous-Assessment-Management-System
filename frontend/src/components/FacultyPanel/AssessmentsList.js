@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
 import ErrorModal from '../ErrorModal';
-import LoadingSpinner from '../LoadingSpinner';
+import ErrorModal from '../ErrorModal';
+// import LoadingSpinner from '../LoadingSpinner';
+import SkeletonLoader from '../SkeletonLoader';
 import { FaFileAlt } from 'react-icons/fa';
 
 const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
@@ -31,7 +33,13 @@ const AssessmentsList = ({ courseId, onAssessmentSelect }) => {
     fetchAssessments();
   }, [courseId]);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) return (
+    <div className="assessments-grid-container">
+      {[...Array(3)].map((_, i) => (
+        <SkeletonLoader key={i} className="assessment-card" height={100} />
+      ))}
+    </div>
+  );
 
   return (
     <div>

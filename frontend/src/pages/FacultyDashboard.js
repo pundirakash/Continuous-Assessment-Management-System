@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { useNavigate } from 'react-router-dom';
 import CoursesList from '../components/FacultyPanel/CoursesList';
 import CourseWorkspace from '../components/FacultyPanel/CourseWorkspace';
 import auhtService from '../services/authService';
 import userService from '../services/userService';
-import LoadingSpinner from '../components/LoadingSpinner';
+// import LoadingSpinner from '../components/LoadingSpinner'; // REMOVED
+import SkeletonLoader from '../components/SkeletonLoader'; // ADDED
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import '../css/FacultyDashboard.css';
 import { FaBell, FaUserCircle, FaSignOutAlt, FaKey, FaChevronDown, FaTrophy, FaCheckCircle, FaFileAlt, FaGraduationCap, FaClock } from 'react-icons/fa';
@@ -121,7 +121,19 @@ const FacultyDashboard = () => {
 
   return (
     <div className="dashboard-container-light" style={{ background: '#f8fafc' }}>
-      {loading && <LoadingSpinner />}
+      {/* {loading && <LoadingSpinner />} Removed global spinner, we will handle skeletons in sections or overlay if critical */}
+      {/* If strictly global loading is needed, use a full screeen skeleton or similar. 
+          But user said "for each part". 
+          Let's assume initial load needs skeleton. 
+      */}
+      {loading && !stats ? (
+        <div className="p-4">
+          <SkeletonLoader type="dashboard" />
+          <div className="mt-5">
+            <SkeletonLoader type="list" count={3} />
+          </div>
+        </div>
+      ) : null}
 
       {/* Modern Light Header */}
       <header className="dashboard-header-light d-flex align-items-center justify-content-between px-4 py-2 bg-white border-bottom sticky-top" style={{ height: '80px', zIndex: 1000, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>

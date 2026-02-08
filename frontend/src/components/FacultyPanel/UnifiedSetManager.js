@@ -3,7 +3,9 @@ import { jwtDecode } from 'jwt-decode';
 import userService from '../../services/userService';
 import QuestionsList from './QuestionsList';
 import CreateSetModal from './CreateSetModal';
-import LoadingSpinner from '../LoadingSpinner';
+import CreateSetModal from './CreateSetModal';
+// import LoadingSpinner from '../LoadingSpinner';
+import SkeletonLoader from '../SkeletonLoader';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 
 const UnifiedSetManager = ({ assessment, courseId }) => {
@@ -131,7 +133,11 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
 
             {/* Content Area */}
             <div className="flex-grow-1 overflow-hidden d-flex flex-column bg-light rounded-3 border">
-                {loading ? <LoadingSpinner /> : (
+                {loading ? (
+                    <div className="p-4">
+                        <SkeletonLoader type="list" count={5} />
+                    </div>
+                ) : (
                     activeSet ? (
                         <div className="animation-fade-in h-100 overflow-auto custom-scrollbar p-0">
                             {/* We just render the existing QuestionList here, passing the current set context */}
