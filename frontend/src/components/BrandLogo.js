@@ -10,30 +10,48 @@ const BrandLogo = ({ textSize = "fs-3", lightMode = false }) => {
         if (token) {
             try {
                 const decoded = jwtDecode(token);
-                const role = decoded.role;
+                // NORMALIZATION: Handle potential undefined role and ensure lowercase comparison
+                const role = decoded.role ? decoded.role.toLowerCase().trim() : '';
+
+                // DEBUG: Help diagnose if it fails again
+                console.log(`[BrandLogo] Navigation Attempt - Role: "${role}" (Original: "${decoded.role}")`);
 
                 switch (role) {
                     case 'admin':
-                    case 'manager': // Assuming manager also goes to admin dashboard or has their own
+                    case 'manager':
                         navigate('/admin-dashboard');
                         break;
+
                     case 'hod':
-                    case 'course_coordinator': // Course coordinators often share HOD views or have specific ones, usually HOD dashboard in this app context if they are HODs, or faculty dashboard if just coordinators. 
-                        // But in this system, 'course_coordinator' often acts like a faculty with extra perms, or HOD. 
-                        // Let's stick to the main 3 for now, standard fallback to login if unknown.
+                    case 'head of department':
                         navigate('/hod-dashboard');
                         break;
+
+                    // CASE: Faculty (Standard)
                     case 'faculty':
                         navigate('/faculty-dashboard');
                         break;
+
+                    // CASE: Course Coordinator (Handles space and underscore)
+                    case 'course coordinator':
+                    case 'course_coordinator':
+                        // In this system, Course Coordinators are often senior faculty. 
+                        // If they have their own dashboard, go there. If they share HOD's view, go to HOD.
+                        // Based on previous context, they often share HOD privileges.
+                        // If this is wrong, it can be swapped to faculty-dashboard.
+                        navigate('/hod-dashboard');
+                        break;
+
                     default:
+                        console.warn("[BrandLogo] Unrecognized role, defaulting to home.");
                         navigate('/');
                 }
             } catch (error) {
-                console.error("Invalid token", error);
+                console.error("[BrandLogo] Invalid token during navigation", error);
                 navigate('/');
             }
         } else {
+            console.log("[BrandLogo] No token found, going to public home.");
             navigate('/');
         }
     };
