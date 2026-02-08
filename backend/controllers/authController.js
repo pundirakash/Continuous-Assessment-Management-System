@@ -19,7 +19,7 @@ exports.login = async (req, res) => {
   console.log(`[Auth] Login attempt for email: ${email}`);
   try {
     console.log('[Auth] Querying DB for user...');
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate('departmentId');
     console.log(`[Auth] DB Query result: ${user ? 'Human Found' : 'Not Found'}`);
 
     if (!user) {
@@ -34,14 +34,17 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Fallback for department name: Use legacy string OR populated name
+    const deptName = user.department || (user.departmentId ? user.departmentId.name : '');
+
     console.log('[Auth] Generating token...');
     const token = jwt.sign({
       _id: user._id,
       role: user.role,
       user: user.name,
       uid: user.uid,
-      department: user.department,
-      departmentId: user.departmentId,
+      department: deptName,
+      departmentId: user.departmentId ? user.departmentId._id : user.departmentId, // ensure ID is passed if populated
       schoolId: user.schoolId,
       universityId: user.universityId
     }, process.env.JWT_SECRET, { expiresIn: '24h' });
