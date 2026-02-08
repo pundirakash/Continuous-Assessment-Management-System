@@ -180,12 +180,8 @@ exports.getQuestionsForSet = async (req, res) => {
 
     const populatedQuestions = await Question.find({ _id: { $in: questionSet.questions } });
 
-    const allApproved = populatedQuestions.every(question => question.status === 'Approved');
-
-    if (allApproved) {
-      questionSet.hodStatus = 'Approved with Remarks';
-      await assessment.save();
-    }
+    // Logic removed: Do not auto-change status to 'Approved with Remarks' just because questions are approved.
+    // The Set status is explicitly controlled by HOD/Coordinator actions.
 
     res.status(200).json(populatedQuestions);
   } catch (error) {
