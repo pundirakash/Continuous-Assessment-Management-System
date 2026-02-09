@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import {
     FaTrash, FaEdit, FaCheck,
-    FaClipboardList, FaCloudDownloadAlt, FaCheckDouble, FaImage,
-    FaCheckCircle, FaTimesCircle
+    FaClipboardList, FaCloudDownloadAlt, FaCheckDouble, FaImage
 } from 'react-icons/fa';
 import userService from '../../services/userService';
 

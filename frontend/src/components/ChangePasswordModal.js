@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaLock, FaTimes } from 'react-icons/fa';
+import { FaLock } from 'react-icons/fa';
 
 const ChangePasswordModal = ({ onClose, onChangePassword }) => {
   const [currentPassword, setCurrentPassword] = useState('');
