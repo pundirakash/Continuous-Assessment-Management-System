@@ -166,6 +166,15 @@ const HodReports = () => {
         }
     };
 
+    const handleDownloadPendency = async () => {
+        try {
+            await userService.downloadPendencyReport(selectedTerm);
+        } catch (error) {
+            console.error("Pendency download failed", error);
+            alert("Failed to download pendency report");
+        }
+    };
+
     const filterOptions = {
         type: ['MCQ', 'True/False', 'Short Answer', 'Fill in the Blanks', 'Match the Following'],
         bloomLevel: ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'],
@@ -255,6 +264,15 @@ const HodReports = () => {
                                         style={{ width: '60px', height: '60px', background: 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)', color: '#ea580c' }}>
                                         <FaExclamationCircle className="fs-4" />
                                     </div>
+                                </div>
+                                <div className="mt-4 pt-2 border-top">
+                                    <button
+                                        className="btn btn-light text-danger w-100 rounded-pill fw-bold d-flex align-items-center justify-content-center py-2"
+                                        style={{ background: '#fff7ed', border: '1px solid #ffedd5' }}
+                                        onClick={handleDownloadPendency}
+                                    >
+                                        <FaFileDownload className="me-2" /> Download Pendency Report
+                                    </button>
                                 </div>
                             </div>
                         </div>

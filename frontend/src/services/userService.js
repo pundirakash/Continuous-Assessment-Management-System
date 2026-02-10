@@ -442,6 +442,27 @@ const userService = {
   syncRoles: async () => {
     const response = await api.post(`${API_URL_ADMIN}/sync-roles`);
     return response.data;
+  },
+
+  downloadPendencyReport: async (termId) => {
+    try {
+      const response = await api.get(`${API_URL_HOD}/pendency-report`, {
+        params: { termId },
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Pendency_Report_${termId || 'Current'}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading pendency report:', error);
+      throw error;
+    }
   }
 };
 

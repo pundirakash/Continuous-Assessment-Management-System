@@ -10,6 +10,196 @@ const ImageModule = require('docxtemplater-image-module-free');
 const archiver = require('archiver');
 const TermArchive = require('../models/TermArchive');
 const SystemConfig = require('../models/SystemConfig');
+const xlsx = require('xlsx');
+
+exports.downloadPendencyReport = async (req, res) => {
+  try {
+    const { department, departmentId, universityId } = req.user;
+    const { termId } = req.query;
+
+    let targetTerm = termId;
+    if (!targetTerm) {
+      const config = await SystemConfig.findOne({ key: 'currentTerm' });
+      targetTerm = config ? config.value : '24252';
+    }
+
+    // 1. Get All Active Courses for the Department in this Term
+    const courseFilter = {
+      isDeleted: { $ne: true },
+      $or: [
+        { activeTerms: { $in: [String(targetTerm)] } },
+        { activeTerms: { $exists: false } },
+        { activeTerms: { $size: 0 } }
+      ]
+    };
+
+    if (departmentId) {
+      courseFilter.departmentId = departmentId;
+    } else {
+      courseFilter.department = department;
+    }
+    if (universityId) courseFilter.universityId = universityId;
+
+    const courses = await Course.find(courseFilter)
+      .populate('faculties', 'name email uid')
+      .populate('coordinator', 'name email uid');
+
+    // 2. Get All Assessments for these courses in this Term
+    const courseIds = courses.map(c => c._id);
+    const assessments = await Assessment.find({
+      course: { $in: courseIds },
+      termId: targetTerm
+    });
+
+    // 3. Flatten Data for Report
+    const reportData = [];
+
+    for (const course of courses) {
+      // Determine effective faculties (including coordinator)
+      let effectiveFaculties = [...course.faculties];
+      if (course.coordinator && !effectiveFaculties.some(f => f._id.toString() === course.coordinator._id.toString())) {
+        effectiveFaculties.unshift(course.coordinator);
+      }
+
+      // Filter only valid faculty objects (in case of nulls)
+      effectiveFaculties = effectiveFaculties.filter(f => f);
+
+      // Group Assessments by Course
+      const courseAssessments = assessments.filter(a => a.course.toString() === course._id.toString());
+
+      for (const faculty of effectiveFaculties) {
+        if (!courseAssessments.length) {
+          // No assessments created for this course yet
+          reportData.push({
+            'Faculty Name': faculty.name,
+            'Faculty UID': faculty.uid,
+            'Faculty Email': faculty.email,
+            'Course Name': course.name,
+            'Course Code': course.code,
+            'Assessment': 'N/A',
+            'Set Name': 'N/A',
+            'Status': 'No Active Assessments',
+            'Questions Punched': 0,
+            'Last Activity': 'N/A'
+          });
+          continue;
+        }
+
+        for (const assessment of courseAssessments) {
+          const facultyWork = assessment.facultyQuestions.find(fq => fq.faculty.toString() === faculty._id.toString());
+
+          if (!facultyWork || !facultyWork.sets || facultyWork.sets.length === 0) {
+            // Assessment exists, but Faculty hasn't started any set
+            reportData.push({
+              'Faculty Name': faculty.name,
+              'Faculty UID': faculty.uid,
+              'Faculty Email': faculty.email,
+              'Course Name': course.name,
+              'Course Code': course.code,
+              'Assessment': assessment.name,
+              'Set Name': 'N/A',
+              'Status': 'Not Started',
+              'Questions Punched': 0,
+              'Last Activity': 'N/A'
+            });
+          } else {
+            // Faculty has sets
+            for (const set of facultyWork.sets) {
+              const lastLog = set.activityLog && set.activityLog.length > 0
+                ? set.activityLog[set.activityLog.length - 1]
+                : null;
+
+              let lastActivityDisplay = 'N/A';
+              const questionCount = set.questions ? set.questions.length : 0;
+
+              if (lastLog) {
+                if (questionCount === 0 && lastLog.action === 'Created') {
+                  // If just created and empty, maybe show "Created: Date" or hide it to avoid confusion about "Activity"
+                  lastActivityDisplay = `Set Created: ${new Date(lastLog.date).toLocaleDateString()}`;
+                } else {
+                  lastActivityDisplay = new Date(lastLog.date).toLocaleString();
+                }
+              }
+
+              // Determine detailed status
+              let preciseStatus = set.hodStatus; // Default to HOD Status
+
+              // Refine Status Logic
+              if (set.hodStatus === 'Pending') {
+                if (questionCount === 0) {
+                  preciseStatus = 'Set Created (Empty)';
+                } else {
+                  preciseStatus = 'In Progress (Not Submitted)';
+                }
+              } else if (set.hodStatus === 'Submitted') {
+                // It is submitted by Faculty
+                // Now check where it is pending
+                if (set.coordinatorStatus === 'Pending') {
+                  preciseStatus = 'Pending Coordinator Review';
+                } else if (set.coordinatorStatus === 'Approved' || set.coordinatorStatus === 'Submitted') {
+                  preciseStatus = 'Pending HOD Review';
+                } else if (set.coordinatorStatus === 'Rejected') {
+                  preciseStatus = 'Rejected by Coordinator';
+                }
+              } else if (set.hodStatus === 'Approved') {
+                preciseStatus = 'Approved by HOD';
+              } else if (set.hodStatus === 'Rejected') {
+                preciseStatus = 'Rejected by HOD';
+              } else if (set.hodStatus === 'Approved with Remarks') {
+                preciseStatus = 'Approved w/ Remarks';
+              }
+
+              reportData.push({
+                'Faculty Name': faculty.name,
+                'Faculty UID': faculty.uid,
+                'Faculty Email': faculty.email,
+                'Course Name': course.name,
+                'Course Code': course.code,
+                'Assessment': assessment.name,
+                'Set Name': set.setName,
+                'Status': preciseStatus,
+                'Questions Punched': questionCount,
+                'Last Activity': lastActivityDisplay
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // 4. Generate Excel
+    const wb = xlsx.utils.book_new();
+    const ws = xlsx.utils.json_to_sheet(reportData);
+
+    // Auto-width columns roughly
+    const colWidths = [
+      { wch: 20 }, // Name
+      { wch: 10 }, // UID
+      { wch: 25 }, // Email
+      { wch: 30 }, // Course Name
+      { wch: 10 }, // Code
+      { wch: 15 }, // Assessment
+      { wch: 10 }, // Set
+      { wch: 20 }, // Status
+      { wch: 10 }, // Questions
+      { wch: 20 }  // Last Activity
+    ];
+    ws['!cols'] = colWidths;
+
+    xlsx.utils.book_append_sheet(wb, ws, 'Pendency Report');
+
+    const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="PendencyReport.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('Error generating pendency report:', error);
+    res.status(500).json({ message: 'Server error generating report', error });
+  }
+};
+
 exports.getFaculties = async (req, res) => {
   try {
     const { universityId } = req.user;
