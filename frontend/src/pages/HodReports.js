@@ -14,11 +14,13 @@ const HodReports = () => {
     const [loading, setLoading] = useState(false);
 
     // --- Analytics State ---
+    // --- Analytics State ---
     const [stats, setStats] = useState([]);
     const [totalQuestions, setTotalQuestions] = useState(0);
     const [totalPending, setTotalPending] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: 'uid', direction: 'asc' });
+    const [isLoadingStats, setIsLoadingStats] = useState(true); // New loading state for analytics
 
     const filteredStats = stats.filter(s =>
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -27,16 +29,10 @@ const HodReports = () => {
 
     const sortedStats = [...filteredStats].sort((a, b) => {
         if (!sortConfig.key) return 0;
-
         let aValue = a[sortConfig.key];
         let bValue = b[sortConfig.key];
-
-        if (aValue < bValue) {
-            return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-            return sortConfig.direction === 'asc' ? 1 : -1;
-        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
     });
 
@@ -106,6 +102,7 @@ const HodReports = () => {
     }, [selectedTerm]);
 
     const fetchStats = useCallback(async () => {
+        setIsLoadingStats(true); // Start loading
         try {
             const data = await userService.getDashboardStats(selectedTerm);
             setStats(data);
@@ -118,6 +115,8 @@ const HodReports = () => {
             setTotalPending(pending);
         } catch (error) {
             console.error("Stats Fetch Error", error);
+        } finally {
+            setIsLoadingStats(false); // Stop loading
         }
     }, [selectedTerm]);
 
@@ -223,6 +222,20 @@ const HodReports = () => {
 
             {activeSection === 'analytics' ? (
                 <div className="animate__animated animate__fadeIn">
+                    <style>
+                        {`
+                          .skeleton {
+                            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                            background-size: 200% 100%;
+                            animation: skeleton-loading 1.5s infinite;
+                            border-radius: 4px;
+                          }
+                          @keyframes skeleton-loading {
+                            0% { background-position: 200% 0; }
+                            100% { background-position: -200% 0; }
+                          }
+                        `}
+                    </style>
                     {/* Summary Cards */}
                     <div className="row g-4 mb-5">
                         <div className="col-md-4">
@@ -230,7 +243,11 @@ const HodReports = () => {
                                 <div className="d-flex justify-content-between align-items-start">
                                     <div>
                                         <h6 className="text-muted text-uppercase fw-bold mb-2 small tracking-wider">Total Questions</h6>
-                                        <h2 className="display-4 fw-bold mb-0 text-dark">{totalQuestions}</h2>
+                                        {isLoadingStats ? (
+                                            <div className="skeleton" style={{ width: '100px', height: '48px', marginBottom: '8px' }}></div>
+                                        ) : (
+                                            <h2 className="display-4 fw-bold mb-0 text-dark">{totalQuestions}</h2>
+                                        )}
                                     </div>
                                     <div className="d-flex align-items-center justify-content-center rounded-circle"
                                         style={{ width: '60px', height: '60px', background: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)', color: '#4f46e5' }}>
@@ -244,7 +261,11 @@ const HodReports = () => {
                                 <div className="d-flex justify-content-between align-items-start">
                                     <div>
                                         <h6 className="text-muted text-uppercase fw-bold mb-2 small tracking-wider">Active Courses</h6>
-                                        <h2 className="display-4 fw-bold mb-0 text-dark">{availableCourses.length}</h2>
+                                        {isLoadingStats ? (
+                                            <div className="skeleton" style={{ width: '80px', height: '48px', marginBottom: '8px' }}></div>
+                                        ) : (
+                                            <h2 className="display-4 fw-bold mb-0 text-dark">{availableCourses.length}</h2>
+                                        )}
                                     </div>
                                     <div className="d-flex align-items-center justify-content-center rounded-circle"
                                         style={{ width: '60px', height: '60px', background: 'linear-gradient(135deg, #ecfdf5 0%, #a7f3d0 100%)', color: '#10b981' }}>
@@ -258,7 +279,11 @@ const HodReports = () => {
                                 <div className="d-flex justify-content-between align-items-start">
                                     <div>
                                         <h6 className="text-muted text-uppercase fw-bold mb-2 small tracking-wider">Pending Approvals</h6>
-                                        <h2 className="display-4 fw-bold mb-0 text-dark">{totalPending}</h2>
+                                        {isLoadingStats ? (
+                                            <div className="skeleton" style={{ width: '60px', height: '48px', marginBottom: '8px' }}></div>
+                                        ) : (
+                                            <h2 className="display-4 fw-bold mb-0 text-dark">{totalPending}</h2>
+                                        )}
                                     </div>
                                     <div className="d-flex align-items-center justify-content-center rounded-circle"
                                         style={{ width: '60px', height: '60px', background: 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)', color: '#ea580c' }}>
@@ -320,82 +345,111 @@ const HodReports = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {sortedStats.map((s, idx) => (
-                                        <tr key={idx} style={{ transition: 'all 0.2s' }}>
-                                            <td className="p-4">
-                                                <div className="d-flex align-items-center">
-                                                    <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px' }}>
-                                                        <span className="fw-bold">{s.name.charAt(0)}</span>
+                                    {isLoadingStats ? (
+                                        // Skeleton Rows
+                                        [1, 2, 3, 4, 5].map((_, i) => (
+                                            <tr key={i}>
+                                                <td className="p-4">
+                                                    <div className="d-flex align-items-center">
+                                                        <div className="skeleton rounded-circle me-3" style={{ width: '40px', height: '40px' }}></div>
+                                                        <div style={{ width: '60%' }}>
+                                                            <div className="skeleton mb-1" style={{ width: '100%', height: '16px' }}></div>
+                                                            <div className="skeleton" style={{ width: '60%', height: '12px' }}></div>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h6 className="mb-0 fw-bold text-dark">{s.name}</h6>
-                                                        <small className="text-muted">UID: {s.uid}</small>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-center">
-                                                <span className="badge bg-light text-dark border px-3 py-2 rounded-pill fw-bold" style={{ minWidth: '45px' }}>{s.coursesCount}</span>
-                                            </td>
-                                            <td className="p-4 text-center">
-                                                <span className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill fw-bold" style={{ minWidth: '45px' }}>{s.allottedCAsCount}</span>
-                                            </td>
-                                            <td className="p-4 text-center">
-                                                <h6 className="mb-0 fw-bold">{s.totalQuestionsCreated}</h6>
-                                                <small className="text-muted x-small">Questions</small>
-                                            </td>
-                                            <td className="p-4 text-center">
-                                                {s.pendingQuestions > 0 ? (
+                                                </td>
+                                                <td className="p-4 text-center"><div className="skeleton mx-auto rounded-pill" style={{ width: '40px', height: '20px' }}></div></td>
+                                                <td className="p-4 text-center"><div className="skeleton mx-auto rounded-pill" style={{ width: '40px', height: '20px' }}></div></td>
+                                                <td className="p-4 text-center"><div className="skeleton mx-auto" style={{ width: '30px', height: '24px' }}></div></td>
+                                                <td className="p-4 text-center">
                                                     <div className="d-flex flex-column align-items-center">
-                                                        <span className="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill fw-bold">
-                                                            {s.pendingQuestions} Qs
-                                                        </span>
-                                                        <small className="text-danger x-small mt-1 fw-bold">{s.pendingReviews} {s.pendingReviews === 1 ? 'Set' : 'Sets'}</small>
+                                                        <div className="skeleton rounded-pill mb-1" style={{ width: '60px', height: '24px' }}></div>
                                                     </div>
-                                                ) : s.totalQuestionsCreated === 0 ? (
-                                                    s.allottedCAsCount > 0 ? (
-                                                        <span className="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill fw-bold">
-                                                            <FaExclamationCircle className="me-1" /> Not Started
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="skeleton mb-1" style={{ width: '100%', height: '6px' }}></div>
+                                                    <div className="skeleton ms-auto" style={{ width: '50px', height: '12px' }}></div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        sortedStats.map((s, idx) => (
+                                            <tr key={idx} style={{ transition: 'all 0.2s' }}>
+                                                <td className="p-4">
+                                                    <div className="d-flex align-items-center">
+                                                        <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px' }}>
+                                                            <span className="fw-bold">{s.name.charAt(0)}</span>
+                                                        </div>
+                                                        <div>
+                                                            <h6 className="mb-0 fw-bold text-dark">{s.name}</h6>
+                                                            <small className="text-muted">UID: {s.uid}</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <span className="badge bg-light text-dark border px-3 py-2 rounded-pill fw-bold" style={{ minWidth: '45px' }}>{s.coursesCount}</span>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <span className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill fw-bold" style={{ minWidth: '45px' }}>{s.allottedCAsCount}</span>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <h6 className="mb-0 fw-bold">{s.totalQuestionsCreated}</h6>
+                                                    <small className="text-muted x-small">Questions</small>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    {s.pendingQuestions > 0 ? (
+                                                        <div className="d-flex flex-column align-items-center">
+                                                            <span className="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill fw-bold">
+                                                                {s.pendingQuestions} Qs
+                                                            </span>
+                                                            <small className="text-danger x-small mt-1 fw-bold">{s.pendingReviews} {s.pendingReviews === 1 ? 'Set' : 'Sets'}</small>
+                                                        </div>
+                                                    ) : s.totalQuestionsCreated === 0 ? (
+                                                        s.allottedCAsCount > 0 ? (
+                                                            <span className="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill fw-bold">
+                                                                <FaExclamationCircle className="me-1" /> Not Started
+                                                            </span>
+                                                        ) : (
+                                                            <span className="badge bg-light text-muted px-3 py-2 rounded-pill fw-bold">
+                                                                No Allocation
+                                                            </span>
+                                                        )
+                                                    ) : s.approvedQuestions < s.totalQuestionsCreated ? (
+                                                        <span className="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill fw-bold">
+                                                            <FaEdit className="me-1" /> In Progress
                                                         </span>
                                                     ) : (
-                                                        <span className="badge bg-light text-muted px-3 py-2 rounded-pill fw-bold">
-                                                            No Allocation
+                                                        <span className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold">
+                                                            <FaCheckCircle className="me-1" /> All Vetted
                                                         </span>
-                                                    )
-                                                ) : s.approvedQuestions < s.totalQuestionsCreated ? (
-                                                    <span className="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill fw-bold">
-                                                        <FaEdit className="me-1" /> In Progress
-                                                    </span>
-                                                ) : (
-                                                    <span className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold">
-                                                        <FaCheckCircle className="me-1" /> All Vetted
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="p-4" style={{ width: '25%' }}>
-                                                <div className="d-flex flex-column">
-                                                    <div className="d-flex justify-content-between mb-1">
-                                                        <span className="small fw-bold text-muted">Approval Rate</span>
-                                                        <span className="small fw-bold text-success">
-                                                            {s.totalQuestionsCreated > 0 ? Math.round((s.approvedQuestions / s.totalQuestionsCreated) * 100) : 0}%
-                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="p-4" style={{ width: '25%' }}>
+                                                    <div className="d-flex flex-column">
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="small fw-bold text-muted">Approval Rate</span>
+                                                            <span className="small fw-bold text-success">
+                                                                {s.totalQuestionsCreated > 0 ? Math.round((s.approvedQuestions / s.totalQuestionsCreated) * 100) : 0}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="progress" style={{ height: '6px', borderRadius: '10px' }}>
+                                                            <div
+                                                                className="progress-bar bg-gradient-success"
+                                                                role="progressbar"
+                                                                style={{
+                                                                    width: `${s.totalQuestionsCreated > 0 ? (s.approvedQuestions / s.totalQuestionsCreated) * 100 : 0}%`,
+                                                                    backgroundColor: '#28a745',
+                                                                    backgroundImage: 'linear-gradient(45deg, #28a745, #85d298)'
+                                                                }}
+                                                            ></div>
+                                                        </div>
+                                                        <small className="text-muted mt-1 text-end">{s.approvedQuestions} Approved</small>
                                                     </div>
-                                                    <div className="progress" style={{ height: '6px', borderRadius: '10px' }}>
-                                                        <div
-                                                            className="progress-bar bg-gradient-success"
-                                                            role="progressbar"
-                                                            style={{
-                                                                width: `${s.totalQuestionsCreated > 0 ? (s.approvedQuestions / s.totalQuestionsCreated) * 100 : 0}%`,
-                                                                backgroundColor: '#28a745',
-                                                                backgroundImage: 'linear-gradient(45deg, #28a745, #85d298)'
-                                                            }}
-                                                        ></div>
-                                                    </div>
-                                                    <small className="text-muted mt-1 text-end">{s.approvedQuestions} Approved</small>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {filteredStats.length === 0 && (
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                    {!isLoadingStats && filteredStats.length === 0 && (
                                         <tr><td colSpan={6} className="text-center p-5 text-muted">
                                             <div className="d-flex flex-column align-items-center">
                                                 <FaFilter className="display-6 mb-3 opacity-25" />
