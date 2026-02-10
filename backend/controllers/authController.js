@@ -16,22 +16,39 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
-  console.log(`[Auth] Login attempt for email: ${email}`);
+
+  // Input Sanitization
+  const sanitizedEmail = email ? email.trim().toLowerCase() : '';
+  const sanitizedPassword = password ? password.trim() : '';
+
+  console.log(`[Auth] Login attempt for email: ${sanitizedEmail}`);
+
+  if (!sanitizedEmail || !sanitizedPassword) {
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
+
   try {
     console.log('[Auth] Querying DB for user...');
     // Optimization: Use lean() for faster read
-    const user = await User.findOne({ email }).populate('departmentId').lean();
-    console.log(`[Auth] DB Query result: ${user ? 'Human Found' : 'Not Found'}`);
+    // Case-insensitive email search just to be safe, though we sanitized above.
+    const user = await User.findOne({
+      email: { $regex: new RegExp(`^${sanitizedEmail}$`, 'i') }
+    }).populate('departmentId').lean();
+
+    console.log(`[Auth] DB Query result: ${user ? 'User Found' : 'User Not Found'}`);
 
     if (!user) {
+      // Security: use generic message but log specific reason
+      console.warn(`[Auth] Login Failed: User not found for email ${sanitizedEmail}`);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     console.log('[Auth] Verifying password...');
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(sanitizedPassword, user.password);
     console.log(`[Auth] Password match result: ${isMatch}`);
 
     if (!isMatch) {
+      console.warn(`[Auth] Login Failed: Password mismatch for user ${sanitizedEmail}`);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 

@@ -23,7 +23,14 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
+      // Input Sanitization: Trim whitespace
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+
+      const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, {
+        email: trimmedEmail,
+        password: trimmedPassword
+      });
       localStorage.setItem('token', response.data.token);
       const decodedToken = jwtDecode(response.data.token);
       const role = decodedToken.role;
@@ -32,7 +39,14 @@ const LoginPage = () => {
       else if (role === 'Faculty' || role === 'CourseCoordinator') navigate('/faculty');
       else if (role === 'HOD') navigate('/hod');
     } catch (error) {
-      setError('Invalid credentials. Please check your email and password.');
+      console.error('Login error:', error);
+      if (error.response && (error.response.status === 400 || error.response.status === 401)) {
+        // Specific credential error
+        setError('Invalid credentials. Please check your email and password.');
+      } else {
+        // Server or Network error - Do NOT say invalid credentials
+        setError('Temporary connection issue. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
