@@ -18,4 +18,10 @@ const courseSchema = new mongoose.Schema({
 // Compound index: A code is unique within a school
 courseSchema.index({ code: 1, schoolId: 1 }, { unique: true });
 
+// Indexes for HOD Dashboard Performance
+courseSchema.index({ department: 1, activeTerms: 1 });
+courseSchema.index({ departmentId: 1, activeTerms: 1 });
+courseSchema.index({ faculties: 1 });
+courseSchema.index({ coordinator: 1 });
+
 module.exports = mongoose.model('Course', courseSchema);

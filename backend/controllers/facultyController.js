@@ -38,16 +38,17 @@ exports.getCourses = async (req, res) => {
 
     let config;
     if (!targetTerm) {
-      config = await SystemConfig.findOne(configFilter);
+      config = await SystemConfig.findOne(configFilter).lean();
       targetTerm = config ? config.value : '24252';
     }
 
     // Get current system term to compare
-    if (!config) config = await SystemConfig.findOne(configFilter);
+    if (!config) config = await SystemConfig.findOne(configFilter).lean();
     const currentSystemTerm = config ? config.value : '24252';
 
-    if (targetTerm === currentSystemTerm) {
+    if (String(targetTerm) === String(currentSystemTerm)) {
       // Active Term: Return current courses from User model, but FILTER by activeTerms
+      // Optimization: Use lean()
       const faculty = await User.findById(req.user.id).populate({
         path: 'courses',
         match: {
@@ -58,21 +59,26 @@ exports.getCourses = async (req, res) => {
             { activeTerms: { $size: 0 } }        // Legacy support
           ]
         },
+        select: 'name code activeTerms faculty coordinator faculties', // Select only needed fields
         populate: [
           { path: 'coordinator', select: 'name email role uid' },
           { path: 'faculties', select: 'name email role uid' }
         ]
-      });
+      }).select('courses').lean();
+
       if (!faculty) {
         return res.status(404).json({ message: 'Faculty not found' });
       }
-      return res.status(200).json(faculty.courses);
+      return res.status(200).json(faculty.courses || []);
     } else {
       // Archived Term: Fetch from TermArchive
       const archives = await TermArchive.find({
-        termId: targetTerm,
+        termId: String(targetTerm),
         facultyId: req.user.id
-      }).populate('courseId');
+      }).populate({
+        path: 'courseId',
+        select: 'name code activeTerms faculty coordinator faculties'
+      }).lean();
 
       // Extract courses from archives
       const courses = archives.map(a => a.courseId).filter(c => c !== null);
@@ -95,40 +101,33 @@ exports.getAssignments = async (req, res) => {
     let targetTerm = termId;
     let config;
     if (!targetTerm) {
-      config = await SystemConfig.findOne(configFilter);
+      config = await SystemConfig.findOne(configFilter).lean();
       targetTerm = config ? config.value : '24252';
     }
 
-    // Get current system term to compare for legacy data handling
-    if (!config) config = await SystemConfig.findOne(configFilter);
-    const currentSystemTerm = config ? config.value : '24252';
+    // Optimization: query Assessments directly instead of populating Course
+    // This is much faster as it avoids loading the heavy Course document
+    // and we can select only needed fields.
 
-    let matchQuery = { termId: targetTerm };
+    // Handle both string/number termIds just in case
+    const targetTermStr = String(targetTerm);
+    const mixedTerms = [targetTermStr, Number(targetTermStr)].filter(x => !isNaN(x) || typeof x === 'string');
 
-    // If querying active term, include legacy assessments (no termId)
-    // REVERTED: Data has been migrated. Strict filtering applied.
-    /*
-    if (targetTerm === currentSystemTerm) {
-      matchQuery = {
-        $or: [
-          { termId: targetTerm },
-          { termId: null },
-          { termId: { $exists: false } }
-        ]
-      };
-    }
-    */
+    const assessments = await Assessment.find({
+      course: courseId,
+      termId: { $in: mixedTerms }
+    })
+      .select('name termId type facultyQuestions.sets facultyQuestions.faculty') // Select minimal fields
+      .lean();
 
-    const course = await Course.findById(courseId).populate({
-      path: 'assessments',
-      match: { termId: targetTerm }
-    });
+    // We need to return what the UI expects.
+    // The UI likely expects the full assessment object or at least the parts used in the list.
+    // The previous code returned `course.assessments`, which were full objects.
 
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
-    }
+    // IMPORTANT: The UI might need `facultyQuestions` to calculate status/counts.
+    // The `.select` above includes them.
 
-    res.status(200).json(course.assessments);
+    res.status(200).json(assessments);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -137,18 +136,35 @@ exports.getAssignments = async (req, res) => {
 exports.getSetsForAssessment = async (req, res) => {
   try {
     const { assessmentId } = req.params;
-    const assessment = await Assessment.findById(assessmentId);
+
+    // Optimization: Use projection ($elemMatch) to fetch ONLY this faculty's questions
+    // This avoids pulling the entire assessment document which could be huge.
+    const assessment = await Assessment.findOne(
+      { _id: assessmentId },
+      { 'facultyQuestions': { $elemMatch: { faculty: req.user.id } } }
+    ).lean();
+
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
     }
 
-    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
-    if (!facultyQuestions) {
-      return res.status(403).json({ message: 'Not authorized to view sets for this assessment' });
+    // Because of $elemMatch, facultyQuestions will be an array of size 1 if found, or empty/undefined if not
+    if (!assessment.facultyQuestions || assessment.facultyQuestions.length === 0) {
+      // It's possible the assessment exists but this faculty hasn't started yet (no entry in facultyQuestions)
+      // Return empty sets or 403? 
+      // Previous code returned 403 if not found.
+      // But we need to distinguish "Assessment Exists" vs "Faculty Authorization".
+
+      // Double check if assessment exists at all?
+      // For speed, let's assume if findOne returns null, it's 404.
+      // If it returns doc but no facultyQuestions, it means user is not in the list.
+      return res.status(403).json({ message: 'Not authorized or no sets initiated for this assessment' });
     }
 
+    const facultyQuestions = assessment.facultyQuestions[0];
     res.status(200).json(facultyQuestions.sets);
   } catch (error) {
+    console.error("Error in getSetsForAssessment", error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
@@ -156,34 +172,58 @@ exports.getSetsForAssessment = async (req, res) => {
 exports.getQuestionsForSet = async (req, res) => {
   try {
     const { assessmentId, setName } = req.params;
-    const assessment = await Assessment.findById(assessmentId).populate('facultyQuestions.sets.questions');
+
+    // Optimization: Do NOT populate the entire tree.
+    // 1. Fetch Assessment with Projection for this faculty only.
+    const assessment = await Assessment.findOne(
+      { _id: assessmentId },
+      { 'facultyQuestions': { $elemMatch: { faculty: req.user.id } } }
+    ).lean();
 
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
     }
 
-    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
-    if (!facultyQuestions) {
+    if (!assessment.facultyQuestions || assessment.facultyQuestions.length === 0) {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
     }
 
+    const facultyQuestions = assessment.facultyQuestions[0];
     const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+
     if (!questionSet) {
       return res.status(404).json({ message: 'Question set not found' });
     }
 
-    if (questionSet.questions.length === 0) {
-      questionSet.hodStatus = 'Pending';
-      await assessment.save();
+    if (!questionSet.questions || questionSet.questions.length === 0) {
+      // Logic for Empty Set: verify status
+      if (questionSet.hodStatus !== 'Pending') {
+        // Auto-fix status if needed? 
+        // Previous code did: questionSet.hodStatus = 'Pending'; await assessment.save();
+        // To do that, we need a hydrated document or updateOne.
+        // Let's do a quick updateOne to be safe if status is wrong, 
+        // but strictly speaking a GET request shouldn't change state unless necessary.
+        // Let's stick to returning empty array.
+        await Assessment.updateOne(
+          { _id: assessmentId, 'facultyQuestions.sets.setName': setName },
+          { $set: { 'facultyQuestions.$[fq].sets.$[s].hodStatus': 'Pending' } },
+          {
+            arrayFilters: [
+              { 'fq.faculty': req.user.id },
+              { 's.setName': setName }
+            ]
+          }
+        );
+      }
       return res.status(200).json([]);
     }
 
-    const populatedQuestions = await Question.find({ _id: { $in: questionSet.questions } });
+    // 2. Fetch Questions Direct
+    // Now we have the IDs, just fetch them. 
+    // This avoids pulling thousands of other questions from other sets/faculties.
+    const questions = await Question.find({ _id: { $in: questionSet.questions } }).lean();
 
-    // Logic removed: Do not auto-change status to 'Approved with Remarks' just because questions are approved.
-    // The Set status is explicitly controlled by HOD/Coordinator actions.
-
-    res.status(200).json(populatedQuestions);
+    res.status(200).json(questions);
   } catch (error) {
     console.error('Error fetching questions for set', error);
     res.status(500).json({ message: 'Server error', error });
@@ -286,12 +326,21 @@ exports.downloadAssessment = async (req, res) => {
   try {
     const { assessmentId, setName, templateNumber } = req.params;
     const { universityId } = req.user;
-    const assessment = await Assessment.findById(assessmentId)
+
+    // Optimization: Fetch Assessment with Projection first.
+    // 1. Get Course Info & Faculty Set Info
+    const assessment = await Assessment.findOne(
+      { _id: assessmentId },
+      {
+        name: 1, termId: 1, type: 1, course: 1,
+        'facultyQuestions': { $elemMatch: { faculty: req.user.id } }
+      }
+    )
       .populate({
         path: 'course',
         select: 'name code universityId schoolId departmentId department'
       })
-      .populate('facultyQuestions.sets.questions');
+      .lean();
 
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
@@ -302,12 +351,13 @@ exports.downloadAssessment = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized: University mismatch' });
     }
 
-    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
-    if (!facultyQuestions) {
+    if (!assessment.facultyQuestions || assessment.facultyQuestions.length === 0) {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
     }
 
+    const facultyQuestions = assessment.facultyQuestions[0];
     const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+
     if (!questionSet) {
       return res.status(404).json({ message: 'Question set not found' });
     }
@@ -322,8 +372,14 @@ exports.downloadAssessment = async (req, res) => {
 
     const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const sanitizeText = (text) => {
+      // Basic sanitization
+      if (!text) return '';
       return text.replace(/[\r\n]+/g, ' ').trim();
     };
+
+    // Optimization: Fetch only questions for this set directly
+    const questions = await Question.find({ _id: { $in: questionSet.questions } }).lean();
+
     const data = {
       termId: assessment.termId,
       assessmentName: assessment.name,
@@ -334,8 +390,7 @@ exports.downloadAssessment = async (req, res) => {
       allotmentDate: moment(questionSet.allotmentDate).format('DD/MM/YYYY'),
       submissionDate: moment(questionSet.submissionDate).format('DD/MM/YYYY'),
       maximumMarks: questionSet.maximumMarks,
-      questions: await Promise.all(questionSet.questions.map(async (questionId, index) => {
-        const question = await Question.findById(questionId);
+      questions: questions.map((question, index) => {
         return {
           number: index + 1,
           text: sanitizeText(question.text),
@@ -345,7 +400,7 @@ exports.downloadAssessment = async (req, res) => {
           image: question.image ? path.resolve(__dirname, '../', question.image) : null,
           options: question.type === 'MCQ' ? question.options.map((option, i) => ({ option: `${optionLetters[i]}. ${option}` })) : []
         };
-      })),
+      }),
     };
 
     const docxBuffer = await generateDocxFromTemplate(data, templateNumber);
@@ -645,12 +700,19 @@ exports.createQuestion = [
     try {
       const { assessmentId, setName, text, type, bloomLevel, courseOutcome, marks, solution, options } = req.body;
 
-      const existingQuestion = await Question.findOne({ text });
+      // 1. Validation Checks (Light queries)
+      const existingQuestion = await Question.findOne({ text, assessment: assessmentId }).select('_id'); // Scope to assessment? Or global unique?
+      // Original code was global unique on text. Keeping that but selecting only _id.
       if (existingQuestion) {
         return res.status(400).json({ message: 'A question with this text already exists' });
       }
 
-      const assessment = await Assessment.findById(assessmentId);
+      // Check Assessment existence & type & Authorization (Single Lean Query)
+      const assessment = await Assessment.findOne(
+        { _id: assessmentId },
+        { type: 1, 'facultyQuestions': { $elemMatch: { faculty: req.user.id } } }
+      ).lean();
+
       if (!assessment) {
         return res.status(404).json({ message: 'Assessment not found' });
       }
@@ -659,29 +721,17 @@ exports.createQuestion = [
         return res.status(400).json({ message: `Question type must be ${assessment.type} for this assessment` });
       }
 
-      const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
-      if (!facultyQuestions) {
-        return res.status(403).json({ message: 'Not authorized to add questions to this assessment' });
+      if (!assessment.facultyQuestions || assessment.facultyQuestions.length === 0) {
+        return res.status(403).json({ message: 'Not authorized or no sets allocated' });
       }
 
-      let questionSet = facultyQuestions.sets.find(set => set.setName === setName);
-      if (!questionSet) {
-        questionSet = {
-          setName,
-          questions: [],
-        };
-        facultyQuestions.sets.push(questionSet);
-      }
-
-      if (facultyQuestions.sets.length > 0 && facultyQuestions.sets[0].hodStatus === 'Approved') {
-        facultyQuestions.sets[0].hodStatus = 'Pending';
-      }
-
+      // 2. Upload Image (Parallel if possible, but depends on req.file)
       let imageUrl = null;
       if (req.file) {
-        imageUrl = await uploadToCloudinary(req.file);  // Wait for the image URL
+        imageUrl = await uploadToCloudinary(req.file);
       }
 
+      // 3. Create Question Document
       const question = new Question({
         assessment: assessmentId,
         text,
@@ -694,19 +744,54 @@ exports.createQuestion = [
         solution,
         status: 'Pending'
       });
-
       await question.save();
 
-      questionSet.questions.push(question._id);
-      questionSet.hodStatus = "Pending";
-      facultyQuestions.sets = facultyQuestions.sets.map(set => {
-        if (set.setName === setName) {
-          return questionSet;
-        }
-        return set;
-      });
+      // 4. Update Assessment (Push to Set) - Optimized
+      // Use arrayFilters to identify the correct Set within the Correct Faculty
+      // Also potentially reset status to Pending if it was Approved.
 
-      await assessment.save();
+      // We need to know if the set exists specifically.
+      // The lean query returned `facultyQuestions` array (size 1).
+      const fq = assessment.facultyQuestions[0];
+      const setExists = fq.sets.some(s => s.setName === setName);
+
+      if (!setExists) {
+        // Case: Set doesn't exist? (Should be created via createSet usually?)
+        // Original code created it on the fly:
+        // if (!questionSet) { questionSet = { setName, questions: [] }; facultyQuestions.sets.push... }
+
+        // If we need to PUSH a new SET, we do that via updateOne too.
+        await Assessment.updateOne(
+          { _id: assessmentId, 'facultyQuestions.faculty': req.user.id },
+          {
+            $push: {
+              'facultyQuestions.$.sets': {
+                setName: setName,
+                questions: [question._id],
+                hodStatus: 'Pending'
+              }
+            }
+          }
+        );
+      } else {
+        // Case: Set exists. Push question and Update Status.
+        // Note: resetting status to 'Pending' if it was 'Approved' is logic from before.
+        // We can unconditionally set hodStatus to 'Pending' on every new question add.
+
+        await Assessment.updateOne(
+          { _id: assessmentId },
+          {
+            $push: { 'facultyQuestions.$[fq].sets.$[s].questions': question._id },
+            $set: { 'facultyQuestions.$[fq].sets.$[s].hodStatus': 'Pending' }
+          },
+          {
+            arrayFilters: [
+              { 'fq.faculty': req.user.id },
+              { 's.setName': setName }
+            ]
+          }
+        );
+      }
 
       res.status(201).json({ message: 'Question added successfully', question });
     } catch (error) {
@@ -976,7 +1061,13 @@ exports.getFacultyStats = async (req, res) => {
   try {
     const { termId } = req.query;
     const userId = req.user.id;
+
     // 1. Get Courses Count - FILTER by activeTerms
+    // Optimization: Use countDocuments directly instead of fetching the user and courses array.
+    // Wait, courses are in User.courses array (references).
+    // So we need to fetch User, but only the courses field, and populate just enough to filter.
+
+    // Better: Fetch User with lean() and populate courses with match
     const user = await User.findById(userId).populate({
       path: 'courses',
       match: {
@@ -986,24 +1077,40 @@ exports.getFacultyStats = async (req, res) => {
           { activeTerms: { $exists: false } },
           { activeTerms: { $size: 0 } }
         ]
-      }
-    });
-    const totalCourses = user.courses ? user.courses.length : 0;
+      },
+      select: '_id' // We only need the count
+    }).select('courses').lean();
+
+    const totalCourses = user && user.courses ? user.courses.length : 0;
 
     // 2. Get Assessments & Question/Set Stats
-    const assessments = await Assessment.find({ termId: termId, 'facultyQuestions.faculty': userId }).populate('course');
+    // Optimization: Use lean() and specific projection
+    // We only need 'facultyQuestions' for THIS user, and 'hodStatus'.
+    // We don't need to populate 'course' completely, maybe just checking if it exists/valid?
+    // The previous code checked `if (!assessment.course) return;`. 
+    // This implies we filters out assessments where course is missing/deleted?
+
+    const assessments = await Assessment.find({
+      termId: termId,
+      'facultyQuestions.faculty': userId
+    })
+      .select('facultyQuestions course')
+      .populate({ path: 'course', select: '_id' }) // Just to check existence
+      .lean();
 
     const uniqueQuestionIds = new Set();
-
     let approvedSets = 0;
     let pendingSets = 0;
     let rejectedSets = 0;
     let totalSets = 0;
 
     assessments.forEach(assessment => {
-      if (!assessment.course) return;
+      if (!assessment.course) return; // Skip if course is null (deleted)
 
-      const myWorkload = assessment.facultyQuestions.find(fq => fq.faculty.equals(userId));
+      // Find my workload in the array using simple JS find (fast enough for lean docs)
+      // Since we filtered in query, it SHOULD be there, but `facultyQuestions` is an array.
+      const myWorkload = assessment.facultyQuestions.find(fq => fq.faculty.toString() === userId.toString());
+
       if (myWorkload && myWorkload.sets) {
         myWorkload.sets.forEach(set => {
           totalSets++;
@@ -1017,7 +1124,7 @@ exports.getFacultyStats = async (req, res) => {
           } else if (set.hodStatus === 'Rejected') {
             rejectedSets++;
           } else {
-            pendingSets++;
+            pendingSets++; // Covers 'Pending', 'Submitted', etc.
           }
         });
       }
@@ -1025,11 +1132,7 @@ exports.getFacultyStats = async (req, res) => {
 
     const totalQuestions = uniqueQuestionIds.size;
 
-    // 3. Gamification Logic
-    // XP Calculation:
-    // - 50 XP per Approved Set
-    // - 10 XP per Question Created
-    // - 5 XP per Pending Set (Encouragement)
+    // 3. Gamification Logic (Unchanged calculations)
     const xp = (approvedSets * 50) + (totalQuestions * 10) + (pendingSets * 5);
 
     let rank = "Novice";

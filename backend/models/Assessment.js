@@ -31,4 +31,8 @@ const assessmentSchema = new mongoose.Schema({
   }],
 });
 
+// Indexes for HOD Dashboard Performance
+assessmentSchema.index({ termId: 1, course: 1 });
+assessmentSchema.index({ 'facultyQuestions.faculty': 1 });
+
 module.exports = mongoose.model('Assessment', assessmentSchema);

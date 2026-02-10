@@ -13,4 +13,8 @@ const termArchiveSchema = new mongoose.Schema({
 // Compound index to prevent duplicates
 termArchiveSchema.index({ termId: 1, courseId: 1, facultyId: 1, universityId: 1 }, { unique: true });
 
+// Indexes for HOD Dashboard Performance
+termArchiveSchema.index({ termId: 1, facultyId: 1 });
+termArchiveSchema.index({ termId: 1, courseId: 1 });
+
 module.exports = mongoose.model('TermArchive', termArchiveSchema);

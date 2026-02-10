@@ -19,7 +19,8 @@ exports.login = async (req, res) => {
   console.log(`[Auth] Login attempt for email: ${email}`);
   try {
     console.log('[Auth] Querying DB for user...');
-    const user = await User.findOne({ email }).populate('departmentId');
+    // Optimization: Use lean() for faster read
+    const user = await User.findOne({ email }).populate('departmentId').lean();
     console.log(`[Auth] DB Query result: ${user ? 'Human Found' : 'Not Found'}`);
 
     if (!user) {
