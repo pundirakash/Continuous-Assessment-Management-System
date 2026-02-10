@@ -18,28 +18,39 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [remarks, setRemarks] = useState('');
+  const [loadingAssessments, setLoadingAssessments] = useState(false);
+  const [loadingSets, setLoadingSets] = useState(false);
 
 
   const handleViewAssessments = async (course) => {
+    setLoadingAssessments(true);
+    setSelectedCourse(course.name);
+    setAssessments([]); // Clear previous
+    setSets([]); // Clear sets
     try {
       const response = await userService.getAssessments(course._id);
       setAssessments(response);
-      setSelectedCourse(course.name);
     } catch (error) {
       setErrorMessage('Error fetching assessments. Please try again.');
       setShowErrorModal(true);
+    } finally {
+      setLoadingAssessments(false);
     }
   };
 
   const handleViewSets = async (assessmentId) => {
+    setLoadingSets(true);
+    setSelectedAssessmentId(assessmentId);
+    setSets([]); // Clear previous
     try {
       const response = await userService.getSetsForAssessmentByHOD(faculty._id, assessmentId);
       setSets(response.length > 0 ? response : []);
-      setSelectedAssessmentId(assessmentId);
     } catch (error) {
       setErrorMessage('Error fetching sets. Please try again.');
       setShowErrorModal(true);
       setSets([]);
+    } finally {
+      setLoadingSets(false);
     }
   };
 
@@ -118,6 +129,20 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
 
   return (
     <>
+      <style>
+        {`
+          .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+          }
+          @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}
+      </style>
       <div className={`modal fade ${show ? 'show d-block' : 'd-none'}`} tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
         <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
           <div className="modal-content custom-modal">
@@ -156,40 +181,62 @@ const ViewCoursesModal = ({ show, handleClose, faculty, courses, handleDeallocat
                   </li>
                 ))}
               </ul>
-              {selectedCourse && assessments.length > 0 && (
+              {selectedCourse && (loadingAssessments || assessments.length > 0) && (
                 <div className="mt-3">
                   <h6 className="mb-3">Assessments for Course: {selectedCourse}</h6>
-                  <ul className="list-group">
-                    {assessments.map((assessment) => (
-                      <li key={assessment._id} className="list-group-item d-flex justify-content-between align-items-center mb-1">
-                        <span>{assessment.name}</span>
-                        <button className="btn btn-link btn-sm" onClick={() => handleViewSets(assessment._id)}>View Sets</button>
-                        {hasPendingSet(assessment._id) && (
-                          <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
-                            <span className="visually-hidden">New alerts</span>
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                  {loadingAssessments ? (
+                    <ul className="list-group">
+                      {[1, 2].map((_, i) => (
+                        <li key={i} className="list-group-item d-flex justify-content-between align-items-center mb-1">
+                          <div className="skeleton" style={{ width: '40%', height: '20px' }}></div>
+                          <div className="skeleton" style={{ width: '80px', height: '30px' }}></div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <ul className="list-group">
+                      {assessments.map((assessment) => (
+                        <li key={assessment._id} className="list-group-item d-flex justify-content-between align-items-center mb-1">
+                          <span>{assessment.name}</span>
+                          <button className="btn btn-link btn-sm" onClick={() => handleViewSets(assessment._id)}>View Sets</button>
+                          {hasPendingSet(assessment._id) && (
+                            <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                              <span className="visually-hidden">New alerts</span>
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
-              {sets.length > 0 && (
+              {(loadingSets || sets.length > 0) && (
                 <div className="mt-3">
                   <h6 className="mb-3">Sets</h6>
-                  <ul className="list-group">
-                    {sets.map((set) => (
-                      <li key={set._id} className="list-group-item d-flex justify-content-between align-items-center mb-1">
-                        <span>{set.setName}</span>
-                        <button className="btn btn-link btn-sm" onClick={() => handleViewQuestions(set.questions, set.setName, set.hodStatus)}>View Questions</button>
-                        {hasPendingQuestion(set.setName) && (
-                          <span className="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle">
-                            <span className="visually-hidden">New alerts</span>
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                  {loadingSets ? (
+                    <ul className="list-group">
+                      {[1, 2, 3].map((_, i) => (
+                        <li key={i} className="list-group-item d-flex justify-content-between align-items-center mb-1">
+                          <div className="skeleton" style={{ width: '30%', height: '20px' }}></div>
+                          <div className="skeleton" style={{ width: '100px', height: '30px' }}></div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <ul className="list-group">
+                      {sets.map((set) => (
+                        <li key={set._id} className="list-group-item d-flex justify-content-between align-items-center mb-1">
+                          <span>{set.setName}</span>
+                          <button className="btn btn-link btn-sm" onClick={() => handleViewQuestions(set.questions, set.setName, set.hodStatus)}>View Questions</button>
+                          {hasPendingQuestion(set.setName) && (
+                            <span className="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle">
+                              <span className="visually-hidden">New alerts</span>
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
             </div>

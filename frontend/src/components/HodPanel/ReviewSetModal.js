@@ -387,7 +387,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                                             {q.image && (
                                                                 <div className="mb-4 p-3 bg-light rounded-4 border text-center">
                                                                     <img
-                                                                        src={`${process.env.REACT_APP_API_URL.replace('/api', '')}/${q.image}`}
+                                                                        src={q.image}
                                                                         alt="Review context"
                                                                         className="img-fluid rounded-3"
                                                                         style={{ maxHeight: '200px' }}
@@ -457,7 +457,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                                                     <FaImage size={10} /> Supporting Image
                                                                 </div>
                                                                 <img
-                                                                    src={`${process.env.REACT_APP_API_URL.replace('/api', '')}/${currentQ.image}`}
+                                                                    src={currentQ.image}
                                                                     alt="Context"
                                                                     className="img-fluid rounded-3 shadow-sm"
                                                                     style={{ maxHeight: '180px', objectFit: 'contain' }}

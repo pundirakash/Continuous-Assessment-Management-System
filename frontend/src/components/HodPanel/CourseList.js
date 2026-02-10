@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import LoadingSpinner from '../LoadingSpinner';
 
 const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment, onViewAssignments, onDeleteCourse, onManageCoordinator, isLoading }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +14,20 @@ const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment, 
 
   return (
     <div className="col-md-6 mb-4">
+      <style>
+        {`
+          .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+          }
+          @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}
+      </style>
       <div className="card shadow-sm">
         <div className="card-header d-flex align-items-center justify-content-between">
           <div className="d-flex align-items-center">
@@ -38,9 +51,18 @@ const CourseList = ({ courses, onAddCourse, onAssignCourse, onCreateAssignment, 
         </div>
 
         {isLoading ? (
-          <div className="text-center my-3">
-            <LoadingSpinner />
-          </div>
+          <ul className="list-group list-group-flush">
+            {[1, 2, 3, 4].map((_, index) => (
+              <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                <div className="skeleton" style={{ width: '40%', height: '20px' }}></div>
+                <div className="d-flex gap-2">
+                  <div className="skeleton rounded" style={{ width: '60px', height: '30px' }}></div>
+                  <div className="skeleton rounded" style={{ width: '80px', height: '30px' }}></div>
+                  <div className="skeleton rounded" style={{ width: '80px', height: '30px' }}></div>
+                </div>
+              </li>
+            ))}
+          </ul>
         ) : (
           <ul className="list-group list-group-flush">
             {filteredCourses.length > 0 ? (

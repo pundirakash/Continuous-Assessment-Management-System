@@ -16,6 +16,8 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
 
     const fetchSets = useCallback(async () => {
         setLoading(true);
+        setSets([]); // Clear previous sets to prevent ghosting
+        setActiveSet(null); // Clear active set
         try {
             const data = await userService.getSetsForAssessment(assessment._id);
             setSets(data);

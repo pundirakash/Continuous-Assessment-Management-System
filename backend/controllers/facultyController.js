@@ -138,10 +138,10 @@ exports.getSetsForAssessment = async (req, res) => {
     const { assessmentId } = req.params;
 
     // Optimization: Use projection ($elemMatch) to fetch ONLY this faculty's questions
-    // This avoids pulling the entire assessment document which could be huge.
+    // Also fetch course and termId for authorization checks if faculty entry is missing
     const assessment = await Assessment.findOne(
       { _id: assessmentId },
-      { 'facultyQuestions': { $elemMatch: { faculty: req.user.id } } }
+      { course: 1, termId: 1, 'facultyQuestions': { $elemMatch: { faculty: req.user.id } } }
     ).lean();
 
     if (!assessment) {
@@ -150,14 +150,32 @@ exports.getSetsForAssessment = async (req, res) => {
 
     // Because of $elemMatch, facultyQuestions will be an array of size 1 if found, or empty/undefined if not
     if (!assessment.facultyQuestions || assessment.facultyQuestions.length === 0) {
-      // It's possible the assessment exists but this faculty hasn't started yet (no entry in facultyQuestions)
-      // Return empty sets or 403? 
-      // Previous code returned 403 if not found.
-      // But we need to distinguish "Assessment Exists" vs "Faculty Authorization".
+      // Check Authorization before returning 403
+      // We need to know if they ARE allowed to be here (to see they have 0 sets)
+      const course = await Course.findById(assessment.course);
+      let isAuthorized = false;
 
-      // Double check if assessment exists at all?
-      // For speed, let's assume if findOne returns null, it's 404.
-      // If it returns doc but no facultyQuestions, it means user is not in the list.
+      if (course) {
+        // 1. Check Live
+        isAuthorized = course.faculties.some(id => id.equals(req.user.id)) ||
+          (course.coordinator && course.coordinator.equals(req.user.id)) ||
+          req.user.role === 'HOD';
+
+        // 2. Check Archive
+        if (!isAuthorized && assessment.termId) {
+          const archive = await TermArchive.findOne({
+            termId: String(assessment.termId),
+            courseId: assessment.course,
+            facultyId: req.user.id
+          });
+          if (archive) isAuthorized = true;
+        }
+      }
+
+      if (isAuthorized) {
+        return res.status(200).json([]); // Authorized, but no sets yet. Return empty array.
+      }
+
       return res.status(403).json({ message: 'Not authorized or no sets initiated for this assessment' });
     }
 
@@ -297,8 +315,22 @@ async function generateDocxFromTemplate(data, templateNumber) {
 
     const imageOpts = {
       centered: false,
-      getImage: (tagValue) => fs.readFileSync(tagValue),
-      getSize: (img, tagValue, tagName) => [150, 150],
+      getImage: function (tagValue, tagName) {
+        // tagValue is now Base64 string (to avoid being treated as object by module)
+        if (tagValue && typeof tagValue === 'string') {
+          return Buffer.from(tagValue, 'base64');
+        }
+
+        if (!tagValue || !Buffer.isBuffer(tagValue)) {
+          console.log(`[DOCX] Image missing for tag: ${tagName}, using placeholder.`);
+          return Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+        }
+        return tagValue;
+      },
+      getSize: function (img, tagValue, tagName) {
+        console.log(`[DOCX] getSize called for ${tagName}`);
+        return [150, 150];
+      },
     };
 
     const imageModule = new ImageModule(imageOpts);
@@ -339,8 +371,7 @@ exports.downloadAssessment = async (req, res) => {
       .populate({
         path: 'course',
         select: 'name code universityId schoolId departmentId department'
-      })
-      .lean();
+      });
 
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
@@ -377,8 +408,63 @@ exports.downloadAssessment = async (req, res) => {
       return text.replace(/[\r\n]+/g, ' ').trim();
     };
 
+    // Helper to fetch image buffer
+    const fetchImage = (url) => {
+      return new Promise((resolve, reject) => {
+        const client = url.startsWith('https') ? require('https') : require('http');
+        // Handle self-signed certs (e.g. detailed in error log)
+        const options = url.startsWith('https') ? { rejectUnauthorized: false } : {};
+
+        client.get(url, options, (res) => {
+          if (res.statusCode !== 200) {
+            // Consume response data to free up memory
+            res.resume();
+            return resolve(null); // Resolve null on error to let doc generation continue without image
+          }
+          const chunks = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => resolve(Buffer.concat(chunks)));
+        }).on('error', (err) => {
+          console.error('Error fetching image:', url, err);
+          resolve(null);
+        });
+      });
+    };
+
     // Optimization: Fetch only questions for this set directly
-    const questions = await Question.find({ _id: { $in: questionSet.questions } }).lean();
+    const questionsRaw = await Question.find({ _id: { $in: questionSet.questions } }).lean();
+
+    // Pre-process questions to fetch images
+    const processedQuestions = await Promise.all(questionsRaw.map(async (question, index) => {
+      let imageBuffer = null;
+      if (question.image) {
+        // Check if it's a remote URL
+        if (question.image.startsWith('http') || question.image.startsWith('https')) {
+          imageBuffer = await fetchImage(question.image);
+        } else {
+          // Local file fallback
+          try {
+            const localPath = path.resolve(__dirname, '../', question.image);
+            if (fs.existsSync(localPath)) {
+              imageBuffer = fs.readFileSync(localPath);
+            }
+          } catch (e) {
+            console.error('Error reading local image:', question.image, e);
+          }
+        }
+      }
+
+      return {
+        number: index + 1,
+        text: sanitizeText(question.text),
+        courseOutcome: question.courseOutcome,
+        bloomLevel: question.bloomLevel,
+        marks: question.marks,
+        // PASS BASE64 STRING to avoid 'typeof object' check in image module which causes crash
+        image: imageBuffer ? imageBuffer.toString('base64') : null,
+        options: question.type === 'MCQ' ? question.options.map((option, i) => ({ option: `${optionLetters[i]}. ${option}` })) : []
+      };
+    }));
 
     const data = {
       termId: assessment.termId,
@@ -390,17 +476,7 @@ exports.downloadAssessment = async (req, res) => {
       allotmentDate: moment(questionSet.allotmentDate).format('DD/MM/YYYY'),
       submissionDate: moment(questionSet.submissionDate).format('DD/MM/YYYY'),
       maximumMarks: questionSet.maximumMarks,
-      questions: questions.map((question, index) => {
-        return {
-          number: index + 1,
-          text: sanitizeText(question.text),
-          courseOutcome: question.courseOutcome,
-          bloomLevel: question.bloomLevel,
-          marks: question.marks,
-          image: question.image ? path.resolve(__dirname, '../', question.image) : null,
-          options: question.type === 'MCQ' ? question.options.map((option, i) => ({ option: `${optionLetters[i]}. ${option}` })) : []
-        };
-      }),
+      questions: processedQuestions,
     };
 
     const docxBuffer = await generateDocxFromTemplate(data, templateNumber);
@@ -463,8 +539,70 @@ exports.downloadSolution = async (req, res) => {
       return res.status(403).json({ message: 'Question set is not approved yet' });
     }
     const sanitizeText = (text) => {
+      // Basic sanitization
+      if (!text) return '';
       return text.replace(/[\r\n]+/g, ' ').trim();
     };
+
+    // Helper to fetch image buffer
+    const fetchImage = (url) => {
+      return new Promise((resolve, reject) => {
+        // Log URLs being fetched
+        console.log(`[DOCX] Fetching image: ${url}`);
+        const client = url.startsWith('https') ? require('https') : require('http');
+        // Handle self-signed certs
+        const options = url.startsWith('https') ? { rejectUnauthorized: false } : {};
+
+        client.get(url, options, (res) => {
+          if (res.statusCode !== 200) {
+            console.log(`[DOCX] Fetch failed (${res.statusCode}): ${url}`);
+            res.resume();
+            return resolve(null);
+          }
+          const chunks = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => {
+            console.log(`[DOCX] Fetched ${chunks.length} chunks for: ${url}`);
+            resolve(Buffer.concat(chunks));
+          });
+        }).on('error', (err) => {
+          console.error('[DOCX] Error fetching image:', url, err);
+          resolve(null);
+        });
+      });
+    };
+
+    const questionsRaw = await Promise.all(questionSet.questions.map(async (questionId) => {
+      return await Question.findById(questionId);
+    }));
+
+    // Pre-process questions to fetch images
+    const processedQuestions = await Promise.all(questionsRaw.map(async (question, index) => {
+      let imageBuffer = null;
+      if (question.image) {
+        try {
+          if (question.image.startsWith('http') || question.image.startsWith('https')) {
+            imageBuffer = await fetchImage(question.image);
+          } else {
+            const localPath = path.resolve(__dirname, '../', question.image);
+            if (fs.existsSync(localPath)) {
+              imageBuffer = fs.readFileSync(localPath);
+            }
+          }
+        } catch (err) {
+          console.error(`[DOCX] Failed to load image for Q${index + 1}:`, err.message);
+        }
+      }
+
+      return {
+        number: index + 1,
+        text: sanitizeText(question.text),
+        solution: sanitizeText(question.solution),
+        marks: question.marks,
+        image: imageBuffer ? imageBuffer.toString('base64') : null,
+      };
+    }));
+
     const data = {
       termId: assessment.termId,
       assessmentName: assessment.name,
@@ -475,15 +613,7 @@ exports.downloadSolution = async (req, res) => {
       allotmentDate: moment(questionSet.allotmentDate).format('DD/MM/YYYY'),
       submissionDate: moment(questionSet.submissionDate).format('DD/MM/YYYY'),
       maximumMarks: questionSet.maximumMarks,
-      questions: await Promise.all(questionSet.questions.map(async (questionId, index) => {
-        const question = await Question.findById(questionId);
-        return {
-          number: index + 1,
-          text: sanitizeText(question.text),
-          solution: sanitizeText(question.solution),
-          marks: question.marks,
-        };
-      })),
+      questions: processedQuestions,
     };
 
     const docxBuffer = await generateDocxFromTemplate(data, templateNumber);
@@ -834,19 +964,25 @@ exports.deleteQuestion = async (req, res) => {
     const question = await Question.findById(questionId);
 
     // Delete the image from Cloudinary if it exists
+    // Delete the image from Cloudinary if it exists
     if (question.image) {
-      const urlParts = question.image.split('/');
-      const fileName = urlParts.pop();  // Extract the file name with extension
-      const folderPath = urlParts.slice(7).join('/');  // Extract the folder path from URL
-      const publicId = `${folderPath}/${fileName.split('.').slice(0, -1).join('.')}`;  // Remove the file extension
+      try {
+        // Robust Public ID extraction: Matches everything after 'upload/(v.../)?' and before the file extension
+        const regex = /\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/;
+        const match = question.image.match(regex);
 
-      await cloudinary.uploader.destroy(publicId, function (error, result) {
-        if (error) {
-          console.error('Error deleting image from Cloudinary:', error);
+        if (match && match[1]) {
+          const publicId = match[1];
+          console.log(`[Cloudinary] Deleting image: ${publicId}`);
+          await cloudinary.uploader.destroy(publicId);
+          console.log('[Cloudinary] Image deleted successfully');
         } else {
-          console.log('Image deleted from Cloudinary:', result);
+          console.warn('[Cloudinary] Could not extract public_id from URL:', question.image);
         }
-      });
+      } catch (err) {
+        console.error('[Cloudinary] Error deleting image:', err.message);
+        // We do NOT block question deletion if image deletion fails
+      }
     }
 
     await Question.deleteOne({ _id: questionId });
@@ -923,9 +1059,37 @@ exports.createSet = async (req, res) => {
       return res.status(404).json({ message: 'Assessment not found' });
     }
 
-    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
+    let facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
     if (!facultyQuestions) {
-      return res.status(403).json({ message: 'Not authorized to add sets to this assessment' });
+      // Self-healing: Check if user is authorized (Faculty/Coordinator/HOD) for this course
+      // If so, initialize their entry in facultyQuestions
+      const course = await Course.findById(assessment.course);
+
+      let isAuthorized = false;
+      if (course) {
+        // 1. Check Live Course (Current Term)
+        isAuthorized = course.faculties.some(id => id.equals(req.user.id)) ||
+          (course.coordinator && course.coordinator.equals(req.user.id)) ||
+          req.user.role === 'HOD';
+
+        // 2. Check Term Archive (Past/Future Terms)
+        if (!isAuthorized && assessment.termId) {
+          const archive = await TermArchive.findOne({
+            termId: String(assessment.termId),
+            courseId: assessment.course,
+            facultyId: req.user.id
+          });
+          if (archive) isAuthorized = true;
+        }
+      }
+
+      if (isAuthorized) {
+        assessment.facultyQuestions.push({ faculty: req.user.id, sets: [] });
+        // We must reach into the array we just pushed to
+        facultyQuestions = assessment.facultyQuestions[assessment.facultyQuestions.length - 1];
+      } else {
+        return res.status(403).json({ message: 'Not authorized to add sets to this assessment' });
+      }
     }
 
     const newSet = {
@@ -982,13 +1146,34 @@ exports.deleteSet = async (req, res) => {
       return res.status(403).json({ message: 'Approved sets cannot be deleted' });
     }
 
+    // NEW: Fetch full question documents to get image URLs
+    const questionsToDelete = await Question.find({ _id: { $in: setToDelete.questions } });
+
+    // NEW: Iterate and delete images from Cloudinary
+    for (const question of questionsToDelete) {
+      if (question.image) {
+        try {
+          const regex = /\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/;
+          const match = question.image.match(regex);
+          if (match && match[1]) {
+            const publicId = match[1];
+            console.log(`[Cloudinary] Deleting image for Set Delete: ${publicId}`);
+            await cloudinary.uploader.destroy(publicId);
+          }
+        } catch (err) {
+          console.error(`[Cloudinary] Failed to delete image for Q ${question._id}:`, err.message);
+          // Continue deleting other images and the set
+        }
+      }
+    }
+
     facultyQuestions.sets.splice(setIndex, 1);
 
     await Question.deleteMany({ _id: { $in: setToDelete.questions } });
 
     await assessment.save();
 
-    res.status(200).json({ message: 'Set deleted successfully' });
+    res.status(200).json({ message: 'Set and associated images deleted successfully' });
   } catch (error) {
     console.error('Error deleting set', error);
     res.status(500).json({ message: 'Server error', error });

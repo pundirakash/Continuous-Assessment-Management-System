@@ -170,6 +170,7 @@ const CourseWorkspace = ({ course, onBack }) => {
                     <div className="bg-white rounded-4 shadow-sm p-4 border border-light h-100" style={{ minHeight: '600px' }}>
                         {selectedAssessment ? (
                             <UnifiedSetManager
+                                key={selectedAssessment._id}
                                 assessment={selectedAssessment}
                                 courseId={course._id}
                             />

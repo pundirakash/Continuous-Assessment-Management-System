@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import LoadingSpinner from '../LoadingSpinner';
 
 const FacultyList = ({ faculties, onFacultyClick, pendingAssessmentSets, isLoading }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +22,20 @@ const FacultyList = ({ faculties, onFacultyClick, pendingAssessmentSets, isLoadi
 
   return (
     <div className="col-md-6 mb-4">
+      <style>
+        {`
+          .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+          }
+          @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `}
+      </style>
       <div className="card shadow-sm">
         <div className="card-header d-flex justify-content-between align-items-center">
           <h4 className="card-title mb-0 me-2">Faculties</h4>
@@ -36,7 +49,19 @@ const FacultyList = ({ faculties, onFacultyClick, pendingAssessmentSets, isLoadi
         </div>
         <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
           {isLoading ? (
-            <LoadingSpinner />
+            <ul className="list-group list-group-flush">
+              {[1, 2, 3, 4].map((_, index) => (
+                <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                  <div className="w-100">
+                    <div className="skeleton mb-2" style={{ width: '60%', height: '20px' }}></div>
+                    <div className="skeleton" style={{ width: '40%', height: '14px' }}></div>
+                  </div>
+                  <div>
+                    <div className="skeleton rounded" style={{ width: '80px', height: '30px' }}></div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           ) : (
             <ul className="list-group list-group-flush">
               {filteredFaculties.length > 0 ? (
