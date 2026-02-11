@@ -23,6 +23,7 @@ const QuestionsList = ({ assessment, setName }) => {
   const [showRandomDownloadModal, setShowRandomDownloadModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -85,6 +86,47 @@ const QuestionsList = ({ assessment, setName }) => {
     setQuestions(response.data);
     setHodStatus('Pending');
     setShowCreateQuestion(false);
+  };
+
+  const handleCheckboxChange = (questionId) => {
+    setSelectedQuestions(prevSelected => {
+      if (prevSelected.includes(questionId)) {
+        return prevSelected.filter(id => id !== questionId);
+      } else {
+        return [...prevSelected, questionId];
+      }
+    });
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedQuestions(filteredQuestions.map(q => q._id));
+    } else {
+      setSelectedQuestions([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedQuestions.length === 0) return;
+
+    if (window.confirm(`Are you sure you want to delete ${selectedQuestions.length} selected questions?`)) {
+      try {
+        setLoading(true);
+        await userService.deleteMultipleQuestions(assessment._id, setName, selectedQuestions);
+
+        // Refresh 
+        const response = await userService.getQuestionsForSet(assessment._id, setName);
+        setQuestions(response.data);
+        setSelectedQuestions([]);
+        setHodStatus('Pending'); // Reset status if needed
+
+      } catch (error) {
+        console.error("Bulk Delete Failed", error);
+        alert(error.response?.data?.message || 'Failed to delete questions');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
   const handleSaveEdit = async (updatedQuestion) => {
     try {
@@ -190,6 +232,16 @@ const QuestionsList = ({ assessment, setName }) => {
                   <FaFileImport />
                 </button>
               </>
+            )}
+
+            {/* Bulk Delete Button */}
+            {(!['Approved', 'Submitted'].includes(hodStatus)) && selectedQuestions.length > 0 && (
+              <button
+                className="btn btn-danger d-flex align-items-center gap-2 shadow-sm px-4 fw-bold rounded-pill"
+                onClick={handleBulkDelete}
+              >
+                <FaTrash size={14} /> Delete Selected ({selectedQuestions.length})
+              </button>
             )}
 
             {/* Show Submit if Pending, OR if user needs to fix remarks (Rejected/Approved with Remarks) */}
@@ -371,6 +423,18 @@ const QuestionsList = ({ assessment, setName }) => {
 
 
         <div className="questions-container p-1">
+          {(!loading && filteredQuestions.length > 0 && !['Approved', 'Submitted'].includes(hodStatus)) && (
+            <div className="d-flex align-items-center gap-2 mb-3 px-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                style={{ width: '1.2em', height: '1.2em' }}
+                checked={selectedQuestions.length > 0 && selectedQuestions.length === filteredQuestions.length}
+                onChange={handleSelectAll}
+              />
+              <span className="fw-bold text-secondary small">Select All</span>
+            </div>
+          )}
           {loading ? (
             // Modern Skeleton Loader
             [1, 2, 3].map(i => (
@@ -400,6 +464,17 @@ const QuestionsList = ({ assessment, setName }) => {
                 <div className="q-header px-4 py-3 bg-light bg-opacity-50 border-bottom d-flex align-items-center justify-content-between">
                   {/* ... same as before ... */}
                   <div className="d-flex align-items-center gap-3">
+                    {/* Checkbox for individual selection */}
+                    {(!['Approved', 'Submitted'].includes(hodStatus)) && (
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        style={{ width: '1.2em', height: '1.2em' }}
+                        checked={selectedQuestions.includes(q._id)}
+                        onChange={() => handleCheckboxChange(q._id)}
+                      />
+                    )}
+
                     <div className="bg-white border rounded-circle d-flex align-items-center justify-content-center shadow-sm text-secondary fw-bold" style={{ width: '40px', height: '40px' }}>
                       {index + 1}
                     </div>

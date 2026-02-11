@@ -993,6 +993,77 @@ exports.deleteQuestion = async (req, res) => {
   }
 };
 
+exports.deleteMultipleQuestions = async (req, res) => {
+  try {
+    const { assessmentId, setName, questionIds } = req.body;
+    const userId = req.user.id;
+
+    if (!Array.isArray(questionIds) || questionIds.length === 0) {
+      return res.status(400).json({ message: 'No questions selected for deletion' });
+    }
+
+    const assessment = await Assessment.findById(assessmentId);
+
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(userId));
+    if (!facultyQuestions) {
+      return res.status(403).json({ message: 'Not authorized or no sets allocated' });
+    }
+
+    const questionSet = facultyQuestions.sets.find(set => set.setName === setName);
+    if (!questionSet) {
+      return res.status(404).json({ message: 'Question set not found' });
+    }
+
+    // Check if hodStatus is 'Approved' or 'Approved with Remarks'
+    if (['Approved', 'Approved with Remarks'].includes(questionSet.hodStatus)) {
+      return res.status(403).json({ message: 'Cannot delete questions from an approved set' });
+    }
+
+    // Fetch questions to get image URLs
+    const questionsToDelete = await Question.find({ _id: { $in: questionIds } });
+
+    // Delete images from Cloudinary
+    for (const question of questionsToDelete) {
+      if (question.image) {
+        try {
+          const regex = /\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/;
+          const match = question.image.match(regex);
+          if (match && match[1]) {
+            const publicId = match[1];
+            await cloudinary.uploader.destroy(publicId);
+          }
+        } catch (err) {
+          console.error(`[Cloudinary] Failed to delete image for Q ${question._id}:`, err.message);
+        }
+      }
+    }
+
+    // Remove from Question Set
+    questionSet.questions = questionSet.questions.filter(qId => !questionIds.includes(qId.toString()));
+
+    // Delete Question Documents
+    await Question.deleteMany({ _id: { $in: questionIds } });
+
+    // Log Activity
+    questionSet.activityLog.push({
+      action: 'Bulk Delete',
+      userId: req.user.id,
+      details: `Deleted ${questionsToDelete.length} questions`
+    });
+
+    await assessment.save();
+
+    res.status(200).json({ message: `Successfully deleted ${questionsToDelete.length} questions` });
+  } catch (error) {
+    console.error('Bulk Delete Error', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
 
 exports.editQuestion = async (req, res) => {
   try {

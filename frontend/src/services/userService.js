@@ -70,6 +70,15 @@ const deleteQuestion = async (questionId) => {
   return response.data;
 };
 
+const deleteMultipleQuestions = async (assessmentId, setName, questionIds) => {
+  const response = await api.post(`${API_URL_FACULTY}/delete-multiple-questions`, {
+    assessmentId,
+    setName,
+    questionIds
+  });
+  return response.data;
+};
+
 const editQuestion = async (questionId, questionData) => {
   const response = await api.put(`${API_URL_FACULTY}/edit-question/${questionId}`, questionData);
   return response.data;
@@ -353,6 +362,7 @@ const userService = {
   getQuestionsForSet,
   createQuestion,
   deleteQuestion,
+  deleteMultipleQuestions,
   editQuestion,
   downloadAssessment,
   downloadSolution,
