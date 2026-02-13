@@ -19,6 +19,7 @@ const BulkImportModal = ({ assessmentId, setName, onClose, onImportSuccess }) =>
         setFile(e.target.files[0]);
         setError(null);
         setSuccess(null);
+        setImportErrors([]);
     };
 
     const handleDownloadTemplate = async () => {
@@ -45,6 +46,7 @@ const BulkImportModal = ({ assessmentId, setName, onClose, onImportSuccess }) =>
         setIsLoading(true);
         setError(null);
         setSuccess(null);
+        setImportErrors([]);
 
         const formData = new FormData();
         formData.append('file', file);
@@ -59,6 +61,7 @@ const BulkImportModal = ({ assessmentId, setName, onClose, onImportSuccess }) =>
             setFile(null);
         } catch (err) {
             setError(err.response?.data?.message || 'Import failed. Check your file format.');
+            setImportErrors(err.response?.data?.errors || []);
         } finally {
             setIsLoading(false);
         }
@@ -147,8 +150,20 @@ const BulkImportModal = ({ assessmentId, setName, onClose, onImportSuccess }) =>
 
                     {/* Feedback */}
                     {error && (
-                        <div className="mb-4 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-10 rounded-3 text-danger small d-flex align-items-center gap-2">
-                            <FaExclamationCircle /> {error}
+                        <div className="mb-4 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-10 rounded-3 text-danger small">
+                            <div className="d-flex align-items-center gap-2">
+                                <FaExclamationCircle /> {error}
+                            </div>
+                            {importErrors && importErrors.length > 0 && (
+                                <div className="mt-2 ps-4">
+                                    <div className="fw-bold x-small text-uppercase opacity-75 mb-1">Error Details:</div>
+                                    <ul className="m-0 ps-3" style={{ fontSize: '0.85em', maxHeight: '100px', overflowY: 'auto' }}>
+                                        {importErrors.map((err, idx) => (
+                                            <li key={idx}>{err}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     )}
                     {success && (

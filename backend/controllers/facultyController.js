@@ -1561,9 +1561,20 @@ exports.bulkImportQuestions = async (req, res) => {
         continue;
       }
 
-      const existing = await Question.findOne({ text: qText });
-      if (existing) {
-        errors.push(`Row ${index + 1}: Question text already exists in database`);
+      // VALIDATION: Bloom's Level
+      const VALID_BLOOM_LEVELS = [
+        'L1: Remember', 'L2: Understand', 'L3: Apply',
+        'L4: Analyze', 'L5: Evaluate', 'L6: Create'
+      ];
+      if (!VALID_BLOOM_LEVELS.includes(bloom)) {
+        errors.push(`Row ${index + 1}: Invalid Bloom Level "${bloom}". Must be one of: ${VALID_BLOOM_LEVELS.join(', ')}`);
+        continue;
+      }
+
+      // VALIDATION: Course Outcome
+      const VALID_COS = ['CO1', 'CO2', 'CO3', 'CO4', 'CO5', 'CO6'];
+      if (!VALID_COS.includes(co)) {
+        errors.push(`Row ${index + 1}: Invalid Course Outcome "${co}". Must be one of: ${VALID_COS.join(', ')}`);
         continue;
       }
 
@@ -1573,6 +1584,24 @@ exports.bulkImportQuestions = async (req, res) => {
         if (row['option b']) options.push(row['option b']);
         if (row['option c']) options.push(row['option c']);
         if (row['option d']) options.push(row['option d']);
+
+        // VALIDATION: Correct Answer must be one of the options
+        // We use loose comparison or exact string match? Requirement says "exactly match".
+        // Trimmed value from NormalizedData is used?
+        // Note: normalizedData uses lowercase keys, but the values are raw from Excel (unless I missed something).
+        // createQuestion function expects 'options' array and 'solution'.
+
+        // Check if solution matches one of the options
+        // row['solution'] might strictly match one of the options
+        if (!options.includes(solution)) {
+          errors.push(`Row ${index + 1}: Correct Answer (Solution) "${solution}" must exactly match one of the provided options.`);
+          continue;
+        }
+      }
+      const existing = await Question.findOne({ text: qText });
+      if (existing) {
+        errors.push(`Row ${index + 1}: Question text already exists in database`);
+        continue;
       }
 
       const question = new Question({
