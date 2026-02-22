@@ -151,6 +151,107 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
         }
     };
 
+    // CO State
+    const [coList, setCoList] = useState(course.courseOutcomes || []);
+
+    // Sync COs when course changes
+    useEffect(() => {
+        if (course) {
+            setCoList(course.courseOutcomes || []);
+        }
+    }, [course]);
+
+    // Save COs
+    const handleSaveCOs = async () => {
+        setLoading(true);
+        try {
+            // We need a route to update Course Details (including COs)
+            // Assuming we use createCourse for update or need a new 'updateCourse' text
+            // For now, let's look for an update endpoint. 
+            // The backend adminController has updateUser, renameSchool, etc. 
+            // HOD Controller has activateCourse. 
+            // We might need to add 'updateCourse' to HOD Controller or use an existing one.
+            // Let's assume we can use a new endpoint or update existing. 
+            // Actually, I missed checking for 'updateCourse' in HOD Controller.
+            // Let's implement specific CO update in frontend first, assuming endpoint exists.
+
+            // Wait, I need to implement the backend endpoint for updating COs first!
+            // I'll skip the Save logic for a moment and focus on the UI
+            // But I can't leave it broken.
+
+            // Let's modify the plan to add 'updateCourse' to HOD backend first? 
+            // No, context switching is bad. I'll stick to frontend and assume I'll fix backend in next step.
+            // I'll call userService.updateCourseCOs(course._id, coList);
+
+            await userService.updateCourseCOs(course._id, coList);
+            refreshData();
+            alert("Course Outcomes Saved!");
+        } catch (error) {
+            console.error(error);
+            alert("Failed to save COs");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddCO = () => {
+        setCoList([...coList, { code: `CO${coList.length + 1}`, description: '' }]);
+    };
+
+    const handleCOChange = (index, field, value) => {
+        const newCOs = [...coList];
+        newCOs[index][field] = value;
+        setCoList(newCOs);
+    };
+
+    const handleDeleteCO = (index) => {
+        const newCOs = coList.filter((_, i) => i !== index);
+        setCoList(newCOs);
+    };
+
+    // Assessment Valid COs
+    const [selectedValidCOs, setSelectedValidCOs] = useState([]);
+
+    // When editing assessment, load its validCOs
+    useEffect(() => {
+        if (editAssessmentId) {
+            const asm = assessments.find(a => a._id === editAssessmentId);
+            if (asm) setSelectedValidCOs(asm.validCOs || []);
+        } else {
+            setSelectedValidCOs([]);
+        }
+    }, [editAssessmentId, assessments]);
+
+    const handleToggleCO = (coCode) => {
+        setSelectedValidCOs(prev =>
+            prev.includes(coCode) ? prev.filter(c => c !== coCode) : [...prev, coCode]
+        );
+    };
+
+    // Update handleSaveAssessment to include validCOs
+    const handleSaveAssessmentInternal = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const payload = { ...newAssessment, validCOs: selectedValidCOs };
+
+            if (editAssessmentId) {
+                await userService.editAssessment(editAssessmentId, payload);
+            } else {
+                await userService.createAssessment(course._id, payload);
+            }
+            setIsCreatingAssessment(false);
+            setEditAssessmentId(null);
+            setNewAssessment({ name: '', type: 'MCQ', termId: currentTerm });
+            const data = await userService.getAssessmentsByCourse(course._id, currentTerm);
+            setAssessments(data);
+        } catch (error) {
+            alert("Failed to save assessment");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (!show || !course) return null;
 
     return ReactDOM.createPortal(
@@ -159,7 +260,7 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
 
             <div className="bg-white rounded-4 shadow-2xl overflow-hidden d-flex flex-column"
                 style={{
-                    width: '700px',
+                    width: '850px',
                     maxHeight: '90vh',
                     animation: 'zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                     willChange: 'transform, opacity'
@@ -193,14 +294,21 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                         className={`btn px-0 py-2 fw-bold position-relative border-0 shadow-none transition-all ${activeTab === 'assessments' ? 'text-primary' : 'text-secondary'}`}
                         onClick={() => setActiveTab('assessments')}
                     >
-                        Assessments (CA)
+                        Assessments
                         {activeTab === 'assessments' && <div className="position-absolute bottom-0 start-0 w-100 bg-primary" style={{ height: '3px', borderRadius: '3px 3px 0 0' }}></div>}
+                    </button>
+                    <button
+                        className={`btn px-0 py-2 fw-bold position-relative border-0 shadow-none transition-all ${activeTab === 'outcomes' ? 'text-primary' : 'text-secondary'}`}
+                        onClick={() => setActiveTab('outcomes')}
+                    >
+                        Course Outcomes
+                        {activeTab === 'outcomes' && <div className="position-absolute bottom-0 start-0 w-100 bg-primary" style={{ height: '3px', borderRadius: '3px 3px 0 0' }}></div>}
                     </button>
                 </div>
 
                 {/* Content Body */}
                 <div className="flex-grow-1 overflow-auto bg-white">
-                    {activeTab === 'faculty' ? (
+                    {activeTab === 'faculty' && (
                         <div className="p-4 d-flex flex-column gap-4 text-left">
                             {/* Assigned Faculty Tags */}
                             <div>
@@ -310,7 +418,9 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                                 </div>
                             </div>
                         </div>
-                    ) : (
+                    )}
+
+                    {activeTab === 'assessments' && (
                         <div className="p-4 d-flex flex-column gap-4 text-left h-100">
                             {!isCreatingAssessment ? (
                                 <>
@@ -338,6 +448,11 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                                                                 {a.type}
                                                             </span>
                                                             <span className="small text-muted">Term: {a.termId}</span>
+                                                            {a.validCOs && a.validCOs.length > 0 && (
+                                                                <span className="small badge bg-secondary bg-opacity-10 text-secondary">
+                                                                    {a.validCOs.length} COs
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -360,7 +475,7 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                                     </div>
                                 </>
                             ) : (
-                                <form onSubmit={handleSaveAssessment} className="bg-light p-4 rounded-4 border">
+                                <form onSubmit={handleSaveAssessmentInternal} className="bg-light p-4 rounded-4 border">
                                     <h6 className="fw-bold text-dark mb-4">{editAssessmentId ? 'Edit Assessment' : 'New Continuous Assessment'}</h6>
 
                                     <div className="mb-4">
@@ -375,7 +490,7 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                                         />
                                     </div>
 
-                                    <div className="row g-4 mb-5">
+                                    <div className="row g-4 mb-4">
                                         <div className="col-md-6">
                                             <label className="form-label small fw-bold text-secondary text-uppercase ls-1">Format Type</label>
                                             <select
@@ -398,6 +513,25 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                                         </div>
                                     </div>
 
+                                    {/* Valid COs Selector */}
+                                    <div className="mb-5">
+                                        <label className="form-label small fw-bold text-secondary text-uppercase ls-1 mb-2">Mapped Course Outcomes</label>
+                                        <div className="bg-white p-3 rounded-3 border d-flex flex-wrap gap-2">
+                                            {coList.length > 0 ? coList.map(co => (
+                                                <div
+                                                    key={co.code}
+                                                    className={`px-3 py-2 rounded-pill border cursor-pointer transition-all ${selectedValidCOs.includes(co.code) ? 'bg-primary text-white border-primary' : 'bg-light hover-bg-gray'}`}
+                                                    onClick={() => handleToggleCO(co.code)}
+                                                >
+                                                    <span className="fw-bold small">{co.code}</span>
+                                                </div>
+                                            )) : (
+                                                <p className="small text-muted mb-0 fst-italic">No Course Outcomes defined. Please add them in the 'Course Outcomes' tab.</p>
+                                            )}
+                                        </div>
+                                        <small className="text-muted" style={{ fontSize: '0.75rem' }}>Select all COs that this assessment covers.</small>
+                                    </div>
+
                                     <div className="d-flex gap-3">
                                         <button
                                             type="button"
@@ -418,6 +552,73 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                             )}
                         </div>
                     )}
+
+                    {activeTab === 'outcomes' && (
+                        <div className="p-4 d-flex flex-column gap-3 text-left">
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h6 className="fw-bold text-dark m-0">Course Outcomes (COs)</h6>
+                                    <p className="small text-muted m-0">Define the outcomes and their descriptions for AI context.</p>
+                                </div>
+                                <button
+                                    className="btn btn-success btn-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-2 shadow-sm"
+                                    onClick={handleAddCO}
+                                    disabled={loading}
+                                >
+                                    <FaPlus size={12} /> Add CO
+                                </button>
+                            </div>
+
+                            <div className="d-flex flex-column gap-3">
+                                {coList.map((co, index) => (
+                                    <div key={index} className="bg-light p-3 rounded-3 border d-flex gap-3 align-items-start">
+                                        <div style={{ width: '100px' }}>
+                                            <label className="small fw-bold text-muted mb-1">CO Code</label>
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm fw-bold"
+                                                value={co.code}
+                                                onChange={(e) => handleCOChange(index, 'code', e.target.value)}
+                                                placeholder="e.g. CO1"
+                                            />
+                                        </div>
+                                        <div className="flex-grow-1">
+                                            <label className="small fw-bold text-muted mb-1">Description (for AI Context)</label>
+                                            <textarea
+                                                className="form-control form-control-sm"
+                                                rows="2"
+                                                value={co.description}
+                                                onChange={(e) => handleCOChange(index, 'description', e.target.value)}
+                                                placeholder="Describe what the student should be able to do..."
+                                            />
+                                        </div>
+                                        <button
+                                            className="btn btn-light text-danger btn-sm mt-4"
+                                            onClick={() => handleDeleteCO(index)}
+                                            title="Remove CO"
+                                        >
+                                            <FaTrash size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                                {coList.length === 0 && (
+                                    <div className="text-center p-5 text-muted border border-dashed rounded-3">
+                                        No Course Outcomes defined yet.
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-3 pt-3 border-top d-flex justify-content-end">
+                                <button
+                                    className="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"
+                                    onClick={handleSaveCOs}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Saving...' : 'Save Outcomes'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <style>{`
@@ -429,6 +630,7 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
                 .x-small { font-size: 10px; }
                 .hover-shadow-md:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; transform: translateY(-1px); }
                 .hover-bg-light:hover { background-color: #f8fafc; }
+                .hover-bg-gray:hover { background-color: #e2e8f0; }
                 .hover-danger:hover { color: #dc3545 !important; }
                 .custom-input:focus {
                     background-color: #fff !important;

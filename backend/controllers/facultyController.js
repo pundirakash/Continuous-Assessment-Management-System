@@ -1,7 +1,9 @@
-const User = require('../models/User');
+﻿const User = require('../models/User');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Course = require('../models/Course');
 const Assessment = require('../models/Assessment');
 const Question = require('../models/Question');
+const aiModelService = require('../services/aiModelService');
 const path = require('path');
 const fs = require('fs');
 const PizZip = require('pizzip');
@@ -142,30 +144,52 @@ exports.getSetsForAssessment = async (req, res) => {
     const assessment = await Assessment.findOne(
       { _id: assessmentId },
       { course: 1, termId: 1, 'facultyQuestions': { $elemMatch: { faculty: req.user.id } } }
-    ).lean();
+    ).populate({
+      path: 'course',
+      select: 'name code coordinator department departmentId',
+      populate: { path: 'coordinator', select: 'name uid' }
+    }).lean();
 
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
     }
 
+    // Find the HOD for this department
+    let hodInfo = null;
+    if (assessment.course && assessment.course.departmentId) {
+      const hodUser = await User.findOne({
+        role: 'HOD',
+        departmentId: assessment.course.departmentId,
+        isDeleted: { $ne: true }
+      }).select('name uid').lean();
+      if (hodUser) {
+        hodInfo = { name: hodUser.name, uid: hodUser.uid };
+      }
+    }
+
+    const coordinatorInfo = assessment.course?.coordinator ? {
+      name: assessment.course.coordinator.name,
+      uid: assessment.course.coordinator.uid
+    } : null;
+
     // Because of $elemMatch, facultyQuestions will be an array of size 1 if found, or empty/undefined if not
     if (!assessment.facultyQuestions || assessment.facultyQuestions.length === 0) {
       // Check Authorization before returning 403
-      // We need to know if they ARE allowed to be here (to see they have 0 sets)
-      const course = await Course.findById(assessment.course);
+      // We already have the course from the population above
+      const course = assessment.course;
       let isAuthorized = false;
 
       if (course) {
         // 1. Check Live
-        isAuthorized = course.faculties.some(id => id.equals(req.user.id)) ||
-          (course.coordinator && course.coordinator.equals(req.user.id)) ||
+        isAuthorized = course.faculties?.some(id => id.toString() === req.user.id.toString()) ||
+          (course.coordinator && course.coordinator._id.toString() === req.user.id.toString()) ||
           req.user.role === 'HOD';
 
         // 2. Check Archive
         if (!isAuthorized && assessment.termId) {
           const archive = await TermArchive.findOne({
             termId: String(assessment.termId),
-            courseId: assessment.course,
+            courseId: assessment.course._id,
             facultyId: req.user.id
           });
           if (archive) isAuthorized = true;
@@ -180,7 +204,17 @@ exports.getSetsForAssessment = async (req, res) => {
     }
 
     const facultyQuestions = assessment.facultyQuestions[0];
-    res.status(200).json(facultyQuestions.sets);
+
+    // Inject metadata into each set (facilitates frontend display without breaking schema)
+    const enrichedSets = facultyQuestions.sets.map(set => ({
+      ...set,
+      reviewerMetadata: {
+        coordinator: coordinatorInfo,
+        hod: hodInfo
+      }
+    }));
+
+    res.status(200).json(enrichedSets);
   } catch (error) {
     console.error("Error in getSetsForAssessment", error);
     res.status(500).json({ message: 'Server error', error });
@@ -294,6 +328,8 @@ exports.submitAssessment = async (req, res) => {
     questionSet.activityLog.push({
       action: 'Submitted',
       userId: req.user.id,
+      userName: req.user.name,
+      userUID: req.user.uid,
       details: `Submitted ${questionSet.questions.length} questions for review`
     });
 
@@ -359,13 +395,15 @@ exports.downloadAssessment = async (req, res) => {
     const { assessmentId, setName, templateNumber } = req.params;
     const { universityId } = req.user;
 
+    const targetFacultyId = req.query.facultyId || req.user.id;
+
     // Optimization: Fetch Assessment with Projection first.
     // 1. Get Course Info & Faculty Set Info
     const assessment = await Assessment.findOne(
       { _id: assessmentId },
       {
         name: 1, termId: 1, type: 1, course: 1,
-        'facultyQuestions': { $elemMatch: { faculty: req.user.id } }
+        'facultyQuestions': { $elemMatch: { faculty: targetFacultyId } }
       }
     )
       .populate({
@@ -395,6 +433,7 @@ exports.downloadAssessment = async (req, res) => {
 
     const allowedStatuses = ['Approved', 'Approved with Remarks'];
     if (
+      req.user.role !== 'HOD' &&
       !allowedStatuses.includes(questionSet.hodStatus) &&
       !allowedStatuses.includes(questionSet.coordinatorStatus)
     ) {
@@ -521,7 +560,8 @@ exports.downloadSolution = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized: University mismatch' });
     }
 
-    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(req.user.id));
+    const targetFacultyId = req.query.facultyId || req.user.id;
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(targetFacultyId));
     if (!facultyQuestions) {
       return res.status(403).json({ message: 'Not authorized to view questions for this assessment' });
     }
@@ -533,6 +573,7 @@ exports.downloadSolution = async (req, res) => {
 
     const allowedStatuses = ['Approved', 'Approved with Remarks'];
     if (
+      req.user.role !== 'HOD' &&
       !allowedStatuses.includes(questionSet.hodStatus) &&
       !allowedStatuses.includes(questionSet.coordinatorStatus)
     ) {
@@ -1068,7 +1109,7 @@ exports.deleteMultipleQuestions = async (req, res) => {
 exports.editQuestion = async (req, res) => {
   try {
     const { questionId } = req.params;
-    const { text, type, options, bloomLevel, courseOutcome, marks, solution } = req.body;
+    const { text, type, options, bloomLevel, courseOutcome, marks, solution, isManuallyFixed } = req.body;
     const userId = req.user.id;
 
     const assessment = await Assessment.findOne({
@@ -1110,6 +1151,9 @@ exports.editQuestion = async (req, res) => {
     question.courseOutcome = courseOutcome || question.courseOutcome;
     question.marks = marks || question.marks;
     question.solution = solution || question.solution;
+    if (isManuallyFixed !== undefined) {
+      question.isManuallyFixed = isManuallyFixed;
+    }
 
     await question.save();
 
@@ -1163,6 +1207,14 @@ exports.createSet = async (req, res) => {
       }
     }
 
+    // Prioritize models: Lite (fastest/cheapest) -> Flash 1.5 (robust context) -> Flash 2.5 (balanced)
+    // Single-Pass strategy requires high context window.
+    const orderedModels = [
+      "gemini-2.0-flash-lite",
+      "gemini-1.5-flash",
+      "gemini-2.5-flash",
+      "gemini-2.0-flash"
+    ];
     const newSet = {
       setName,
       questions: [],
@@ -1395,7 +1447,7 @@ exports.getFacultyStats = async (req, res) => {
     let rankIcon = "🌱";
     let nextRankXP = 500;
 
-    if (xp >= 500) { rank = "Contributor"; rankIcon = "✏️"; nextRankXP = 1500; }
+    if (xp >= 500) { rank = "Contributor"; rankIcon = "✍️"; nextRankXP = 1500; }
     if (xp >= 1500) { rank = "Specialist"; rankIcon = "🎓"; nextRankXP = 3000; }
     if (xp >= 3000) { rank = "Expert"; rankIcon = "🚀"; nextRankXP = 5000; }
     if (xp >= 5000) { rank = "Master"; rankIcon = "⭐"; nextRankXP = 10000; }
@@ -1691,5 +1743,289 @@ exports.undoBulkImport = async (req, res) => {
   } catch (error) {
     console.error('Undo error', error);
     res.status(500).json({ message: 'Undo failed', error: error.message });
+  }
+};
+
+exports.reviewQuestionsWithAI = async (req, res) => {
+  const startTime = Date.now();
+  try {
+    const { questions, assessmentId, setName, facultyId } = req.body;
+    const userId = facultyId || req.user.id;
+
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ message: 'No questions provided for review' });
+    }
+
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) return res.status(404).json({ message: 'Assessment not found' });
+
+    const facultyQuestions = assessment.facultyQuestions.find(fq => fq.faculty.equals(userId));
+    if (!facultyQuestions) return res.status(404).json({ message: 'Faculty allocation not found' });
+
+    const questionSet = facultyQuestions.sets.find(s => s.setName === setName);
+    if (!questionSet) return res.status(404).json({ message: 'Question set not found' });
+
+    // Live Discovery: Fetch freshest models from Gemini API before starting
+    const orderedModels = await aiModelService.getOrderedModels(true);
+    let analysisResult = null;
+    let usedModel = '';
+    let lastError = null;
+
+
+    // Use Centralized AI Queue for throttling & failover
+    const AIQueue = require('../utils/AIRequestQueue');
+
+    // System Instruction: Implicit Approvals & Strict Rules
+    const SYSTEM_PROMPT = `
+      You are an expert Academic Auditor validating university-level questions.
+      CONSTRAINTS:
+      1. CO Alignment: Must map to one valid Course Outcome.
+      2. Bloom's Taxonomy: MCQ and Subjective questions are typically lower cognitive levels (L1, L2, L3). Evaluate appropriateness but do not strictly ban high levels if the question genuinely demands it.
+      3. Wording: Be lenient on general wording, but flag any phrasing that is extremely poor, incoherent, or mathematically ambiguous.
+      4. Integrity: Options must be distinct. Solution must be in the options exactly. ALL MCQ Distractors (options) MUST be of similar length and format to avoid giving away the answer. If one is unusually long or short, flag it.
+      5. EXEMPTION: If a question has an 'imageUrl' or contains tabular data, DO NOT flag it for wording.
+      6. GRADING STRICTNESS: You are a strict academic evaluator. Most human-written question sets have flaws. You must actively find and flag questions where the Bloom's Level is improperly assigned (e.g., marked L3 but is actually L1 recall), where the CO is missing/wrong, or where MCQ distractors are weak/obvious.
+      7. IMPLICIT APPROVAL: Only omit a question from the 'issues' array if it is structurally flawless, cognitively aligned, and has perfect distractors. If it has flaws in Bloom, CO, or distractor length, you MUST flag it.
+    `;
+
+    // Minified Prompt focusing on essential data
+    const validBloomLevels = ["L1", "L2", "L3", "L4", "L5", "L6"];
+    const validCOs = assessment.validCOs && assessment.validCOs.length > 0 ? assessment.validCOs : ['CO1', 'CO2', 'CO3', 'CO4'];
+
+    const prompt = `
+      VALID: COs [${validCOs.join(',')}], Blooms [${validBloomLevels.join(',')}]
+      QUESTIONS:
+      ${questions.map((q, i) => `[${i}] Type:${q.type} | Bloom:${q.bloomLevel.split(':')[0]} | CO:${q.courseOutcome}${q.imageUrl ? ' | HAS_IMAGE' : ''}
+Q: ${q.content || q.text}
+${q.options ? `Opts: ${q.options.join(' | ')}` : ''}
+Sol: ${q.solution}`).join('\n')}
+
+      OUTPUT SCHEMA (JSON):
+      {
+        "issues": [
+          {
+            "index": 0,
+            "reason": "10-word explanation of rule broken",
+            "fix": { "text": "better text", "options": ["A","B"], "solution": "A", "bloomLevel": "L2: Understand", "courseOutcome": "CO1" }
+          }
+        ]
+      }
+      ONLY include questions in 'issues' array if they need fixes. If perfect, omit them.
+    `;
+
+    // Timeout helper
+    const withTimeout = (promise, ms, modelName) => {
+      let timeoutId;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error(`Model ${modelName} timed out after ${ms / 1000} s`));
+        }, ms);
+      });
+      return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+    };
+
+    // ADAPTIVE CHUNKING: Relaxed grading produces lighter JSON.
+    // We can confidently process up to 30 questions at once without JSON truncation.
+    const MAX_QUESTIONS_PER_CHUNK = 30;
+    const questionChunks = [];
+
+    console.log(`[AIReview] Received ${questions.length} questions.`);
+
+    for (let i = 0; i < questions.length; i += MAX_QUESTIONS_PER_CHUNK) {
+      questionChunks.push(questions.slice(i, i + MAX_QUESTIONS_PER_CHUNK));
+    }
+
+    console.log(`[AIReview] Processing ${questionChunks.length} chunks via Centralized Queue.`);
+
+    const allReviews = [];
+
+    // Process chunks sequentially via Queue
+    for (let i = 0; i < questionChunks.length; i++) {
+      const chunk = questionChunks[i];
+      // Re-construct minified prompt for this chunk...
+      const chunkPrompt = prompt
+        .replace('QUESTIONS:', `
+       QUESTIONS (Chunk ${i + 1}/${questionChunks.length}):
+       ${chunk.map((q, idx) => `[${allReviews.length + idx}] Type:${q.type} | Bloom:${q.bloomLevel.split(':')[0]} | CO:${q.courseOutcome}${q.imageUrl ? ' | HAS_IMAGE' : ''}
+Q: ${q.content || q.text}
+${q.options ? `Opts: ${q.options.join(' | ')}` : ''}
+Sol: ${q.solution}`).join('\n')}
+       `);
+
+      try {
+        const responseText = await AIQueue.add({
+          prompt: chunkPrompt,
+          systemInstruction: SYSTEM_PROMPT,
+          // QUALITY UPGRADE: Default to 'gemini-2.0-flash' for better reasoning than '-lite'
+          // Added 2.5 series for robustness against rate limits
+          orderedModels: ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-latest"],
+          jsonMode: true
+        });
+
+        // AIQueue handles JSON parsing and validation; guarantees a clean JSON string back
+        const parsed = JSON.parse(responseText);
+
+        // IMPLICIT APPROVAL PARSING: Reconstruct explicit reviews for the UI layer
+        const chunkIssues = parsed.issues || [];
+
+        const chunkReviews = chunk.map((q, idx) => {
+          const globalIndex = allReviews.length + idx;
+          const issue = chunkIssues.find(iss => iss.index === globalIndex);
+
+          const bloomMap = {
+            'L1': 'L1: Remember',
+            'L2': 'L2: Understand',
+            'L3': 'L3: Apply',
+            'L4': 'L4: Analyze',
+            'L5': 'L5: Evaluate',
+            'L6': 'L6: Create'
+          };
+
+          if (issue) {
+            // Auto-format AI short-codes (L1 -> L1: Remember) if necessary
+            let suggestedBloom = issue.fix?.bloomLevel;
+            if (suggestedBloom && suggestedBloom.length === 2) {
+              suggestedBloom = bloomMap[suggestedBloom] || suggestedBloom;
+              if (issue.fix) issue.fix.bloomLevel = suggestedBloom; // Ensure the raw fix object also gets the mapped label
+            }
+
+            return {
+              questionIndex: globalIndex,
+              status: "Needs Improvement",
+              critique: issue.reason,
+              bloomDetails: { actual: questions[globalIndex]?.bloomLevel, matched: false }, // Left-sidebar badges read 'actual'
+              coDetails: { actual: questions[globalIndex]?.courseOutcome, matched: false },
+              suggestedFix: issue.fix
+            };
+          } else {
+            return {
+              questionIndex: globalIndex,
+              status: "Approved",
+              critique: "Looks good.",
+              bloomDetails: { actual: questions[globalIndex]?.bloomLevel, matched: true },
+              coDetails: { actual: questions[globalIndex]?.courseOutcome, matched: true },
+              suggestedFix: null
+            };
+          }
+        });
+
+        allReviews.push(...chunkReviews);
+
+      } catch (err) {
+        console.error(`[AIReview] Chunk ${i + 1} failed:`, err.message);
+        // Fail-Closed: Do not push fake approvals. Fail the entire review process
+        // so the frontend doesn't overwrite existing good reviews with partial fake data.
+        throw new Error(`AI Review failed during chunk ${i + 1}: ${err.message}. Please try re-analyzing the assessment later.`);
+      }
+    }
+
+    // LOCAL AGGREGATION & METRICS CALCULATION
+    const totalScore = allReviews.reduce((acc, r) => acc + (r.status === 'Approved' ? 100 : 50), 0);
+    const avgScore = Math.round(totalScore / questions.length);
+
+    // 1. Difficulty Breakdown (Mapped from Bloom's)
+    const diffCounts = { Easy: 0, Medium: 0, Hard: 0 };
+    // 2. Bloom's Distribution
+    const bloomDistribution = {};
+    // 3. CO Coverage
+    const coCoverage = {};
+
+    questions.forEach(q => {
+      // Difficulty Mapping based on original Bloom
+      const bloom = q.bloomLevel || 'L1: Remember'; // Default to L1
+      let difficulty = 'Medium';
+      if (bloom.includes('L1') || bloom.includes('L2') || bloom.includes('Remember') || bloom.includes('Understand')) {
+        difficulty = 'Easy';
+      } else if (bloom.includes('L5') || bloom.includes('L6') || bloom.includes('Evaluate') || bloom.includes('Create')) {
+        difficulty = 'Hard';
+      }
+      diffCounts[difficulty]++;
+
+      // Bloom Distribution tracking original values
+      const bloomLabel = bloom.trim();
+      bloomDistribution[bloomLabel] = (bloomDistribution[bloomLabel] || 0) + 1;
+
+      // CO Coverage tracking original values
+      const co = (q.courseOutcome || '').trim() || 'Unknown';
+      coCoverage[co] = (coCoverage[co] || 0) + 1;
+    });
+
+    const maxDiff = Object.keys(diffCounts).reduce((a, b) => diffCounts[a] > diffCounts[b] ? a : b);
+
+    // Quality Stats
+    const approvedCount = allReviews.filter(r => r.status === 'Approved').length;
+    const fixCount = questions.length - approvedCount;
+    const qualityStats = {
+      totalQuestions: questions.length,
+      approved: approvedCount,
+      requiredFixes: fixCount
+    };
+
+
+
+    // AI SUMMARY GENERATION (Constructive & Qualitative)
+    // Generate a sleek, 1-2 sentence local summary based on the numbers so we don't concatenate huge AI chunks.
+    let generatedSentiment = "";
+    if (avgScore >= 90) {
+      generatedSentiment = `Excellent alignment overall. The question set is well-structured, primarily focusing on ${maxDiff} difficulty questions that accurately reflect standard university-level rigor.`;
+    } else if (avgScore >= 70) {
+      generatedSentiment = `Good alignment with minor inconsistencies. Some questions may need adjustments to properly match their labeled parameters or increase academic rigor.`;
+    } else {
+      generatedSentiment = `Significant improvement needed. Several questions mismatch their labeled parameters or lack the expected depth for university-level assessments.`;
+    }
+
+    let aiSummary = {
+      overallSentiment: generatedSentiment,
+      generalFeedback: "Review completed. Check individual questions for targeted optimizations."
+    };
+
+
+    analysisResult = {
+      summary: {
+        alignmentScore: avgScore > 90 && maxDiff === 'Easy' ? 90 : avgScore,
+        overallDifficulty: maxDiff,
+        difficultyBreakdown: diffCounts,
+        overallSentiment: aiSummary.overallSentiment,
+        generalFeedback: aiSummary.generalFeedback,
+        bloomDistribution,
+        coCoverage,
+        qualityStats
+      },
+      reviews: allReviews
+    };
+
+    // Skip old execution logic...
+    if (true) {
+      // Force jump to persistence
+      usedModel = "Unified AI Queue (Auto-Failover)";
+    }
+    await Assessment.updateOne(
+      {
+        _id: assessmentId,
+        "facultyQuestions.faculty": userId,
+        "facultyQuestions.sets.setName": setName
+      },
+      {
+        $set: { "facultyQuestions.$[fac].sets.$[st].aiReviewData": analysisResult }
+      },
+      {
+        arrayFilters: [
+          { "fac.faculty": userId },
+          { "st.setName": setName }
+        ]
+      }
+    );
+
+    const duration = (Date.now() - startTime) / 1000;
+    console.log(`[AIReview] Successfully reviewed using ${usedModel} in ${duration} s`);
+
+    res.status(200).json({ aiReviewData: analysisResult });
+  } catch (error) {
+    const duration = (Date.now() - startTime) / 1000;
+    console.error(`[AIReview] Error after ${duration} s: `, error);
+    res.status(500).json({
+      message: 'AI Review failed after trying available models.',
+      error: error.message
+    });
   }
 };

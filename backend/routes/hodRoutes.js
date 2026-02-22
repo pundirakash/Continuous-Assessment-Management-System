@@ -31,4 +31,6 @@ router.get('/download-questions', auth(['HOD']), hodController.downloadQuestions
 router.get('/master-filter', auth(['HOD']), hodController.masterFilterQuestions);
 router.get('/stats', auth(['HOD']), hodController.getDashboardStats);
 router.get('/pendency-report', auth(['HOD']), hodController.downloadPendencyReport);
+router.put('/course/:courseId/outcomes', auth(['HOD', 'CourseCoordinator']), hodController.updateCourseOutcomes);
+
 module.exports = router;

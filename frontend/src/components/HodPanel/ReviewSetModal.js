@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import AIReviewModal from '../FacultyPanel/AIReviewModal'; // Import the AI Modal
 import {
-    FaTrash, FaEdit, FaCheck,
-    FaClipboardList, FaCloudDownloadAlt, FaCheckDouble, FaImage
+    FaTrash, FaEdit, FaCheck, FaHistory,
+    FaClipboardList, FaCloudDownloadAlt, FaCheckDouble, FaImage, FaRobot, FaMagic,
+    FaCheckCircle, FaTimesCircle, FaArrowRight
 } from 'react-icons/fa';
 import userService from '../../services/userService';
 
@@ -11,21 +13,106 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
     const [reviewDisplay, setReviewDisplay] = useState('split'); // 'split' or 'list'
     const [remarks, setRemarks] = useState('');
     const [actionType, setActionType] = useState(null); // 'approve' | 'reject' | null
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null);
     const [localSetData, setLocalSetData] = useState(null);
+    const [rejectError, setRejectError] = useState('');
+
+    // AI Review State
+    const [showAIModal, setShowAIModal] = useState(false);
+    const [aiResponse, setAiResponse] = useState(null);
+    const [isAILoading, setIsAILoading] = useState(false);
 
     useEffect(() => {
         if (show && set) {
             setLocalSetData(set);
             setRemarks(set.hodRemarks || '');
             setCurrentQuestionIndex(0);
+            // Load existing AI data if available
+            if (set.aiReviewData) {
+                const result = JSON.parse(JSON.stringify(set.aiReviewData)); // deep copy to avoid mutations
+
+                // Strict Score Calculation Consistency
+                if (result && result.reviews) {
+                    const approvedCount = result.reviews.filter(r => r.status === 'Approved').length;
+                    const totalReviews = result.reviews.length;
+                    const strictScore = totalReviews > 0 ? Math.round((approvedCount / totalReviews) * 100) : 0;
+
+                    if (result.summary) {
+                        result.summary.alignmentScore = strictScore;
+                    }
+                }
+
+                // Map original question text for sidebar visibility
+                if (result && result.reviews) {
+                    result.reviews = result.reviews.map(r => ({
+                        ...r,
+                        originalText: set.questions[r.questionIndex]?.text || ""
+                    }));
+                }
+                setAiResponse(result);
+            } else {
+                setAiResponse(null);
+            }
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
         }
         return () => { document.body.style.overflow = 'unset'; };
     }, [show, set]);
+
+    const handleAIReview = async () => {
+        setIsAILoading(true);
+        setShowAIModal(true);
+        try {
+            // Call AI review API — pass facultyId so it persists for the faculty being reviewed
+            const res = await userService.reviewQuestionsWithAI(
+                assessmentId,
+                localSetData.setName,
+                localSetData.questions,
+                facultyId
+            );
+            const result = res.aiReviewData;
+
+            // Strict Score Calculation Consistency
+            if (result && result.reviews) {
+                const approvedCount = result.reviews.filter(r => r.status === 'Approved').length;
+                const totalReviews = result.reviews.length;
+                const strictScore = totalReviews > 0 ? Math.round((approvedCount / totalReviews) * 100) : 0;
+
+                if (result.summary) {
+                    result.summary.alignmentScore = strictScore;
+                }
+            }
+
+            // Map original question text for sidebar visibility
+            if (result && result.reviews) {
+                result.reviews = result.reviews.map(r => ({
+                    ...r,
+                    originalText: localSetData.questions[r.questionIndex]?.text || ""
+                }));
+            }
+
+            setAiResponse(result);
+            // Clear isManuallyFixed flags — new analysis means new suggestions, old "applied" state is stale
+            setLocalSetData(prev => ({
+                ...prev,
+                aiReviewData: result,
+                questions: prev.questions.map(q => ({ ...q, isManuallyFixed: false }))
+            }));
+        } catch (error) {
+            console.error("AI Review Failed", error);
+            if (error.response && error.response.status === 503) {
+                alert(error.response.data.message || "AI Service currently unavailable due to high demand. Please try again later.");
+            } else {
+                alert("Failed to generate AI review.");
+            }
+            setShowAIModal(false);
+        } finally {
+            setIsAILoading(false);
+        }
+    };
 
     const isApproved = (status) => status === 'Approved' || status === 'Approved with Remarks';
     const currentQ = localSetData?.questions[currentQuestionIndex];
@@ -44,7 +131,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
         const finalRemarks = status === 'Approved' ? '' : sanitizedRemarks;
 
         if (status === 'Rejected' && !finalRemarks) {
-            alert("Please provide remarks for rejection.");
+            setRejectError("Please provide a reason for rejection.");
             return;
         }
 
@@ -106,7 +193,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
 
     const handleDownloadAssessment = async (templateNumber) => {
         try {
-            const blob = await userService.downloadAssessment(assessmentId, localSetData.setName, templateNumber);
+            const blob = await userService.downloadAssessment(assessmentId, localSetData.setName, templateNumber, facultyId);
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
@@ -119,7 +206,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
 
     const handleDownloadSolution = async (templateNumber) => {
         try {
-            const blob = await userService.downloadSolution(assessmentId, localSetData.setName, templateNumber);
+            const blob = await userService.downloadSolution(assessmentId, localSetData.setName, templateNumber, facultyId);
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
@@ -130,6 +217,80 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
         } catch (e) {
             console.error('Solution download error', e);
         }
+    };
+
+    // HOD Apply fix logic (optional, if we want HOD to fix via AI)
+    const handleApplyAIFix = async (questionIndex, fixedData) => {
+        if (!localSetData.questions[questionIndex]) return;
+        const qToUpdate = localSetData.questions[questionIndex];
+        const payload = {
+            ...qToUpdate,
+            text: fixedData.text,
+            bloomLevel: fixedData.bloomLevel || qToUpdate.bloomLevel,
+            courseOutcome: fixedData.courseOutcome || qToUpdate.courseOutcome,
+            options: (qToUpdate.type === 'MCQ' && fixedData.options && fixedData.options.length > 0) ? fixedData.options : qToUpdate.options,
+            solution: fixedData.solution || qToUpdate.solution,
+            difficultyLevel: fixedData.difficultyLevel || qToUpdate.difficultyLevel,
+            isManuallyFixed: true
+        };
+
+        try {
+            await userService.editQuestionByHod(qToUpdate._id, payload); // Using HOD edit endpoint
+            setLocalSetData(prev => ({
+                ...prev,
+                questions: prev.questions.map((q, i) => i === questionIndex ? payload : q)
+            }));
+            // DO NOT MUTATE THE AI REPORT — preserve original analysis for historical accuracy
+        } catch (error) {
+            console.error("HOD AI Fix Failed", error);
+            alert("Failed to apply AI fix.");
+        }
+    };
+
+    const handleApplyAllAIFixes = async () => {
+        if (!aiResponse || !aiResponse.reviews) return;
+        const fixesToApply = aiResponse.reviews.filter(r => r.status !== 'Approved');
+        if (fixesToApply.length === 0) { alert("No remaining fixes."); return; }
+        if (!window.confirm(`Apply fixes for ${fixesToApply.length} questions?`)) return;
+
+        setIsAILoading(true);
+        let successIndices = [];
+        let updatedQuestions = [...localSetData.questions];
+
+        for (const review of fixesToApply) {
+            try {
+                let targetQuestion = updatedQuestions[review.questionIndex];
+                if (!targetQuestion || (review.originalQuestion && targetQuestion.text !== review.originalQuestion)) {
+                    targetQuestion = updatedQuestions.find(q => q.text === review.originalQuestion);
+                }
+
+                if (!targetQuestion || !targetQuestion._id || !review.suggestedFix) continue;
+
+                const payload = {
+                    ...targetQuestion,
+                    text: review.suggestedFix.text || targetQuestion.text,
+                    options: (targetQuestion.type === 'MCQ' && review.suggestedFix.options && review.suggestedFix.options.length > 0) ? review.suggestedFix.options : targetQuestion.options,
+                    solution: review.suggestedFix.solution || targetQuestion.solution,
+                    bloomLevel: review.suggestedFix.bloomLevel || targetQuestion.bloomLevel,
+                    courseOutcome: review.suggestedFix.courseOutcome || targetQuestion.courseOutcome,
+                    difficultyLevel: review.suggestedFix.difficultyLevel || targetQuestion.difficultyLevel,
+                    isManuallyFixed: true
+                };
+
+                await userService.editQuestionByHod(targetQuestion._id, payload);
+                const qIdx = updatedQuestions.findIndex(q => q._id === targetQuestion._id);
+                if (qIdx !== -1) updatedQuestions[qIdx] = payload;
+                successIndices.push({ index: review.questionIndex, fix: review.suggestedFix });
+            } catch (e) {
+                console.error(`Failed to apply bulk fix for index ${review.questionIndex}:`, e);
+            }
+        }
+
+        setLocalSetData(prev => ({ ...prev, questions: updatedQuestions }));
+
+        // DO NOT MUTATE THE AI REPORT — preserve original analysis for historical accuracy
+
+        setIsAILoading(false);
     };
 
     if (!show || !localSetData) return null;
@@ -171,8 +332,17 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                 <div className="d-flex align-items-center gap-2 small fw-bold text-secondary">
                                     <span className="text-primary disabled">Set {localSetData.setName}</span>
                                 </div>
+                                <div className="vr h-50 my-auto mx-2"></div>
+                                <button
+                                    className={`btn btn-sm border rounded-pill px-3 fw-bold shadow-sm d-flex align-items-center gap-2 ${aiResponse ? 'btn-success text-white' : 'btn-white text-primary'}`}
+                                    onClick={() => aiResponse ? setShowAIModal(true) : handleAIReview()}
+                                >
+                                    {aiResponse ? <><FaCheckDouble size={12} /> View AI Report</> : <><FaRobot size={12} /> Run AI Review</>}
+                                </button>
+
+
                                 {localSetData.questions.length > 0 && (
-                                    <div className="dropdown">
+                                    <div className="dropdown ms-2">
                                         <button className="btn btn-white btn-sm border rounded-pill px-3 fw-bold shadow-sm d-flex align-items-center gap-2 dropdown-toggle" data-bs-toggle="dropdown">
                                             <FaCloudDownloadAlt className="text-primary" /> Download
                                         </button>
@@ -184,6 +354,13 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                         </ul>
                                     </div>
                                 )}
+
+                                <button
+                                    className="btn btn-white btn-sm border rounded-pill px-3 fw-bold shadow-sm d-flex align-items-center gap-2 ms-2"
+                                    onClick={() => setShowHistoryModal(true)}
+                                >
+                                    <FaHistory size={12} className="text-secondary" /> History
+                                </button>
                             </div>
                         </div>
 
@@ -278,14 +455,25 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                                         )}
 
                                                         <textarea
-                                                            className="form-control bg-light border-0 rounded-3 mb-3 small p-3 custom-input"
+                                                            className={`form-control bg-light border-0 rounded-3 mb-1 small p-3 custom-input ${rejectError ? 'is-invalid border-danger' : ''}`}
                                                             rows="3"
                                                             style={{ fontSize: '13px', resize: 'none' }}
                                                             placeholder={actionType === 'approve' ? "Add remarks to request changes..." : "Reason for rejection..."}
                                                             value={remarks}
-                                                            onChange={(e) => setRemarks(e.target.value)}
+                                                            onChange={(e) => {
+                                                                setRemarks(e.target.value);
+                                                                setRejectError('');
+                                                            }}
                                                             autoFocus
                                                         ></textarea>
+
+                                                        {rejectError && actionType === 'reject' && (
+                                                            <div className="text-danger x-small fw-bold mb-3 px-1 animate__animated animate__headShake d-flex align-items-center gap-1">
+                                                                <i className="bi bi-exclamation-circle-fill"></i> {rejectError}
+                                                            </div>
+                                                        )}
+
+                                                        <div className={!(rejectError && actionType === 'reject') ? "mb-3" : ""}></div>
 
                                                         {actionType === 'approve' && remarks.trim() && (
                                                             <div className="d-flex justify-content-between align-items-center mb-3">
@@ -304,7 +492,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                                                         <div className="d-flex gap-2">
                                                             <button
                                                                 className="btn btn-light btn-sm flex-grow-1 rounded-pill fw-bold"
-                                                                onClick={() => { setActionType(null); setRemarks(''); }}
+                                                                onClick={() => { setActionType(null); setRemarks(''); setRejectError(''); }}
                                                             >
                                                                 Back
                                                             </button>
@@ -623,6 +811,21 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                     document.body
                 )}
 
+                {/* AI Review Modal for HOD */}
+                {showAIModal && (
+                    <AIReviewModal
+                        isOpen={showAIModal}
+                        onClose={() => setShowAIModal(false)}
+                        aiResponse={aiResponse}
+                        questions={localSetData.questions}
+                        onApplyFix={handleApplyAIFix}
+                        loading={isAILoading}
+                        onReRun={handleAIReview}
+                        onApplyAllFixes={handleApplyAllAIFixes}
+                        isHodView={true}
+                    />
+                )}
+
                 <style>{`
                 @keyframes zoomIn {
                     from { opacity: 0; transform: scale(0.98); }
@@ -654,6 +857,84 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                 .border-dashed { border-style: dashed !important; }
                 .correct-option-bg { background-color: rgba(25, 135, 84, 0.1) !important; }
             `}</style>
+
+                {/* Activity History Modal */}
+                {showHistoryModal && (
+                    <div className="modal-backdrop-custom d-flex align-items-center justify-content-center"
+                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(8px)', zIndex: 1200, padding: '1rem' }}
+                        onClick={() => setShowHistoryModal(false)}>
+                        <div className="modal-content border-0 shadow-2xl bg-white overflow-hidden"
+                            style={{ width: '100%', maxWidth: '600px', borderRadius: '24px', animation: 'zoomIn 0.3s' }}
+                            onClick={e => e.stopPropagation()}>
+
+                            <div className="p-4 text-white d-flex align-items-center justify-content-between"
+                                style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' }}>
+                                <div className="d-flex align-items-center gap-3">
+                                    <div className="p-2 rounded-3" style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }}>
+                                        <FaHistory size={20} />
+                                    </div>
+                                    <div>
+                                        <h5 className="m-0 fw-bold">Activity History</h5>
+                                        <p className="m-0 small opacity-75">Audit log for Set {localSetData.setName}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setShowHistoryModal(false)} className="btn-close btn-close-white opacity-100 shadow-none"></button>
+                            </div>
+
+                            <div className="p-4 overflow-auto" style={{ maxHeight: '60vh' }}>
+                                {localSetData.activityLog && localSetData.activityLog.length > 0 ? (
+                                    <div className="activity-timeline">
+                                        {localSetData.activityLog.slice().reverse().map((log, i) => (
+                                            <div key={i} className="d-flex gap-3 mb-4 position-relative">
+                                                <div className="flex-shrink-0 d-flex flex-column align-items-center">
+                                                    <div className={`rounded-circle d-flex align-items-center justify-content-center shadow-sm flex-shrink-0 ${log.action.includes('Approved') ? 'bg-success' :
+                                                        log.action.includes('Rejected') ? 'bg-danger' :
+                                                            log.action.includes('Submitted') ? 'bg-primary' : 'bg-secondary'
+                                                        } text-white`} style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', zIndex: 2 }}>
+                                                        {log.action.includes('Approved') ? <FaCheck size={12} /> :
+                                                            log.action.includes('Submitted') ? <FaCheckDouble size={12} /> :
+                                                                <FaHistory size={12} />}
+                                                    </div>
+                                                    {i !== localSetData.activityLog.length - 1 && (
+                                                        <div className="h-100 border-start mt-1" style={{ borderStyle: 'dashed', opacity: 0.3 }}></div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-grow-1 pt-1 pb-3">
+                                                    <div className="d-flex justify-content-between align-items-start mb-1">
+                                                        <div>
+                                                            <h6 className="fw-bold text-dark m-0">{log.action}</h6>
+                                                            {(log.userName || log.userUID) && (
+                                                                <div className="text-muted x-small fw-bold mt-1">
+                                                                    by {log.userName || 'Unknown'} {log.userUID ? `(${log.userUID})` : ''}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-muted x-small fw-medium" style={{ fontSize: '11px' }}>
+                                                            {new Date(log.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-secondary small m-0 lh-base">{log.details || 'No details specified.'}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-5">
+                                        <div className="bg-light rounded-circle d-inline-flex p-4 mb-3">
+                                            <FaHistory size={40} className="text-muted opacity-50" />
+                                        </div>
+                                        <h6 className="fw-bold text-dark">No history yet</h6>
+                                        <p className="text-secondary small m-0">Activity log for this set will appear here.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-4 bg-light text-center">
+                                <button className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" onClick={() => setShowHistoryModal(false)}>Close Log</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>,
         document.body

@@ -18,6 +18,7 @@ const CourseWorkspace = ({ course, onBack }) => {
     const [showChat, setShowChat] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [scrolled, setScrolled] = useState(false);
     const { selectedTerm } = useTerm();
 
     const fetchAssessments = useCallback(async () => {
@@ -42,6 +43,21 @@ const CourseWorkspace = ({ course, onBack }) => {
         }
         fetchAssessments();
     }, [fetchAssessments]);
+
+    // Shrink header on scroll
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScroll = window.scrollY;
+            // Use hysteresis to prevent jittering at the threshold
+            if (currentScroll > 80) {
+                setScrolled(true);
+            } else if (currentScroll < 30) {
+                setScrolled(false);
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // Poll for unread counts
     useEffect(() => {
@@ -81,38 +97,60 @@ const CourseWorkspace = ({ course, onBack }) => {
     );
 
     return (
-        <div className="course-workspace h-100 d-flex flex-column">
-            {/* 🌟 Workspace Header (Clean Premium) */}
-            <div className="d-flex align-items-center justify-content-between mb-4 p-4 rounded-4 shadow-sm bg-white sticky-top"
+        <div className="course-workspace h-100 d-flex flex-column" style={{ paddingBottom: '15vh' }}>
+            {/* 🌟 Workspace Header — shrinks on scroll (Hysteresis enabled) */}
+            <div
+                className="d-flex align-items-center justify-content-between rounded-4 sticky-top"
                 style={{
                     top: '80px',
-                    zIndex: 900 // Lowered to let navbar dropdowns pass over
-                }}>
-
-                <div className="d-flex align-items-center gap-4">
+                    zIndex: 900,
+                    padding: scrolled ? '10px 24px' : '20px 32px',
+                    marginBottom: '24px',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    background: scrolled ? 'rgba(245, 243, 255, 0.94)' : '#f5f3ff',
+                    backdropFilter: scrolled ? 'blur(12px)' : 'none',
+                    boxShadow: scrolled ? '0 10px 30px rgba(79, 70, 229, 0.12), 0 1px 10px rgba(0,0,0,0.05)' : '0 4px 20px rgba(79, 70, 229, 0.08)',
+                    border: scrolled ? '1px solid rgba(79, 70, 229, 0.1)' : '1px solid transparent',
+                    willChange: 'padding, background, box-shadow',
+                }}
+            >
+                <div className="d-flex align-items-center" style={{ gap: scrolled ? '12px' : '24px', transition: 'gap 0.25s ease' }}>
                     <button
                         className="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center shadow-sm text-secondary hover-bg-gray-200 transition-all"
-                        style={{ width: '45px', height: '45px' }}
+                        style={{ width: scrolled ? '34px' : '45px', height: scrolled ? '34px' : '45px', transition: 'width 0.25s ease, height 0.25s ease', flexShrink: 0 }}
                         onClick={onBack}
                     >
-                        <FaArrowLeft size={16} />
+                        <FaArrowLeft size={scrolled ? 12 : 16} />
                     </button>
                     <div>
-                        <h2 className="m-0 fw-bold text-dark" style={{ fontFamily: 'Syne, sans-serif' }}>{course.name}</h2>
-                        <span className="text-secondary fw-bold small font-monospace bg-light border px-2 py-1 rounded">{course.code || course.courseCode}</span>
+                        <div
+                            className="fw-bold text-dark"
+                            style={{
+                                fontFamily: 'Syne, sans-serif',
+                                fontSize: scrolled ? '1rem' : '1.5rem',
+                                lineHeight: 1.2,
+                                transition: 'font-size 0.25s ease',
+                            }}
+                        >{course.name}</div>
+                        {!scrolled && (
+                            <span className="text-secondary fw-bold small font-monospace bg-light border px-2 py-1 rounded">
+                                {course.code || course.courseCode}
+                            </span>
+                        )}
                     </div>
                 </div>
 
                 <div className="d-flex align-items-center gap-3">
                     <button
-                        className={`btn rounded-pill px-4 py-2 fw-bold d-flex align-items-center gap-2 transition-all ${showChat ? 'btn-primary shadow' : 'btn-outline-primary border-opacity-25'}`}
+                        className={`btn rounded-pill fw-bold d-flex align-items-center gap-2 transition-all ${showChat ? 'btn-primary shadow-lg scale-105' : 'bg-white bg-opacity-60 border text-secondary hover-bg-gray-200'}`}
+                        style={{ padding: scrolled ? '6px 16px' : '10px 24px', fontSize: scrolled ? '0.85rem' : '0.95rem', transition: 'all 0.3s ease' }}
                         onClick={() => {
                             setShowChat(!showChat);
                             if (!showChat) setUnreadCount(0);
                         }}
                     >
                         <div className="position-relative d-flex align-items-center gap-2">
-                            <FaComments />
+                            <FaComments size={scrolled ? 12 : 14} />
                             <span>Discussion Hub</span>
                             {unreadCount > 0 && (
                                 <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">

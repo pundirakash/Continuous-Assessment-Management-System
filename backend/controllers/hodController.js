@@ -634,7 +634,7 @@ exports.deallocateCourse = async (req, res) => {
 
 exports.createAssessment = async (req, res) => {
   try {
-    const { courseId, name, termId, type } = req.body;
+    const { courseId, name, termId, type, validCOs } = req.body;
     const course = await Course.findById(courseId);
 
     if (!course) {
@@ -653,6 +653,7 @@ exports.createAssessment = async (req, res) => {
       termId,
       name,
       type,
+      validCOs,
       facultyQuestions
     });
 
@@ -872,6 +873,8 @@ exports.approveAssessment = async (req, res) => {
     questionSet.activityLog.push({
       action: status,
       userId: req.user.id,
+      userName: req.user.name,
+      userUID: req.user.uid,
       details: `${reviewerRole} Review: ${status}${cleanRemarks ? ` - ${cleanRemarks}` : ''}`
     });
 
@@ -1090,7 +1093,7 @@ exports.getSetsByFaculty = async (req, res) => {
 exports.editQuestionByHOD = async (req, res) => {
   try {
     const { questionId } = req.params;
-    const { text, type, options, bloomLevel, courseOutcome, marks } = req.body;
+    const { text, type, options, bloomLevel, courseOutcome, marks, solution, isManuallyFixed } = req.body;
 
     const question = await Question.findById(questionId);
 
@@ -1125,6 +1128,8 @@ exports.editQuestionByHOD = async (req, res) => {
     question.bloomLevel = bloomLevel || question.bloomLevel;
     question.courseOutcome = courseOutcome || question.courseOutcome;
     question.marks = marks || question.marks;
+    if (solution !== undefined) question.solution = solution;
+    if (isManuallyFixed !== undefined) question.isManuallyFixed = isManuallyFixed;
 
     await question.save();
 
@@ -1619,100 +1624,135 @@ exports.masterFilterQuestions = async (req, res) => {
         return res.status(403).json({ message: "Invalid Course Access or None Found" });
       }
       assessmentQuery.course = { $in: validCourseIds };
-    } else {
-      // If no course selected, find ALL courses for this department first to get their IDs
-      const courseFilter = {};
-      if (departmentId) {
-        courseFilter.departmentId = departmentId;
-      } else {
-        courseFilter.department = department;
+    }
+    // If no course selected, find ALL courses for this department first to get their IDs
+    const courseFilter = {};
+    const normalizedTargetTerms = targetTerms.map(t => String(t));
+
+    // Construct Match Query
+    const matchQuery = {
+      termId: { $in: normalizedTargetTerms }
+    };
+
+    if (courseIds) matchQuery.course = { $in: courseIds };
+    if (assessmentIds) matchQuery._id = { $in: assessmentIds };
+    if (types) matchQuery.type = { $in: types };
+
+    // console.log("Match Query:", matchQuery);
+
+    // 2. Fetch Assessments based on Term, Course, Assessment ID, Type
+    // Optimization: Select only necessary fields + facultyQuestions
+    const assessments = await Assessment.find(matchQuery)
+      .populate('course', 'name code departmentId department universityId activeTerms coordinator')
+      .populate('facultyQuestions.faculty', 'name email')
+      .populate('facultyQuestions.sets.questions');
+
+    // Filter assessments by HOD's department/university scope
+    const scopedAssessments = assessments.filter(a => {
+      // Check University Scope
+      if (universityId && a.course.universityId && a.course.universityId.toString() !== universityId.toString()) {
+        return false;
       }
-      const deptCourses = await Course.find(courseFilter).select('_id');
-      const deptCourseIds = deptCourses.map(c => c._id);
-      assessmentQuery.course = { $in: deptCourseIds };
-    }
+      // Check Department Scope
+      // Handle legacy string department vs new ObjectId
+      if (departmentId) {
+        return a.course.departmentId && a.course.departmentId.toString() === departmentId.toString();
+      }
+      // Legacy fallback
+      return a.course.department === department;
+    });
 
-    if (assessmentIds) {
-      assessmentQuery._id = { $in: assessmentIds };
-    }
+    // 3. Extract and Flatten Questions
+    let allQuestions = [];
 
-    // Fetch Assessments with minimal fields needed for filtering logic
-    const assessments = await Assessment.find(assessmentQuery)
-      .populate('course', 'name code')
-      .populate('facultyQuestions.faculty', 'name')
-      .lean();
+    scopedAssessments.forEach(assessment => {
+      if (!assessment.facultyQuestions) return;
 
-    if (!assessments.length) {
-      return res.status(200).json([]);
-    }
-
-    // 3. Aggregate Question IDs from Assessments
-    const questionMetaMap = new Map();
-
-    assessments.forEach(assessment => {
       assessment.facultyQuestions.forEach(fq => {
-        // Filter by Faculty if requested
-        if (facultyIds && !facultyIds.includes(fq.faculty._id.toString())) return;
+        // Filter by Faculty ID if provided
+        if (facultyIds && (!fq.faculty || !facultyIds.includes(fq.faculty._id.toString()))) {
+          return;
+        }
+
+        if (!fq.sets) return;
 
         fq.sets.forEach(set => {
-          // Filter by Status if requested
-          if (statuses && !statuses.includes(set.hodStatus)) return;
+          // Filter by Status if provided
+          if (statuses && !statuses.includes(set.hodStatus)) {
+            return;
+          }
 
-          set.questions.forEach(qId => {
-            // Store metadata. Last one wins if duplicate.
-            questionMetaMap.set(qId.toString(), {
-              status: set.hodStatus,
-              facultyName: fq.faculty.name,
+          if (!set.questions) return;
+
+          set.questions.forEach(q => {
+            // Apply Question-Level Filters (Bloom, CO)
+            // Note: We populated questions, so 'q' is the question object
+            if (bloomLevels && !bloomLevels.includes(q.bloomLevel)) return;
+            // CO Filter: q.courseOutcome might be single string or array? Schema says string.
+            // If comma-separated, we might need flexible matching. Assuming exact match for now.
+            if (courseOutcomes && !courseOutcomes.includes(q.courseOutcome)) return;
+
+            allQuestions.push({
+              _id: q._id,
+              text: q.text,
+              type: q.type,
+              bloomLevel: q.bloomLevel,
+              courseOutcome: q.courseOutcome,
+              marks: q.marks,
+              image: q.image,
+              status: q.status, // Approval status of individual question
+              // Context Metadata
               assessmentName: assessment.name,
               courseName: assessment.course.name,
               courseCode: assessment.course.code,
+              facultyName: fq.faculty ? fq.faculty.name : 'Unknown',
               setName: set.setName,
-              marks: 0 // Will fill from Question doc
+              setStatus: set.hodStatus
             });
           });
         });
       });
     });
 
-    const candidateQuestionIds = Array.from(questionMetaMap.keys());
-
-    if (candidateQuestionIds.length === 0) {
-      return res.status(200).json([]);
-    }
-
-    // 4. Query Actual Questions Collection
-    const questionQuery = { _id: { $in: candidateQuestionIds } };
-
-    if (types) questionQuery.type = { $in: types };
-    if (bloomLevels) questionQuery.bloomLevel = { $in: bloomLevels };
-    if (courseOutcomes) questionQuery.courseOutcome = { $in: courseOutcomes };
-
-    const questions = await Question.find(questionQuery).lean();
-
-    // 5. Merge Metadata and Return
-    const finalResult = questions.map(q => {
-      const meta = questionMetaMap.get(q._id.toString());
-      return {
-        _id: q._id,
-        text: q.text,
-        type: q.type,
-        marks: q.marks,
-        bloomLevel: q.bloomLevel,
-        courseOutcome: q.courseOutcome,
-        // Metadata from Assessment context
-        status: meta.status,
-        facultyName: meta.facultyName,
-        assessmentName: meta.assessmentName,
-        courseName: meta.courseName,
-        courseCode: meta.courseCode,
-        setName: meta.setName
-      };
-    });
-
-    res.status(200).json(finalResult);
+    res.status(200).json(allQuestions);
 
   } catch (error) {
-    console.error("Master Filter Error:", error);
+    console.error('Master Filter Error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.updateCourseOutcomes = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { courseOutcomes } = req.body;
+
+    // Validation
+    if (!courseOutcomes || !Array.isArray(courseOutcomes)) {
+      return res.status(400).json({ message: 'Invalid Course Outcomes data' });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // AUTH CHECK: Must be Admin, HOD of the department, or Coordinator
+    const isOwner = req.user.role === 'Admin' ||
+      (course.departmentId?.toString() === req.user.departmentId?.toString()) ||
+      (course.department === req.user.department) ||
+      (course.coordinator?.toString() === req.user.id);
+
+    if (!isOwner) {
+      return res.status(403).json({ message: 'Not authorized to update this course' });
+    }
+
+    course.courseOutcomes = courseOutcomes;
+    await course.save();
+
+    res.status(200).json({ message: 'Course Outcomes updated successfully', courseOutcomes: course.courseOutcomes });
+  } catch (error) {
+    console.error('Update Course Outcomes Error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

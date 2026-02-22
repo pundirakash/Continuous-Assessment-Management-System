@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import CoursesList from '../components/FacultyPanel/CoursesList';
@@ -33,6 +33,8 @@ const FacultyDashboard = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedSetForReview, setSelectedSetForReview] = useState(null);
   const [reviewContext, setReviewContext] = useState(null);
+  const notificationRef = useRef(null);
+  const userMenuRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -69,6 +71,20 @@ const FacultyDashboard = () => {
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Click Outside Listener
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleLogout = () => {
@@ -137,96 +153,114 @@ const FacultyDashboard = () => {
       ) : null}
 
       {/* Modern Light Header */}
-      <header className="dashboard-header-light d-flex align-items-center justify-content-between px-4 py-2 bg-white border-bottom sticky-top" style={{ height: '80px', zIndex: 1000, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-        <div className="d-flex align-items-center gap-4">
-          <BrandLogo textSize="fs-4" />
-          <div style={{ height: '30px', width: '1px', background: '#e2e8f0' }}></div>
-          <div>
+      <header className="dashboard-header-light d-flex align-items-center justify-content-between px-3 px-md-4 py-2 bg-white border-bottom sticky-top shadow-sm" style={{ height: '72px', zIndex: 1000 }}>
+        <div className="d-flex align-items-center gap-2 gap-md-4">
+          <BrandLogo textSize="fs-5 fs-md-4" />
+          <div className="d-none d-md-block" style={{ height: '24px', width: '1px', background: '#e2e8f0' }}></div>
+          <div className="header-greeting d-none d-lg-block">
             <h1 className="m-0 fs-5 fw-bold text-dark">{getGreeting()}, {user.username.split(' ')[0]}</h1>
-            <span className="small text-muted fw-bold" style={{ fontSize: '0.85rem' }}>{user.department} • {user.uid}</span>
+            <span className="small text-muted fw-bold" style={{ fontSize: '0.8rem' }}>{user.department}</span>
           </div>
         </div>
 
-        <div className="d-flex align-items-center gap-3">
-          <TermSelector />
-          <div className="bg-light px-3 py-2 rounded-3 fw-bold text-secondary small border">
+        <div className="header-actions d-flex align-items-center gap-2 gap-md-3">
+          <div className="term-selector-wrapper">
+            <TermSelector />
+          </div>
+
+          <div className="bg-light px-3 py-1 rounded-pill fw-bold text-secondary small border d-none d-xl-flex align-items-center" style={{ height: '36px' }}>
             {currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
           </div>
 
-          {/* Notifications */}
-          <div className="position-relative pointer" onClick={async () => {
-            const newShow = !showNotifications;
-            setShowNotifications(newShow);
-            if (newShow && notifications.some(n => !n.read)) {
-              try {
-                await userService.markNotificationsRead();
-                setNotifications(notifications.map(n => ({ ...n, read: true })));
-              } catch (e) {
-                console.error('Failed to mark read', e);
-              }
-            }
-          }} style={{ cursor: 'pointer' }}>
-            <div className="p-2 rounded-circle hover-bg-light transition-all">
-              <FaBell className="text-secondary fs-5" />
-            </div>
-            {notifications.filter(n => !n.read && typeof n !== 'string').length > 0 && (
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white">
-                {notifications.filter(n => !n.read && typeof n !== 'string').length}
-              </span>
-            )}
-            {showNotifications && (
-              <div className="dropdown-menu-custom show">
-                <div className="dropdown-body">
-                  {notifications.length > 0 ? (
-                    notifications.map((n, i) => {
-                      const isObj = typeof n === 'object' && n !== null;
-                      const rawText = isObj ? n.message : n;
-                      const createdAt = isObj ? n.createdAt : null;
-                      const cleanText = rawText.replace(/Dear\s+.*?,/, '').trim();
-                      let timeAgo = 'Just now';
-                      if (createdAt) {
-                        const seconds = Math.floor((new Date() - new Date(createdAt)) / 1000);
-                        if (seconds > 86400) timeAgo = Math.floor(seconds / 86400) + "d ago";
-                        else if (seconds > 3600) timeAgo = Math.floor(seconds / 3600) + "h ago";
-                        else timeAgo = Math.floor(seconds / 60) + "m ago";
-                      }
-                      return (
-                        <div key={i} className={`dropdown-item-text d-flex gap-3 align-items-start ${isObj && !n.read ? 'bg-light' : ''}`}>
-                          <div className="mt-1 text-primary"><FaBell /></div>
-                          <div>
-                            <p className="m-0 text-dark small" style={{ lineHeight: '1.4' }}>{cleanText}</p>
-                            <span className="text-xs text-muted fw-bold" style={{ fontSize: '0.7rem' }}>{timeAgo}</span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : <p className="text-muted p-3 m-0 small">No new notifications</p>}
-                </div>
+          <div className="d-flex align-items-center gap-2 gap-md-3">
+            {/* Notifications */}
+            <div className="position-relative" ref={notificationRef}>
+              <div
+                className="header-pill rounded-circle"
+                onClick={async () => {
+                  const newShow = !showNotifications;
+                  setShowNotifications(newShow);
+                  if (newShow) setShowUserMenu(false); // Mutually exclusive
+                  if (newShow && notifications.some(n => !n.read)) {
+                    try {
+                      await userService.markNotificationsRead();
+                      setNotifications(notifications.map(n => ({ ...n, read: true })));
+                    } catch (e) {
+                      console.error('Failed to mark read', e);
+                    }
+                  }
+                }}
+                style={{ cursor: 'pointer', width: '36px', height: '36px' }}
+              >
+                <FaBell className="text-secondary" style={{ fontSize: '14px' }} />
               </div>
-            )}
-          </div>
-
-          {/* User Menu */}
-          <div className="d-flex align-items-center gap-2 p-2 rounded-3 hover-bg-light cursor-pointer position-relative" onClick={() => setShowUserMenu(!showUserMenu)} style={{ cursor: 'pointer' }}>
-            <div className="bg-light rounded-circle p-1 border">
-              <FaUserCircle className="text-secondary fs-4" />
-            </div>
-            <FaChevronDown className="text-muted small" />
-            {showUserMenu && (
-              <div className="dropdown-menu-custom show">
-                <div className="dropdown-item-action p-3 hover-bg-light cursor-pointer d-flex align-items-center gap-2" onClick={() => setShowChangePasswordModal(true)}>
-                  <FaKey className="text-muted" /> Change Password
-                </div>
-                {user.role === 'HOD' && (
-                  <div className="dropdown-item-action p-3 hover-bg-light cursor-pointer d-flex align-items-center gap-2" onClick={() => navigate('/hod')}>
-                    <FaUserCircle className="text-primary" /> Switch to HOD Panel
+              {notifications.filter(n => !n.read && typeof n !== 'string').length > 0 && (
+                <span className="badge rounded-pill bg-danger notification-badge-custom">
+                  {notifications.filter(n => !n.read && typeof n !== 'string').length}
+                </span>
+              )}
+              {showNotifications && (
+                <div className="dropdown-menu-custom show">
+                  <div className="dropdown-header border-bottom p-3">
+                    <h6 className="m-0 fw-bold">Notifications</h6>
                   </div>
-                )}
-                <div className="dropdown-item-action p-3 hover-bg-light cursor-pointer d-flex align-items-center gap-2 text-danger" onClick={() => handleLoading(handleLogout)}>
-                  <FaSignOutAlt /> Logout
+                  <div className="dropdown-body">
+                    {notifications.length > 0 ? (
+                      notifications.map((n, i) => {
+                        const isObj = typeof n === 'object' && n !== null;
+                        const rawText = isObj ? n.message : n;
+                        const cleanText = rawText.replace(/Dear\s+.*?,/, '').trim();
+                        return (
+                          <div key={i} className={`dropdown-item-text d-flex gap-2 align-items-start ${isObj && !n.read ? 'bg-light' : ''}`}>
+                            <div className="mt-1 text-primary small"><FaBell /></div>
+                            <div>
+                              <p className="m-0 text-dark" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>{cleanText}</p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : <p className="text-muted p-3 m-0 small text-center">No notifications</p>}
+                  </div>
                 </div>
+              )}
+            </div>
+
+            {/* User Menu */}
+            <div className="position-relative" ref={userMenuRef}>
+              <div
+                className="header-pill rounded-pill gap-2 px-2 py-1 cursor-pointer"
+                style={{ height: '36px' }}
+                onClick={() => {
+                  const newShow = !showUserMenu;
+                  setShowUserMenu(newShow);
+                  if (newShow) setShowNotifications(false); // Mutually exclusive
+                }}
+              >
+                <div className="bg-light rounded-circle d-flex align-items-center justify-content-center" style={{ width: '24px', height: '24px' }}>
+                  <FaUserCircle className="text-secondary" style={{ fontSize: '14px' }} />
+                </div>
+                <FaChevronDown className="text-muted d-none d-md-block" style={{ fontSize: '10px' }} />
               </div>
-            )}
+              {showUserMenu && (
+                <div className="dropdown-menu-custom show dropdown-menu-end">
+                  <div className="dropdown-item-action p-3 hover-bg-light cursor-pointer d-flex align-items-center gap-2" onClick={() => {
+                    setShowUserMenu(false);
+                    setShowChangePasswordModal(true);
+                  }}>
+                    <FaKey className="text-muted" /> Change Password
+                  </div>
+                  {user.role === 'HOD' && (
+                    <div className="dropdown-item-action p-3 hover-bg-light cursor-pointer d-flex align-items-center gap-2" onClick={() => navigate('/hod')}>
+                      <FaUserCircle className="text-primary" /> Switch to HOD Panel
+                    </div>
+                  )}
+                  <div className="dropdown-item-divider border-top my-1"></div>
+                  <div className="dropdown-item-action p-3 hover-bg-light cursor-pointer d-flex align-items-center gap-2 text-danger" onClick={() => handleLoading(handleLogout)}>
+                    <FaSignOutAlt /> Logout
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -357,49 +391,51 @@ const FacultyDashboard = () => {
                     {pendingApprovals.length} Pending
                   </span>
                 </div>
-                <div className="row g-4">
-                  {pendingApprovals.map((item, idx) => (
-                    <div className="col-md-6 col-lg-4" key={idx}>
-                      <div className="card h-100 border-0 shadow-sm hover-lift" style={{ borderRadius: '15px' }}>
-                        <div className="card-body p-4 d-flex flex-column">
-                          <div className="d-flex justify-content-between align-items-start mb-3">
-                            <div className="bg-warning bg-opacity-10 text-warning px-3 py-1 rounded-pill small fw-bold text-uppercase letter-spacing-1">
-                              Pending Review
-                            </div>
-                            <div className="text-muted small">
-                              <FaClock className="me-1" /> Today
-                            </div>
-                          </div>
-
-                          <h6 className="card-title fw-bold text-dark mb-1">{item.setName}</h6>
-                          <div className="mb-3">
-                            <div className="text-primary small fw-bold">{item.courseName}</div>
-                            <div className="text-muted x-small">{item.courseCode}</div>
-                          </div>
-
-                          <div className="mt-auto">
-                            <div className="d-flex align-items-center mb-3 p-2 bg-light rounded-3">
-                              <div className="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center me-3" style={{ width: '32px', height: '32px' }}>
-                                <span className="fw-bold text-primary small">{(item.facultyName || '?').charAt(0)}</span>
+                <div className="overflow-y-auto custom-scrollbar pe-2 pb-2" style={{ maxHeight: '450px', overflowX: 'hidden' }}>
+                  <div className="row g-4">
+                    {pendingApprovals.map((item, idx) => (
+                      <div className="col-md-6 col-lg-4" key={idx}>
+                        <div className="card h-100 border-0 shadow-sm hover-lift" style={{ borderRadius: '15px' }}>
+                          <div className="card-body p-4 d-flex flex-column">
+                            <div className="d-flex justify-content-between align-items-start mb-3">
+                              <div className="bg-warning bg-opacity-10 text-warning px-3 py-1 rounded-pill small fw-bold text-uppercase letter-spacing-1">
+                                Pending Review
                               </div>
-                              <div>
-                                <div className="small text-muted text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Submitted By</div>
-                                <div className="fw-bold text-dark small">{item.facultyName || 'Unknown'}</div>
+                              <div className="text-muted small">
+                                <FaClock className="me-1" /> Today
                               </div>
                             </div>
 
-                            <button
-                              className="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm btn-sm"
-                              onClick={() => handleReviewClick(item)}
-                              style={{ background: 'linear-gradient(to right, #f59e0b, #ea580c)', border: 'none' }}
-                            >
-                              Review Set
-                            </button>
+                            <h6 className="card-title fw-bold text-dark mb-1">{item.setName}</h6>
+                            <div className="mb-3">
+                              <div className="text-primary small fw-bold">{item.courseName}</div>
+                              <div className="text-muted x-small">{item.courseCode}</div>
+                            </div>
+
+                            <div className="mt-auto">
+                              <div className="d-flex align-items-center mb-3 p-2 bg-light rounded-3">
+                                <div className="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center me-3" style={{ width: '32px', height: '32px' }}>
+                                  <span className="fw-bold text-primary small">{(item.facultyName || '?').charAt(0)}</span>
+                                </div>
+                                <div>
+                                  <div className="small text-muted text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Submitted By</div>
+                                  <div className="fw-bold text-dark small">{item.facultyName || 'Unknown'}</div>
+                                </div>
+                              </div>
+
+                              <button
+                                className="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm btn-sm"
+                                onClick={() => handleReviewClick(item)}
+                                style={{ background: 'linear-gradient(to right, #f59e0b, #ea580c)', border: 'none' }}
+                              >
+                                Review Set
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

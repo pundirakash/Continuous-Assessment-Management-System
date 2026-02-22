@@ -12,7 +12,11 @@ const courseSchema = new mongoose.Schema({
   schoolId: { type: mongoose.Schema.Types.ObjectId, ref: 'School' },
   universityId: { type: mongoose.Schema.Types.ObjectId, ref: 'University' },
   activeTerms: [{ type: String }],
-  isDeleted: { type: Boolean, default: false }
+  isDeleted: { type: Boolean, default: false },
+  courseOutcomes: [{
+    code: { type: String, required: true }, // e.g., "CO1"
+    description: { type: String, required: true } // e.g., "Analyze process scheduling algorithms"
+  }]
 });
 
 // Compound index: A code is unique within a school

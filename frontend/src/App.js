@@ -13,6 +13,7 @@ import PrivateRoute from './utils/PrivateRoute';
 import RoleSelection from './pages/RoleSelection';
 import Footer from './components/Footer';
 import NetworkStatusModal from './components/NetworkStatusModal'; // Import the new modal
+import SessionExpiredModal from './components/SessionExpiredModal'; // Import the session expired modal
 import "bootstrap/dist/css/bootstrap.min.css";
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './App.css';
@@ -20,6 +21,7 @@ import { TermProvider } from './context/TermContext';
 
 function App() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isSessionExpired, setIsSessionExpired] = useState(false);
 
   // Handler for network changes
   useEffect(() => {
@@ -36,9 +38,19 @@ function App() {
     };
   }, []);
 
+  // Handler for session expiration
+  useEffect(() => {
+    const handleSessionExpired = () => setIsSessionExpired(true);
+    window.addEventListener('sessionExpired', handleSessionExpired);
+    return () => {
+      window.removeEventListener('sessionExpired', handleSessionExpired);
+    };
+  }, []);
+
   return (
     <Router>
       <NetworkStatusModal show={isOffline} handleClose={() => setIsOffline(false)} />
+      {isSessionExpired && <SessionExpiredModal />}
       <TermProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

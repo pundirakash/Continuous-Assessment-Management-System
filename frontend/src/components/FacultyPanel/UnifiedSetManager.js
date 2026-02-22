@@ -6,13 +6,14 @@ import CreateSetModal from './CreateSetModal';
 // Duplicate removed
 // import LoadingSpinner from '../LoadingSpinner';
 import SkeletonLoader from '../SkeletonLoader';
-import { FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
 
 const UnifiedSetManager = ({ assessment, courseId }) => {
     const [sets, setSets] = useState([]);
     const [activeSet, setActiveSet] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showCreateSetModal, setShowCreateSetModal] = useState(false);
+    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
 
     const fetchSets = useCallback(async () => {
         setLoading(true);
@@ -60,29 +61,31 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
         setActiveSet(set);
     };
 
-    const handleDeleteSet = async () => {
+    const handleDeleteSet = () => {
+        if (!activeSet) return;
+        setShowDeleteConfirmModal(true);
+    };
+
+    const confirmDeleteSet = async () => {
         if (!activeSet) return;
 
-        const confirmDelete = window.confirm(`⚠️ ARE YOU ABSOLUTELY SURE?\n\nDeleting Set ${activeSet.setName} will PERMANENTLY remove all questions uploaded in this set.\n\nThis action cannot be undone.`);
+        setLoading(true);
+        setShowDeleteConfirmModal(false);
+        try {
+            const token = localStorage.getItem('token');
+            const decoded = jwtDecode(token);
+            const facultyId = decoded._id;
 
-        if (confirmDelete) {
-            setLoading(true);
-            try {
-                const token = localStorage.getItem('token');
-                const decoded = jwtDecode(token);
-                const facultyId = decoded._id;
+            await userService.deleteSetForAssessment(assessment._id, facultyId, activeSet.setName);
 
-                await userService.deleteSetForAssessment(assessment._id, facultyId, activeSet.setName);
-
-                // Clear active set before fetching to avoid stale data issues
-                setActiveSet(null);
-                await fetchSets();
-            } catch (error) {
-                console.error("Failed to delete set", error);
-                alert(error.response?.data?.message || "Failed to delete set. Please check if it's already approved.");
-            } finally {
-                setLoading(false);
-            }
+            // Clear active set before fetching to avoid stale data issues
+            setActiveSet(null);
+            await fetchSets();
+        } catch (error) {
+            console.error("Failed to delete set", error);
+            alert(error.response?.data?.message || "Failed to delete set. Please check if it's already approved.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -121,15 +124,7 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
                 </div>
 
                 <div className="d-flex gap-2">
-                    {activeSet && (
-                        <button
-                            className="btn btn-outline-danger border-opacity-25 shadow-sm rounded-pill px-4 fw-bold hover-scale d-flex align-items-center gap-2"
-                            onClick={handleDeleteSet}
-                            disabled={['Approved', 'Approved with Remarks'].includes(activeSet.hodStatus)}
-                        >
-                            <FaTrash size={14} /> Delete Set {activeSet.setName}
-                        </button>
-                    )}
+                    {/* Delete Set action moved to QuestionsList dropdown */}
                 </div>
             </div>
 
@@ -146,6 +141,7 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
                             <QuestionsList
                                 assessment={assessment}
                                 setName={activeSet.setName}
+                                onDeleteSet={handleDeleteSet}
                             />
                         </div>
                     ) : (
@@ -165,6 +161,36 @@ const UnifiedSetManager = ({ assessment, courseId }) => {
 
             {showCreateSetModal && (
                 <CreateSetModal onClose={() => setShowCreateSetModal(false)} onSave={handleCreateSet} />
+            )}
+
+            {/* Custom Delete Confirmation Modal */}
+            {showDeleteConfirmModal && activeSet && (
+                <div className="modal-backdrop-custom d-flex align-items-center justify-content-center"
+                    style={{
+                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                        background: 'rgba(15, 23, 42, 0.7)', zIndex: 1100, backdropFilter: 'blur(4px)'
+                    }}>
+                    <div className="bg-white rounded-4 shadow-lg overflow-hidden"
+                        style={{ width: '90%', maxWidth: '400px', animation: 'zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                        <div className="p-4 text-center">
+                            <div className="d-inline-flex bg-danger bg-opacity-10 text-danger p-3 rounded-circle mb-3">
+                                <FaExclamationTriangle size={36} />
+                            </div>
+                            <h4 className="fw-bold text-dark mb-2">Delete Set {activeSet.setName}?</h4>
+                            <p className="text-muted small mb-4 px-2">
+                                You are about to permanently delete <strong>Set {activeSet.setName}</strong> and all questions inside it. This action cannot be undone.
+                            </p>
+                            <div className="d-flex gap-2 w-100">
+                                <button className="btn btn-light text-secondary border fw-bold w-50 py-2 rounded-pill" onClick={() => setShowDeleteConfirmModal(false)}>
+                                    Cancel
+                                </button>
+                                <button className="btn btn-danger text-white fw-bold w-50 py-2 rounded-pill shadow-sm" onClick={confirmDeleteSet}>
+                                    Yes, Delete Set
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

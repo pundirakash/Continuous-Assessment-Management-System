@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+dotenv.config();
 const path = require('path');
 
 const authRoutes = require('./routes/authRoutes');
@@ -12,7 +13,6 @@ const facultyRoutes = require('./routes/facultyRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 
 
-dotenv.config();
 const app = express();
 const corsOptions = {
   origin: `${process.env.ORIGIN}` || 'https://continuous-assessment-management-system.vercel.app',

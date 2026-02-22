@@ -21,7 +21,8 @@ const {
   downloadImportTemplate,
   bulkImportQuestions,
   undoBulkImport,
-  deleteMultipleQuestions
+  deleteMultipleQuestions,
+  reviewQuestionsWithAI
 
 } = require('../controllers/facultyController');
 const auth = require('../middleware/auth');
@@ -54,5 +55,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post('/bulk-import', auth(['Faculty', 'CourseCoordinator', 'HOD']), upload.single('file'), bulkImportQuestions);
 router.post('/undo-bulk-import', auth(['Faculty', 'CourseCoordinator', 'HOD']), undoBulkImport);
 router.post('/delete-multiple-questions', auth(['Faculty', 'CourseCoordinator', 'HOD']), deleteMultipleQuestions);
+
+
+// AI Review Route
+router.post('/ai-review', auth(['Faculty', 'CourseCoordinator', 'HOD']), reviewQuestionsWithAI);
 
 module.exports = router;

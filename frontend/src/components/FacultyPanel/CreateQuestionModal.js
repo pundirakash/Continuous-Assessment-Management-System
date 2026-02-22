@@ -35,6 +35,16 @@ const CreateQuestionModal = ({ assessmentId, setName, assessmentType, onQuestion
   }, [type]);
 
   const handleCreate = async () => {
+    if (!text.trim()) {
+      alert('Please enter a Question Statement.');
+      return;
+    }
+
+    if (!marks || isNaN(marks) || marks <= 0) {
+      alert('Please enter a valid number of marks.');
+      return;
+    }
+
     if (!bloomLevel || !courseOutcome) {
       alert('Please select a Bloom Level and a Course Outcome.');
       return;

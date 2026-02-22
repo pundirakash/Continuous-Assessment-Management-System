@@ -5,6 +5,7 @@ const assessmentSchema = new mongoose.Schema({
   course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
   termId: { type: Number, required: true },
   type: { type: String, required: true },
+  validCOs: [{ type: String }], // e.g., ["CO1", "CO2"]
   facultyQuestions: [{
     faculty: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     sets: [{
@@ -22,11 +23,14 @@ const assessmentSchema = new mongoose.Schema({
         action: { type: String, required: true }, // 'Created', 'Submitted', 'Approved', 'Rejected', 'Downloaded', 'Bulk Imported'
         date: { type: Date, default: Date.now },
         userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        userName: { type: String },
+        userUID: { type: String },
         details: { type: String }
       }],
       approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       approvedByName: { type: String },
-      approvalDate: { type: Date }
+      approvalDate: { type: Date },
+      aiReviewData: { type: mongoose.Schema.Types.Mixed } // Stores the JSON analysis from AI
     }]
   }],
 });

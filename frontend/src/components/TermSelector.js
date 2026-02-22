@@ -15,28 +15,28 @@ const TermSelector = () => {
     terms.sort().reverse();
 
     return (
-        <div className="dropdown" style={{ position: 'relative' }}>
+        <div className="dropdown term-selector-dropdown" style={{ position: 'relative' }}>
             <button
-                className="btn d-flex align-items-center gap-3 px-4 py-2 bg-white border shadow-sm"
-                style={{ borderRadius: '16px', transition: 'all 0.2s', minWidth: '220px' }}
+                className="btn d-flex align-items-center gap-1 gap-md-3 px-2 px-md-4 py-2 bg-white border shadow-sm term-selector-btn"
+                style={{ borderRadius: '16px', transition: 'all 0.2s', minWidth: 'auto' }}
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-                <div className="d-flex align-items-center justify-content-center bg-indigo-50 text-indigo rounded-circle"
-                    style={{ width: '32px', height: '32px', backgroundColor: '#e0e7ff', color: '#4f46e5' }}>
-                    <FaCalendarAlt size={14} />
+                <div className="d-flex align-items-center justify-content-center bg-indigo-50 text-indigo rounded-circle d-none d-sm-flex"
+                    style={{ width: '28px', height: '28px', backgroundColor: '#e0e7ff', color: '#4f46e5' }}>
+                    <FaCalendarAlt size={12} />
                 </div>
                 <div className="d-flex flex-column align-items-start lh-1">
-                    <span className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.5px' }}>CURRENT TERM</span>
-                    <span className="fw-bold text-dark" style={{ fontSize: '1.1rem' }}>{selectedTerm}</span>
+                    <span className="text-muted d-none d-md-block" style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.5px' }}>CURRENT TERM</span>
+                    <span className="fw-bold text-dark" style={{ fontSize: '0.95rem' }}>{selectedTerm}</span>
                 </div>
-                <div className="ms-auto d-flex align-items-center gap-2">
+                <div className="ms-md-2 d-flex align-items-center gap-1">
                     {selectedTerm === currentTerm && (
-                        <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1" style={{ fontSize: '10px' }}>Active</span>
+                        <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 d-none d-md-inline" style={{ fontSize: '9px' }}>Active</span>
                     )}
-                    <FaChevronDown size={12} className="text-secondary" />
+                    <FaChevronDown size={10} className="text-secondary" />
                 </div>
             </button>
 

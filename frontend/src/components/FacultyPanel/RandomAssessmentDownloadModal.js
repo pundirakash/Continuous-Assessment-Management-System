@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom';
 import userService from '../../services/userService';
 import { FaRandom, FaDownload, FaTimes } from 'react-icons/fa';
 
-const RandomAssessmentDownloadModal = ({ onClose, assessmentId, setName }) => {
-    const [numberOfQuestions, setNumberOfQuestions] = useState(1);
+const RandomAssessmentDownloadModal = ({ onClose, assessmentId, setName, totalQuestions }) => {
+    const [numberOfQuestions, setNumberOfQuestions] = useState(totalQuestions || 1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 

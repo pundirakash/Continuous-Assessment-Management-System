@@ -25,6 +25,7 @@ const FacultyWorkloadModal = ({ show, handleClose, faculty, courses, handleDeall
     // Approval State
     const [remarks, setRemarks] = useState('');
     const [actionType, setActionType] = useState(null); // 'approve' | 'reject' | null
+    const [rejectError, setRejectError] = useState('');
 
     // Edit Question State
     const [showEditModal, setShowEditModal] = useState(false);
@@ -116,7 +117,7 @@ const FacultyWorkloadModal = ({ show, handleClose, faculty, courses, handleDeall
 
     const submitDecision = async (status) => {
         if (status === 'Rejected' && !remarks.trim()) {
-            alert("Please provide remarks for rejection.");
+            setRejectError("Please provide a reason for rejection.");
             return;
         }
 
@@ -511,19 +512,30 @@ const FacultyWorkloadModal = ({ show, handleClose, faculty, courses, handleDeall
                                                             </div>
 
                                                             <textarea
-                                                                className="form-control bg-light border-0 rounded-3 mb-4 small p-3 custom-input"
+                                                                className={`form-control bg-light border-0 rounded-3 mb-1 small p-3 custom-input ${rejectError ? 'is-invalid border-danger' : ''}`}
                                                                 rows="4"
                                                                 style={{ fontSize: '14px', resize: 'none' }}
                                                                 placeholder={actionType === 'approve' ? "Add any commendations or notes for the faculty..." : "Please specify exactly what needs to be corrected..."}
                                                                 value={remarks}
-                                                                onChange={(e) => setRemarks(e.target.value)}
+                                                                onChange={(e) => {
+                                                                    setRemarks(e.target.value);
+                                                                    setRejectError('');
+                                                                }}
                                                                 autoFocus
                                                             ></textarea>
+
+                                                            {rejectError && actionType === 'reject' && (
+                                                                <div className="text-danger x-small fw-bold mb-3 px-1 animate__animated animate__headShake d-flex align-items-center gap-1">
+                                                                    <i className="bi bi-exclamation-circle-fill"></i> {rejectError}
+                                                                </div>
+                                                            )}
+
+                                                            <div className={!(rejectError && actionType === 'reject') ? "mb-4" : ""}></div>
 
                                                             <div className="d-flex gap-2">
                                                                 <button
                                                                     className="btn btn-light btn-sm flex-grow-1 rounded-pill fw-bold py-2"
-                                                                    onClick={() => { setActionType(null); setRemarks(''); }}
+                                                                    onClick={() => { setActionType(null); setRemarks(''); setRejectError(''); }}
                                                                 >
                                                                     Cancel
                                                                 </button>

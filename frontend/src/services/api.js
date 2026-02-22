@@ -26,9 +26,9 @@ api.interceptors.response.use(
     (error) => {
         if (error.response && error.response.status === 401) {
             // Token expired or unauthorized
-            alert("Your session has expired. Please login again.");
             localStorage.removeItem('token');
-            window.location.href = '/'; // Redirect to login page
+            // Dispatch event to show the nice Bootstrap modal
+            window.dispatchEvent(new Event('sessionExpired'));
         }
         return Promise.reject(error);
     }

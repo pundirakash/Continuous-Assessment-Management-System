@@ -11,7 +11,8 @@ const questionSchema = new mongoose.Schema({
   image: { type: String },
   status: { type: String, enum: ['Pending', 'Submitted', 'Approved', 'Rejected'] },
   solution: { type: String },
-  batchId: { type: String } // Track groups of imported questions
+  batchId: { type: String }, // Track groups of imported questions
+  isManuallyFixed: { type: Boolean, default: false } // Track if AI fixes were applied
 });
 
 module.exports = mongoose.model('Question', questionSchema);

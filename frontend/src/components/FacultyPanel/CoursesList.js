@@ -52,6 +52,7 @@ const CoursesList = ({ onCourseSelect }) => {
         <div className="hero-courses-container">
           {courses.map((course, index) => (
             <div
+              key={course._id || index}
               className={`course-hero-card gradient-${index % 4}`}
               onClick={() => onCourseSelect(course)}
             >

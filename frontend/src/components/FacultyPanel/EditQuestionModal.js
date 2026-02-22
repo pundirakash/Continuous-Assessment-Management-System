@@ -65,6 +65,16 @@ const EditQuestionModal = ({ question, onClose, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.text || !formData.text.trim()) {
+      alert("Please enter a Question Statement.");
+      return;
+    }
+
+    if (!formData.marks || isNaN(formData.marks) || formData.marks <= 0) {
+      alert("Please enter a valid number of marks.");
+      return;
+    }
+
     if (formData.type === 'MCQ' && formData.options.some(opt => !opt.trim())) {
       alert("Please fill all options for MCQ");
       return;

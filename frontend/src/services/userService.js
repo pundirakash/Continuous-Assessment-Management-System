@@ -55,6 +55,10 @@ const createQuestion = async (questionData) => {
   return response.data;
 };
 
+const addQuestionToSet = async (assessmentId, setName, questionData) => {
+  return await createQuestion({ ...questionData, assessmentId, setName });
+};
+
 const register = async (userData) => {
   const response = await api.post(`${API_URL}/register`, userData);
   return response.data;
@@ -70,6 +74,12 @@ const deleteQuestion = async (questionId) => {
   return response.data;
 };
 
+const deleteQuestionFromSet = async (assessmentId, setName, questionId) => {
+  await deleteQuestion(questionId);
+  return await getSetsForAssessment(assessmentId);
+};
+
+
 const deleteMultipleQuestions = async (assessmentId, setName, questionIds) => {
   const response = await api.post(`${API_URL_FACULTY}/delete-multiple-questions`, {
     assessmentId,
@@ -84,15 +94,17 @@ const editQuestion = async (questionId, questionData) => {
   return response.data;
 };
 
-const downloadAssessment = async (assessmentId, setName, templateNumber) => {
-  const response = await api.get(`${API_URL_FACULTY}/download-assessment/${assessmentId}/${setName}/${templateNumber}`, {
+const downloadAssessment = async (assessmentId, setName, templateNumber, facultyId = null) => {
+  const query = facultyId ? `?facultyId=${facultyId}` : '';
+  const response = await api.get(`${API_URL_FACULTY}/download-assessment/${assessmentId}/${setName}/${templateNumber}${query}`, {
     responseType: 'blob'
   });
   return response.data;
 };
 
-const downloadSolution = async (assessmentId, setName, templateNumber) => {
-  const response = await api.get(`${API_URL_FACULTY}/download-solution/${assessmentId}/${setName}/${templateNumber}`, {
+const downloadSolution = async (assessmentId, setName, templateNumber, facultyId = null) => {
+  const query = facultyId ? `?facultyId=${facultyId}` : '';
+  const response = await api.get(`${API_URL_FACULTY}/download-solution/${assessmentId}/${setName}/${templateNumber}${query}`, {
     responseType: 'blob'
   });
   return response.data;
@@ -352,6 +364,11 @@ const renameSchool = async (id, name) => {
   return response.data;
 };
 
+const updateQuestionInSet = async (assessmentId, setName, questionId, questionData) => {
+  await editQuestion(questionId, questionData);
+  return await getSetsForAssessment(assessmentId);
+};
+
 const userService = {
   register,
   assignRole,
@@ -361,9 +378,13 @@ const userService = {
   getSetsForAssessment,
   getQuestionsForSet,
   createQuestion,
+  addQuestionToSet,
   deleteQuestion,
+  deleteQuestionFromSet,
   deleteMultipleQuestions,
+
   editQuestion,
+  updateQuestionInSet,
   downloadAssessment,
   downloadSolution,
   createSetForAssessment,
@@ -473,6 +494,22 @@ const userService = {
       console.error('Error downloading pendency report:', error);
       throw error;
     }
+  },
+
+  reviewQuestionsWithAI: async (assessmentId, setName, questions, facultyId = null) => {
+    const response = await api.post(`${API_URL_FACULTY}/ai-review`, {
+      assessmentId,
+      setName,
+      questions,
+      facultyId
+    });
+    return response.data;
+  },
+
+  updateCourseCOs: async (courseId, courseOutcomes) => {
+    // Using a new endpoint for HOD to update specific course details
+    const response = await api.put(`${API_URL_HOD}/course/${courseId}/outcomes`, { courseOutcomes });
+    return response.data;
   }
 };
 
