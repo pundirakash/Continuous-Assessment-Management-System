@@ -330,7 +330,7 @@ const AIReviewModal = ({ isOpen, onClose, aiResponse, questions, loading, onAppl
                                                     review={{ ...review, isManuallyFixed: review.isManuallyFixed || isFixed }}
                                                     index={index}
                                                     isActive={activeTab === index}
-                                                    onClick={() => { setActiveTab(index); setExpandedQuestionIndex(index); }}
+                                                    onClick={() => { setActiveTab(index); }}
                                                 />
                                             );
                                         })}

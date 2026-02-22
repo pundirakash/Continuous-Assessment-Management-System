@@ -14,6 +14,7 @@ const QuestionsList = ({ assessment, setName, onDeleteSet }) => {
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [showCreateQuestion, setShowCreateQuestion] = useState(false);
   const [hodStatus, setHodStatus] = useState('');
   const [hodRemarks, setHodRemarks] = useState('');
   const [activityLog, setActivityLog] = useState([]);
