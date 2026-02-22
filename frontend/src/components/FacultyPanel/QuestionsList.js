@@ -14,9 +14,6 @@ const QuestionsList = ({ assessment, setName, onDeleteSet }) => {
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingQuestion, setEditingQuestion] = useState(null);
-  const [showCreateQuestion, setShowCreateQuestion] = useState(false);
-  const [assessmentType, setAssessmentType] = useState('');
-  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   const [hodStatus, setHodStatus] = useState('');
   const [hodRemarks, setHodRemarks] = useState('');
   const [activityLog, setActivityLog] = useState([]);
@@ -74,7 +71,6 @@ const QuestionsList = ({ assessment, setName, onDeleteSet }) => {
           const response = await userService.getQuestionsForSet(assessment._id, setName);
           setQuestions(response.data);
           await fetchSetDetails();
-          setAssessmentType(assessment.type);
         } catch (error) {
           console.error(error);
         } finally {

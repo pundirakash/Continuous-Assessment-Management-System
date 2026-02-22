@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { FaRobot, FaExclamationTriangle, FaCheckCircle, FaMagic, FaArrowRight, FaChartPie, FaCheck, FaSpinner, FaSync, FaTimes, FaLightbulb, FaUserEdit, FaExchangeAlt, FaQuestionCircle, FaWrench } from 'react-icons/fa';
+import { FaRobot, FaExclamationTriangle, FaCheckCircle, FaMagic, FaArrowRight, FaCheck, FaSpinner, FaSync, FaLightbulb, FaUserEdit, FaWrench } from 'react-icons/fa';
 
 // Memoized Sidebar Item for Performance
 const ReviewListItem = React.memo(({ review, index, isActive, onClick }) => (
@@ -76,7 +76,6 @@ const ReviewListItem = React.memo(({ review, index, isActive, onClick }) => (
  */
 const AIReviewModal = ({ isOpen, onClose, aiResponse, questions, loading, onApplyFix, onApplyAllFixes, onReRun, feedback, isHodView = false }) => {
     const [activeTab, setActiveTab] = useState('summary');
-    const [expandedQuestionIndex, setExpandedQuestionIndex] = useState(null);
     const [applyingFixId, setApplyingFixId] = useState(null);
     const [showReanalyzeConfirm, setShowReanalyzeConfirm] = useState(false);
     const [showApplyAllConfirm, setShowApplyAllConfirm] = useState(false);
