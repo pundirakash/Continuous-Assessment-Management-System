@@ -9,9 +9,17 @@ class AIRequestQueue {
         this.queue = [];
         this.processing = false;
         this.lastRequestTime = 0;
-        this.minInterval = 4000; // Minimum 4s between requests to be safe
+        this.minInterval = 1500; // Reduced for Vercel 10s timeout (Safe but aggressive)
         this.modelHealth = new Map(); // modelName -> cooldownUntil (timestamp)
-        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+        const apiKey = (process.env.GEMINI_API_KEY || "").trim();
+        if (!apiKey) {
+            console.error("[AIQueue] CRITICAL: GEMINI_API_KEY is missing from environment variables!");
+        } else if (apiKey.length < 10) {
+            console.warn(`[AIQueue] WARNING: GEMINI_API_KEY is suspiciously short (${apiKey.length} chars). Check your Vercel/Env configuration.`);
+        }
+
+        this.genAI = new GoogleGenerativeAI(apiKey);
     }
 
     /**
@@ -112,11 +120,20 @@ class AIRequestQueue {
                 const isRateLimit = err.message.includes('429') || err.message.includes('Quota');
                 const isOverloaded = err.message.includes('503') || err.message.includes('Overloaded');
 
+                // CRITICAL: If limit is 0, the project/key is blocked or exhausted per day. 
+                // Don't waste time trying other models in the same minute; it will fail.
+                const isHardLimit = isRateLimit && err.message.includes('limit: 0');
+
                 if (isRateLimit || isOverloaded) {
                     // Set Cooldown: 3m
                     const cooldownUntil = Date.now() + 180000; // 3 minutes
                     this.modelHealth.set(modelName, cooldownUntil);
                     console.warn(`[AIQueue] Marking ${modelName} for 3m cooldown.`);
+                }
+
+                if (isHardLimit) {
+                    console.error(`[AIQueue] Hard Quota Limit (0) hit for ${modelName}. Aborting failover to save timeout credits.`);
+                    break;
                 }
                 // If it was a JSON validation error, we DO NOT cooldown the model, we just let the loop continue to the next model (or retry if logic permits).
             }

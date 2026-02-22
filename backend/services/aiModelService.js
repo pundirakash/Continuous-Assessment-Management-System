@@ -1,8 +1,9 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
-const CACHE_PATH = path.join(__dirname, '../cache/model_cache.json');
+const CACHE_PATH = path.join(os.tmpdir(), 'cams_model_cache.json');
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 // Preference order for models
@@ -23,7 +24,11 @@ const PREFERRED_MODELS = [
  */
 class AIModelService {
     constructor() {
-        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        this.apiKey = (process.env.GEMINI_API_KEY || "").trim();
+        if (!this.apiKey) {
+            console.error("[AIModelService] CRITICAL: GEMINI_API_KEY is missing!");
+        }
+        this.genAI = new GoogleGenerativeAI(this.apiKey);
     }
 
     /**
@@ -44,7 +49,7 @@ class AIModelService {
 
             // Refresh cache
             console.log('[AIModelService] Refreshing model list from Gemini...');
-            const modelListResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+            const modelListResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`);
             const data = await modelListResponse.json();
 
             if (!data.models) {
