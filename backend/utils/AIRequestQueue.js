@@ -132,8 +132,9 @@ class AIRequestQueue {
                 }
 
                 if (isHardLimit) {
-                    console.error(`[AIQueue] Hard Quota Limit (0) hit for ${modelName}. Aborting failover to save timeout credits.`);
-                    break;
+                    const msg = `Gemini Quota Exhausted (Limit 0) for ${modelName}. Please check your Google AI Studio billing/plan or try a different API key.`;
+                    console.error(`[AIQueue] ${msg}`);
+                    throw new Error(msg); // Throw immediately to stop all chunks/retries
                 }
                 // If it was a JSON validation error, we DO NOT cooldown the model, we just let the loop continue to the next model (or retry if logic permits).
             }

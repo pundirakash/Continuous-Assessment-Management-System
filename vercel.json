@@ -1,0 +1,24 @@
+{
+    "version": 2,
+    "name": "cams-fullstack",
+    "functions": {
+        "backend/api/**/*.js": {
+            "maxDuration": 60
+        },
+        "backend/app.js": {
+            "maxDuration": 60
+        }
+    },
+    "builds": [
+        {
+            "src": "backend/app.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "backend/app.js"
+        }
+    ]
+}
