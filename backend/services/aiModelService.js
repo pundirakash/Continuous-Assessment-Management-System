@@ -1,7 +1,7 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const AIRequestQueue = require('../utils/AIRequestQueue');
 
 const CACHE_PATH = path.join(os.tmpdir(), 'cams_model_cache.json');
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
@@ -24,11 +24,7 @@ const PREFERRED_MODELS = [
  */
 class AIModelService {
     constructor() {
-        this.apiKey = (process.env.GEMINI_API_KEY || "").trim();
-        if (!this.apiKey) {
-            console.error("[AIModelService] CRITICAL: GEMINI_API_KEY is missing!");
-        }
-        this.genAI = new GoogleGenerativeAI(this.apiKey);
+        // AIRequestQueue singleton handles keys and genAI
     }
 
     /**
@@ -49,8 +45,19 @@ class AIModelService {
 
             // Refresh cache
             console.log('[AIModelService] Refreshing model list from Gemini...');
-            const modelListResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`);
-            const data = await modelListResponse.json();
+            let apiKey = AIRequestQueue.getActiveApiKey();
+            let modelListResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+            let data = await modelListResponse.json();
+
+            // Handle Quota Exhaustion for Model Discovery
+            if (data.error && (data.error.code === 429 || data.error.message.includes('quota'))) {
+                console.warn('[AIModelService] Quota hit during discovery. Rotating key...');
+                if (AIRequestQueue.rotateKey()) {
+                    apiKey = AIRequestQueue.getActiveApiKey();
+                    modelListResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                    data = await modelListResponse.json();
+                }
+            }
 
             if (!data.models) {
                 throw new Error('Failed to fetch models: ' + JSON.stringify(data));

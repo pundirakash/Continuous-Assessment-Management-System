@@ -11,15 +11,60 @@ class AIRequestQueue {
         this.lastRequestTime = 0;
         this.minInterval = 1500; // Reduced for Vercel 10s timeout (Safe but aggressive)
         this.modelHealth = new Map(); // modelName -> cooldownUntil (timestamp)
+        this.keyHealth = new Map(); // keyIndex -> cooldownUntil (timestamp)
 
-        const apiKey = (process.env.GEMINI_API_KEY || "").trim();
-        if (!apiKey) {
-            console.error("[AIQueue] CRITICAL: GEMINI_API_KEY is missing from environment variables!");
-        } else if (apiKey.length < 10) {
-            console.warn(`[AIQueue] WARNING: GEMINI_API_KEY is suspiciously short (${apiKey.length} chars). Check your Vercel/Env configuration.`);
+        // Load all available GEMINI_API_KEY variants
+        this.apiKeys = [
+            process.env.GEMINI_API_KEY,
+            process.env.GEMINI_API_KEY_2,
+            process.env.GEMINI_API_KEY_3,
+            process.env.GEMINI_API_KEY_4
+        ].filter(k => k && k.trim().length > 10).map(k => k.trim());
+
+        this.currentKeyIndex = 0;
+
+        if (this.apiKeys.length === 0) {
+            console.error("[AIQueue] CRITICAL: No valid GEMINI_API_KEY found in environment!");
+        } else {
+            console.log(`[AIQueue] Initialized with ${this.apiKeys.length} API keys. Using Key #1.`);
         }
 
-        this.genAI = new GoogleGenerativeAI(apiKey);
+        this.initGenAI();
+    }
+
+    initGenAI() {
+        if (this.apiKeys.length === 0) return;
+        const key = this.apiKeys[this.currentKeyIndex];
+        this.genAI = new GoogleGenerativeAI(key);
+    }
+
+    getActiveApiKey() {
+        if (this.apiKeys.length === 0) return null;
+        return this.apiKeys[this.currentKeyIndex];
+    }
+
+    /**
+     * Switches to the next available working key.
+     * @returns {boolean} True if a new key was found, false if all are exhausted.
+     */
+    rotateKey() {
+        const startIndex = this.currentKeyIndex;
+        let found = false;
+
+        for (let i = 1; i <= this.apiKeys.length; i++) {
+            const nextIndex = (startIndex + i) % this.apiKeys.length;
+            const cooldown = this.keyHealth.get(nextIndex);
+
+            if (!cooldown || cooldown < Date.now()) {
+                this.currentKeyIndex = nextIndex;
+                this.initGenAI();
+                console.log(`[AIQueue] ROTATED to Key #${this.currentKeyIndex + 1} (Sticky).`);
+                found = true;
+                break;
+            }
+        }
+
+        return found;
     }
 
     /**
@@ -120,21 +165,29 @@ class AIRequestQueue {
                 const isRateLimit = err.message.includes('429') || err.message.includes('Quota');
                 const isOverloaded = err.message.includes('503') || err.message.includes('Overloaded');
 
-                // CRITICAL: If limit is 0, the project/key is blocked or exhausted per day. 
-                // Don't waste time trying other models in the same minute; it will fail.
+                // Hard Limit = Limit 0 (Exhausted per project/day)
                 const isHardLimit = isRateLimit && err.message.includes('limit: 0');
 
-                if (isRateLimit || isOverloaded) {
-                    // Set Cooldown: 3m
-                    const cooldownUntil = Date.now() + 180000; // 3 minutes
-                    this.modelHealth.set(modelName, cooldownUntil);
-                    console.warn(`[AIQueue] Marking ${modelName} for 3m cooldown.`);
+                if (isOverloaded) {
+                    // Just cool down the model
+                    this.modelHealth.set(modelName, Date.now() + 180000); // 3m
                 }
 
-                if (isHardLimit) {
-                    const msg = `Gemini Quota Exhausted (Limit 0) for ${modelName}. Please check your Google AI Studio billing/plan or try a different API key.`;
-                    console.error(`[AIQueue] ${msg}`);
-                    throw new Error(msg); // Throw immediately to stop all chunks/retries
+                if (isRateLimit) {
+                    if (isHardLimit) {
+                        console.warn(`[AIQueue] Key #${this.currentKeyIndex + 1} exhausted (Limit 0).`);
+                        // Cool down this KEY specifically for 15 minutes
+                        this.keyHealth.set(this.currentKeyIndex, Date.now() + 15 * 60000);
+
+                        // Attempt to switch keys and retry THIS request
+                        if (this.rotateKey()) {
+                            console.log(`[AIQueue] Successfully switched keys. Retrying request...`);
+                            return await this.executeWithFailover({ prompt, systemInstruction, orderedModels, jsonMode });
+                        }
+                    } else {
+                        // Regular rate limit (per minute). Just cool down the model.
+                        this.modelHealth.set(modelName, Date.now() + 180000); // 3m
+                    }
                 }
                 // If it was a JSON validation error, we DO NOT cooldown the model, we just let the loop continue to the next model (or retry if logic permits).
             }
