@@ -6,7 +6,7 @@ import CreateSetModal from './CreateSetModal';
 // Duplicate removed
 // import LoadingSpinner from '../LoadingSpinner';
 import SkeletonLoader from '../SkeletonLoader';
-import { FaPlus, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
+import { FaPlus, FaExclamationTriangle } from 'react-icons/fa';
 
 const UnifiedSetManager = ({ assessment, courseId }) => {
     const [sets, setSets] = useState([]);

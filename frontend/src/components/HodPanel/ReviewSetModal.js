@@ -3,8 +3,7 @@ import ReactDOM from 'react-dom';
 import AIReviewModal from '../FacultyPanel/AIReviewModal'; // Import the AI Modal
 import {
     FaTrash, FaEdit, FaCheck, FaHistory,
-    FaClipboardList, FaCloudDownloadAlt, FaCheckDouble, FaImage, FaRobot, FaMagic,
-    FaCheckCircle, FaTimesCircle, FaArrowRight
+    FaClipboardList, FaCloudDownloadAlt, FaCheckDouble, FaImage, FaRobot
 } from 'react-icons/fa';
 import userService from '../../services/userService';
 

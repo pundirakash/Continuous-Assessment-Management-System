@@ -114,26 +114,6 @@ const CourseManagerModal = ({ show, handleClose, course, refreshData, currentTer
         }
     };
 
-    const handleSaveAssessment = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            if (editAssessmentId) {
-                await userService.editAssessment(editAssessmentId, newAssessment);
-            } else {
-                await userService.createAssessment(course._id, newAssessment);
-            }
-            setIsCreatingAssessment(false);
-            setEditAssessmentId(null);
-            setNewAssessment({ name: '', type: 'MCQ', termId: currentTerm });
-            const data = await userService.getAssessmentsByCourse(course._id, currentTerm);
-            setAssessments(data);
-        } catch (error) {
-            alert("Failed to save assessment");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleEditClick = (assessment) => {
         setNewAssessment({ name: assessment.name, type: assessment.type, termId: assessment.termId });

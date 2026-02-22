@@ -49,8 +49,6 @@ const QuestionsList = ({ assessment, setName, onDeleteSet }) => {
   };
 
   useEffect(() => {
-    fetchQuestions();
-
     const fetchSetDetails = async () => {
       try {
         const response = await userService.getSetsForAssessment(assessment._id);
@@ -70,9 +68,20 @@ const QuestionsList = ({ assessment, setName, onDeleteSet }) => {
     };
 
     if (assessment && setName) {
-      fetchQuestions();
-      fetchSetDetails();
-      setAssessmentType(assessment.type);
+      const fetchAll = async () => {
+        setLoading(true);
+        try {
+          const response = await userService.getQuestionsForSet(assessment._id, setName);
+          setQuestions(response.data);
+          await fetchSetDetails();
+          setAssessmentType(assessment.type);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchAll();
     }
   }, [assessment, setName]);
 
@@ -135,7 +144,7 @@ const QuestionsList = ({ assessment, setName, onDeleteSet }) => {
       setFilteredQuestions(questions.filter(q => {
         const textMatch = (q.text || "").toLowerCase().includes(lowerQuery);
         const optionsMatch = q.options && q.options.some(opt =>
-          (opt && opt.text || "").toLowerCase().includes(lowerQuery)
+          ((opt && opt.text) || "").toLowerCase().includes(lowerQuery)
         );
         return textMatch || optionsMatch;
       }));
@@ -191,16 +200,6 @@ const QuestionsList = ({ assessment, setName, onDeleteSet }) => {
     });
   };
 
-  const handleBulkImport = async (importedQuestions) => {
-    try {
-      await userService.bulkImportQuestions(assessment._id, setName, importedQuestions);
-      await fetchQuestions(); // Refresh with full documents
-      setShowBulkImportModal(false);
-    } catch (error) {
-      console.error("Bulk import failed:", error);
-      alert("Bulk import failed");
-    }
-  };
 
   const handleBulkDelete = async () => {
     if (!window.confirm(`Delete ${selectedQuestions.length} questions?`)) return;
