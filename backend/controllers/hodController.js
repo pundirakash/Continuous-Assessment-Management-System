@@ -306,18 +306,21 @@ exports.getCoursesByDepartment = async (req, res) => {
       // Filter by departmentId if available, fallback to department string
       const courseFilter = {
         isDeleted: { $ne: true },
-        $or: [
-          { activeTerms: { $in: [String(targetTerm)] } },
-          { activeTerms: { $exists: false } },
-          { activeTerms: { $size: 0 } }
+        $and: [
+          {
+            $or: [
+              { activeTerms: { $in: [String(targetTerm)] } },
+              { activeTerms: { $exists: false } },
+              { activeTerms: { $size: 0 } }
+            ]
+          }
         ]
       };
 
       if (req.user.departmentId) {
-        courseFilter.$or = courseFilter.$or || [];
-        courseFilter.$or.push({ departmentId: req.user.departmentId });
-        // Also allow matching by department name if ID is present but not on course
-        if (department) courseFilter.$or.push({ department: department });
+        const deptOr = [{ departmentId: req.user.departmentId }];
+        if (department) deptOr.push({ department: department });
+        courseFilter.$and.push({ $or: deptOr });
       } else {
         courseFilter.department = department; // Legacy
       }
