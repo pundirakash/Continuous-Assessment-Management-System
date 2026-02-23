@@ -18,6 +18,7 @@ const HodFaculty = () => {
     const [selectedFaculty, setSelectedFaculty] = useState(null);
     const [facultyCourses, setFacultyCourses] = useState([]);
     const [showCoursesModal, setShowCoursesModal] = useState(false);
+    const [loadingWorkload, setLoadingWorkload] = useState(false);
 
     useEffect(() => {
         setActiveTab('faculty');
@@ -43,16 +44,24 @@ const HodFaculty = () => {
     );
 
     const handleViewFaculty = async (faculty) => {
+        // Clear previous state to avoid stale data
+        setFacultyCourses([]);
         setSelectedFaculty(faculty);
+        setShowCoursesModal(true);
+        setLoadingWorkload(true);
+
         try {
+            if (!faculty?._id) throw new Error("Invalid faculty selected");
+
             // Fetch courses for this faculty
             const courses = await userService.getCoursesByFaculty(faculty._id, selectedTerm);
-            setFacultyCourses(courses);
-
-
-            setShowCoursesModal(true);
+            setFacultyCourses(courses || []);
         } catch (err) {
             console.error("Error loading faculty details", err);
+            // Optionally close modal or show error state? 
+            // For now, modal stays open with empty list/error message if handled.
+        } finally {
+            setLoadingWorkload(false);
         }
     };
 
@@ -170,6 +179,7 @@ const HodFaculty = () => {
                     courses={facultyCourses}
                     handleDeallocateCourse={handleDeallocateCourse}
                     currentTerm={selectedTerm}
+                    loadingWorkload={loadingWorkload}
                 />
             )}
 

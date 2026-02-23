@@ -372,8 +372,17 @@ exports.getArchivedTerms = async (req, res) => {
     const filter = {};
     if (universityId) filter.universityId = universityId;
 
-    const archives = await TermArchive.find(filter).distinct('termId');
-    res.status(200).json(archives.sort().reverse()); // Show newest first
+    // Get archived terms
+    const archivedTerms = await TermArchive.find(filter).distinct('termId');
+
+    // Get current active term
+    const config = await SystemConfig.findOne({ key: 'currentTerm', universityId });
+    const currentTerm = config ? config.value : null;
+
+    // Combine and deduplicate
+    const allTerms = [...new Set([...archivedTerms, currentTerm].filter(Boolean))];
+
+    res.status(200).json(allTerms.sort().reverse()); // Show newest first
   } catch (error) {
     res.status(500).json({ message: 'Server error fetching archives', error });
   }

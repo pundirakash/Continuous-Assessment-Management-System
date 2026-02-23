@@ -192,7 +192,15 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
 
     const handleDownloadAssessment = async (templateNumber) => {
         try {
-            const blob = await userService.downloadAssessment(assessmentId, localSetData.setName, templateNumber, facultyId);
+            // Determine template for compact format if 3 was passed but it's subjective
+            let finalTemplate = templateNumber;
+            if (templateNumber === 3) {
+                const isMCQ = localSetData.assessmentType === 'MCQ' ||
+                    (localSetData.questions.length > 0 && localSetData.questions[0].type === 'MCQ');
+                finalTemplate = isMCQ ? 3 : 4;
+            }
+
+            const blob = await userService.downloadAssessment(assessmentId, localSetData.setName, finalTemplate, facultyId);
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;

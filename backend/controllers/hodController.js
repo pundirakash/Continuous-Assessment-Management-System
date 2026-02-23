@@ -314,7 +314,10 @@ exports.getCoursesByDepartment = async (req, res) => {
       };
 
       if (req.user.departmentId) {
-        courseFilter.departmentId = req.user.departmentId;
+        courseFilter.$or = courseFilter.$or || [];
+        courseFilter.$or.push({ departmentId: req.user.departmentId });
+        // Also allow matching by department name if ID is present but not on course
+        if (department) courseFilter.$or.push({ department: department });
       } else {
         courseFilter.department = department; // Legacy
       }
@@ -614,7 +617,10 @@ exports.deallocateCourse = async (req, res) => {
     const faculty = await User.findById(facultyId);
     const course = await Course.findById(courseId);
 
-    if (!faculty || !course || faculty.department !== req.user.department) {
+    const isCourseOwner = (req.user.departmentId && course.departmentId?.toString() === req.user.departmentId.toString()) ||
+      (course.department === req.user.department);
+
+    if (!faculty || !course || !isCourseOwner) {
       return res.status(403).json({ message: 'Not authorized to deallocate this course' });
     }
 
@@ -677,8 +683,10 @@ exports.reviewAssessment = async (req, res) => {
       return res.status(404).json({ message: 'Assessment not found' });
     }
 
-    const course = await Course.findById(assessment.course);
-    if (!course || faculty.department !== req.user.department) {
+    const isCourseOwner = (req.user.departmentId && course.departmentId?.toString() === req.user.departmentId.toString()) ||
+      (course.department === req.user.department);
+
+    if (!course || !isCourseOwner) {
       return res.status(403).json({ message: 'Not authorized to review this assessment' });
     }
 
@@ -757,26 +765,46 @@ exports.getCoursesByFaculty = async (req, res) => {
     const config = await SystemConfig.findOne({ key: 'currentTerm' });
     const currentSystemTerm = config ? config.value : '24252';
 
-    const faculty = await User.findById(facultyId); // Fetch logic separated
-    if (!faculty || faculty.department !== req.user.department) {
-      return res.status(403).json({ message: 'Not authorized to view courses for this faculty' });
+    const faculty = await User.findById(facultyId);
+    if (!faculty) {
+      return res.status(404).json({ message: 'Faculty not found' });
     }
 
-    if (targetTerm === currentSystemTerm) {
-      // Re-fetch with populate FILTERED by activeTerms
-      const facultyWithCourses = await User.findById(facultyId).populate({
-        path: 'courses',
-        match: {
-          isDeleted: { $ne: true },
-          $or: [
-            { activeTerms: { $in: [String(targetTerm)] } },
-            { activeTerms: { $exists: false } }, // Legacy support
-            { activeTerms: { $size: 0 } }        // Legacy support
-          ]
-        }
+    // Safety: Ensure HOD and Faculty are in the same University OR HOD owns the course
+    const inSameUniversity = faculty.universityId?.toString() === req.user.universityId?.toString();
+    if (!inSameUniversity && faculty.universityId && req.user.universityId) {
+      return res.status(403).json({ message: 'Not authorized to view courses for faculty in another university' });
+    }
+
+    // ATTEMPT LIVE VIEW FIRST (Resilient to term mismatches)
+    const facultyWithCourses = await User.findById(facultyId).populate({
+      path: 'courses',
+      match: {
+        isDeleted: { $ne: true },
+        activeTerms: { $in: [String(targetTerm)] }
+      }
+    });
+
+    const isInternalFaculty = (req.user.departmentId && faculty.departmentId?.toString() === req.user.departmentId.toString()) ||
+      (req.user.department && faculty.department === req.user.department);
+
+    let visibleCourses = facultyWithCourses?.courses || [];
+
+    // Filter to HOD's department if faculty is external
+    if (!isInternalFaculty) {
+      visibleCourses = visibleCourses.filter(course => {
+        const matchesId = req.user.departmentId && course.departmentId && course.departmentId.toString() === req.user.departmentId.toString();
+        const matchesName = req.user.department && course.department && course.department === req.user.department;
+        // Also handling cross-type matches (e.g. HOD has ID, Course has only String name)
+        // This is safe because if the names match, they are in the same dept regardless of ID presence.
+        return matchesId || matchesName;
       });
-      return res.status(200).json(facultyWithCourses.courses);
+    }
+
+    if (visibleCourses.length > 0 || String(targetTerm) === String(currentSystemTerm)) {
+      return res.status(200).json(visibleCourses);
     } else {
+      // Fallback to archives ONLY if no live courses found and it's not the current system term
       const archives = await TermArchive.find({
         termId: targetTerm,
         facultyId: facultyId
@@ -1083,7 +1111,12 @@ exports.getSetsByFaculty = async (req, res) => {
       return res.status(404).json({ message: 'No question sets found for this faculty' });
     }
 
-    res.status(200).json(facultyQuestions.sets);
+    const setsWithType = facultyQuestions.sets.map(set => ({
+      ...set.toObject(),
+      assessmentType: assessment.type
+    }));
+
+    res.status(200).json(setsWithType);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error });
@@ -1236,6 +1269,7 @@ exports.getPendingAssessmentSets = async (req, res) => {
           return submittedSets.map(set => ({
             assessmentId: assessment._id,
             assessmentName: assessment.name,
+            assessmentType: assessment.type,
             courseName: assessment.course.name,
             courseCode: assessment.course.code,
             facultyId: facultyQuestion.faculty ? facultyQuestion.faculty._id : null,
