@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import {
-    FaTrash, FaFolderOpen, FaArrowLeft, FaEdit, FaCheck, FaChevronRight,
-    FaUserGraduate, FaClipboardList, FaCloudDownloadAlt, FaCheckCircle,
-    FaTimesCircle, FaCheckDouble, FaImage
+    FaFolderOpen, FaArrowLeft, FaChevronRight,
+    FaUserGraduate, FaClipboardList
 } from 'react-icons/fa';
 import userService from '../../services/userService';
 import ReviewSetModal from './ReviewSetModal';
@@ -31,7 +30,7 @@ const FacultyWorkloadModal = ({ show, handleClose, faculty, courses, handleDeall
             resetReviewView();
         }
         return () => { document.body.style.overflow = 'unset'; };
-    }, [show, faculty]);
+    }, [show, faculty, courses]);
 
     const resetReviewView = () => {
         setViewMode('list');
