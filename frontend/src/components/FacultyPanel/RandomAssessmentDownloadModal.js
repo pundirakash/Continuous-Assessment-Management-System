@@ -21,11 +21,11 @@ const RandomAssessmentDownloadModal = ({ onClose, assessmentId, setName, totalQu
         setLoading(true);
         setError(null);
         try {
-            const blob = await userService.downloadRandomApprovedQuestions(assessmentId, numberOfQuestions, setName);
+            const { blob, filename } = await userService.downloadRandomApprovedQuestions(assessmentId, numberOfQuestions, setName);
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `random_assessment_${setName}.zip`); // Matches backend archiver response
+            link.setAttribute('download', filename); // Matches backend archiver response
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);

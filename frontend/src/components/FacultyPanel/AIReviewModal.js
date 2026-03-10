@@ -130,7 +130,7 @@ const AIReviewModal = ({ isOpen, onClose, aiResponse, questions, loading, onAppl
                 width: '100%',
                 height: '100%',
                 background: 'rgba(15, 23, 42, 0.7)',
-                zIndex: 1200,
+                zIndex: 2300,
                 backdropFilter: 'blur(8px)'
             }}>
 
@@ -208,7 +208,7 @@ const AIReviewModal = ({ isOpen, onClose, aiResponse, questions, loading, onAppl
                     <div className="modal-backdrop-custom d-flex align-items-center justify-content-center"
                         style={{
                             position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                            background: 'rgba(15, 23, 42, 0.6)', zIndex: 1200, backdropFilter: 'blur(3px)', borderRadius: '24px'
+                            background: 'rgba(15, 23, 42, 0.6)', zIndex: 2350, backdropFilter: 'blur(3px)', borderRadius: '24px'
                         }}>
                         <div className="bg-white rounded-4 shadow-lg overflow-hidden"
                             style={{ width: '90%', maxWidth: '380px', animation: 'zoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)' }}>
@@ -239,7 +239,7 @@ const AIReviewModal = ({ isOpen, onClose, aiResponse, questions, loading, onAppl
 
                 {/* Confirm Apply All Fixes Modal */}
                 {showApplyAllConfirm && (
-                    <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex align-items-center justify-content-center" style={{ zIndex: 1060 }}>
+                    <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex align-items-center justify-content-center" style={{ zIndex: 2350 }}>
                         <div className="bg-white rounded-4 shadow-lg p-4 mx-3" style={{ maxWidth: '450px', width: '100%', animation: 'slideInDown 0.3s ease-out' }}>
                             <div className="d-flex align-items-center gap-3 mb-3">
                                 <div className="bg-primary bg-opacity-10 text-primary p-3 rounded-circle d-flex align-items-center justify-content-center">

@@ -99,7 +99,14 @@ const downloadAssessment = async (assessmentId, setName, templateNumber, faculty
   const response = await api.get(`${API_URL_FACULTY}/download-assessment/${assessmentId}/${setName}/${templateNumber}${query}`, {
     responseType: 'blob'
   });
-  return response.data;
+
+  const contentDisposition = response.headers['content-disposition'];
+  let filename = `assessment_${assessmentId}_${setName}.docx`;
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (match && match[1]) filename = match[1];
+  }
+  return { blob: response.data, filename };
 };
 
 const downloadSolution = async (assessmentId, setName, templateNumber, facultyId = null) => {
@@ -107,7 +114,14 @@ const downloadSolution = async (assessmentId, setName, templateNumber, facultyId
   const response = await api.get(`${API_URL_FACULTY}/download-solution/${assessmentId}/${setName}/${templateNumber}${query}`, {
     responseType: 'blob'
   });
-  return response.data;
+
+  const contentDisposition = response.headers['content-disposition'];
+  let filename = `solution_${assessmentId}_${setName}.docx`;
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (match && match[1]) filename = match[1];
+  }
+  return { blob: response.data, filename };
 };
 
 const downloadRandomApprovedQuestions = async (assessmentId, numberOfQuestions, setName) => {
@@ -118,7 +132,14 @@ const downloadRandomApprovedQuestions = async (assessmentId, numberOfQuestions, 
   }, {
     responseType: 'blob'
   });
-  return response.data;
+
+  const contentDisposition = response.headers['content-disposition'];
+  let filename = `random_questions.zip`;
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (match && match[1]) filename = match[1];
+  }
+  return { blob: response.data, filename };
 };
 
 const createSetForAssessment = async (assessmentId, setName) => {

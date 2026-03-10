@@ -123,3 +123,48 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 }
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, email, uid } = req.body;
+    const userId = req.user._id;
+
+    // Validate email uniqueness if email is changed
+    if (email) {
+      const existingUser = await User.findOne({
+        email: { $regex: new RegExp(`^${email.trim()}$`, 'i') },
+        _id: { $ne: userId }
+      });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email is already taken' });
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: { name, email: email.trim(), uid } },
+      { new: true }
+    ).populate('departmentId').lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Since name/email/uid are likely inside the token payload, we need to issue a new token
+    const deptName = user.department || (user.departmentId ? user.departmentId.name : '');
+    const token = jwt.sign({
+      _id: user._id,
+      role: user.role,
+      user: user.name,
+      uid: user.uid,
+      department: deptName,
+      departmentId: user.departmentId ? user.departmentId._id : user.departmentId,
+      schoolId: user.schoolId,
+      universityId: user.universityId
+    }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+    res.status(200).json({ message: 'Profile updated successfully', token, user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};

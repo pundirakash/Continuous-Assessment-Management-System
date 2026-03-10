@@ -200,11 +200,11 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                 finalTemplate = isMCQ ? 3 : 4;
             }
 
-            const blob = await userService.downloadAssessment(assessmentId, localSetData.setName, finalTemplate, facultyId);
+            const { blob, filename } = await userService.downloadAssessment(assessmentId, localSetData.setName, finalTemplate, facultyId);
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
-            link.download = `Set_${localSetData.setName}.docx`;
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -213,11 +213,11 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
 
     const handleDownloadSolution = async (templateNumber) => {
         try {
-            const blob = await userService.downloadSolution(assessmentId, localSetData.setName, templateNumber, facultyId);
+            const { blob, filename } = await userService.downloadSolution(assessmentId, localSetData.setName, templateNumber, facultyId);
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
-            link.download = `Solution_Set_${localSetData.setName}.docx`;
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -304,7 +304,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
 
     return ReactDOM.createPortal(
         <div className="modal-backdrop-custom d-flex align-items-center justify-content-center"
-            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15, 23, 42, 0.4)', zIndex: 1100, backdropFilter: 'blur(4px)' }}>
+            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15, 23, 42, 0.4)', zIndex: 2100, backdropFilter: 'blur(4px)' }}>
 
             <div className="bg-white rounded-4 shadow-2xl overflow-hidden d-flex flex-column"
                 style={{
@@ -722,7 +722,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                 {/* Inner Edit Modal - Modernized (Faculty Style) */}
                 {showEditModal && ReactDOM.createPortal(
                     <div className="modal-backdrop-custom d-flex align-items-center justify-content-center"
-                        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15, 23, 42, 0.6)', zIndex: 1300, backdropFilter: 'blur(2px)' }}>
+                        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15, 23, 42, 0.6)', zIndex: 2200, backdropFilter: 'blur(2px)' }}>
                         <div className="bg-white rounded-5 shadow-2xl overflow-hidden d-flex flex-column"
                             style={{ width: '700px', maxHeight: '90vh', animation: 'zoomIn 0.2s ease-out' }}>
                             <div className="p-4 bg-white border-bottom d-flex justify-content-between align-items-center">
@@ -868,7 +868,7 @@ const ReviewSetModal = ({ show, handleClose, set, assessmentId, facultyId, facul
                 {/* Activity History Modal */}
                 {showHistoryModal && (
                     <div className="modal-backdrop-custom d-flex align-items-center justify-content-center"
-                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(8px)', zIndex: 1200, padding: '1rem' }}
+                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(8px)', zIndex: 2150, padding: '1rem' }}
                         onClick={() => setShowHistoryModal(false)}>
                         <div className="modal-content border-0 shadow-2xl bg-white overflow-hidden"
                             style={{ width: '100%', maxWidth: '600px', borderRadius: '24px', animation: 'zoomIn 0.3s' }}

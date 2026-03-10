@@ -1,9 +1,9 @@
 import React from 'react';
-import { FaUserGraduate, FaBuilding, FaCalendarAlt, FaSignOutAlt } from 'react-icons/fa';
+import { FaUserGraduate, FaBuilding, FaCalendarAlt, FaSignOutAlt, FaKey, FaUserEdit } from 'react-icons/fa';
 
 import BrandLogo from '../BrandLogo';
 
-const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, onLogout, onChangePasswordClick, onEditProfileClick }) => {
     return (
         <div className="admin-sidebar-modern">
             <a href="/admin" className="admin-brand d-flex flex-column align-items-center gap-2 py-3 text-decoration-none">
@@ -46,6 +46,22 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
             </div>
 
             <div className="pt-4 border-top border-secondary border-opacity-25">
+                <button
+                    className="admin-nav-item w-100 text-primary border-0 bg-transparent mb-2"
+                    onClick={onEditProfileClick}
+                    style={{ transition: 'all 0.3s' }}
+                >
+                    <FaUserEdit size={18} />
+                    <span>Edit Profile</span>
+                </button>
+                <button
+                    className="admin-nav-item w-100 text-info border-0 bg-transparent mb-2"
+                    onClick={onChangePasswordClick}
+                    style={{ transition: 'all 0.3s' }}
+                >
+                    <FaKey size={18} />
+                    <span>Change Password</span>
+                </button>
                 <button
                     className="admin-nav-item w-100 text-danger border-0 bg-transparent"
                     onClick={onLogout}

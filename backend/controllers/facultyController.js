@@ -528,8 +528,30 @@ exports.downloadAssessment = async (req, res) => {
     });
     await assessment.save();
 
-    // Set headers to indicate a file download
-    res.setHeader('Content-Disposition', `attachment; filename="assessment_${assessmentId}_${setName}.docx"`);
+    // Build custom descriptive filename
+    let facultyNameForFile = 'Faculty';
+    if (req.query.facultyId) {
+      const User = require('../models/User');
+      const tUser = await User.findById(req.query.facultyId).select('name');
+      if (tUser) facultyNameForFile = tUser.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+    } else {
+      facultyNameForFile = req.user.name ? req.user.name.replace(/[^a-zA-Z0-9_-]/g, '_') : 'Faculty';
+    }
+
+    const safeAssessmentName = assessment.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeSetName = setName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeCourseCode = assessment.course && assessment.course.code ? assessment.course.code.replace(/[^a-zA-Z0-9_-]/g, '_') : '';
+    const formatName = templateNumber == 1 ? 'CourseFile' :
+      templateNumber == 2 ? 'CourseFile_Practical' :
+        'Compact';
+
+    const termStr = assessment.termId ? `_${assessment.termId}` : '';
+    const courseCodeStr = safeCourseCode ? `_${safeCourseCode}` : '';
+    const finalFilename = `${facultyNameForFile}${courseCodeStr}_${safeAssessmentName}_${safeSetName}${termStr}_QP_${formatName}.docx`;
+
+    // Set headers to expose filename to frontend
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+    res.setHeader('Content-Disposition', `attachment; filename="${finalFilename}"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
     // Send the file buffer directly to the client
@@ -667,8 +689,26 @@ exports.downloadSolution = async (req, res) => {
     });
     await assessment.save();
 
-    // Set headers to indicate a file download
-    res.setHeader('Content-Disposition', `attachment; filename="solution_${assessmentId}_${setName}.docx"`);
+    // Build custom descriptive filename
+    let facultyNameForFile = 'Faculty';
+    if (req.query.facultyId) {
+      const User = require('../models/User');
+      const tUser = await User.findById(req.query.facultyId).select('name');
+      if (tUser) facultyNameForFile = tUser.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+    } else {
+      facultyNameForFile = req.user.name ? req.user.name.replace(/[^a-zA-Z0-9_-]/g, '_') : 'Faculty';
+    }
+
+    const safeAssessmentName = assessment.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeSetName = setName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeCourseCode = assessment.course && assessment.course.code ? assessment.course.code.replace(/[^a-zA-Z0-9_-]/g, '_') : '';
+    const termStr = assessment.termId ? `_${assessment.termId}` : '';
+    const courseCodeStr = safeCourseCode ? `_${safeCourseCode}` : '';
+    const finalFilename = `${facultyNameForFile}${courseCodeStr}_${safeAssessmentName}_${safeSetName}${termStr}_Solution.docx`;
+
+    // Set headers
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+    res.setHeader('Content-Disposition', `attachment; filename="${finalFilename}"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
     // Send the file buffer directly to the client
@@ -781,7 +821,18 @@ exports.downloadRandomApprovedQuestions = async (req, res) => {
 
     // Stream the ZIP file directly to the client
     const archive = archiver('zip', { zlib: { level: 9 } });
-    res.attachment(`assessment_${data.assessmentName}_random_${numberOfQuestions}.zip`);
+
+    // Build custom filename
+    const safeAssessmentName = assessment.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeCourseCode = assessment.course && assessment.course.code ? assessment.course.code.replace(/[^a-zA-Z0-9_-]/g, '_') : '';
+    const termStr = assessment.termId ? `_${assessment.termId}` : '';
+    const courseCodeStr = safeCourseCode ? `_${safeCourseCode}` : '';
+    const facultyNameForFile = req.user.name ? req.user.name.replace(/[^a-zA-Z0-9_-]/g, '_') : 'Faculty';
+    const finalFilename = `${facultyNameForFile}${courseCodeStr}_${safeAssessmentName}_Random_${numberOfQuestions}_Questions${termStr}.zip`;
+
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+    res.setHeader('Content-Disposition', `attachment; filename="${finalFilename}"`);
+    res.setHeader('Content-Type', 'application/zip');
 
     archive.on('error', (err) => {
       console.error('Error creating archive', err);

@@ -34,11 +34,24 @@ const changePassword = async (currentPassword, newPassword, confirmNewPassword) 
   return response.data;
 };
 
+// User update profile function
+const updateProfile = async (name, email, uid) => {
+  const response = await api.put(
+    `${API_URL}/user/profile`,
+    { name, email, uid }
+  );
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
+  }
+  return response.data;
+};
+
 const authService = {
   login,
   logout,
   adminResetPassword,
   changePassword,
+  updateProfile,
 };
 
 export default authService;

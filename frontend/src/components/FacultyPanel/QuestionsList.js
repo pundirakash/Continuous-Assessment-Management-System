@@ -352,17 +352,17 @@ const QuestionsList = ({ assessment, setName, onDeleteSet }) => {
 
   const handleDownloadAssessment = async (templateNumber) => {
     try {
-      const blob = await userService.downloadAssessment(assessment._id, setName, templateNumber);
+      const { blob, filename } = await userService.downloadAssessment(assessment._id, setName, templateNumber);
       const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement('a'); link.href = url; link.download = 'assessment.docx'; link.click();
+      const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
     } catch (e) { console.error(e); }
   };
 
   const handleDownloadSolution = async (templateNumber) => {
     try {
-      const blob = await userService.downloadSolution(assessment._id, setName, templateNumber);
+      const { blob, filename } = await userService.downloadSolution(assessment._id, setName, templateNumber);
       const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement('a'); link.href = url; link.download = 'solution.docx'; link.click();
+      const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
     } catch (e) { console.error('Solution download error', e); }
   };
 
